@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		275B7F0B2F8536E3003DBE6C /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 275B7F0A2F8536E3003DBE6C /* Supabase */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		27E97BCB2F781EDE001879C8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				275B7F0B2F8536E3003DBE6C /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +130,7 @@
 			);
 			name = ARMikronav;
 			packageProductDependencies = (
+				275B7F0A2F8536E3003DBE6C /* Supabase */,
 			);
 			productName = ARMikronav;
 			productReference = 27E97BBD2F781EDA001879C8 /* ARMikronav.app */;
@@ -208,6 +214,9 @@
 			);
 			mainGroup = 27E97BB42F781EDA001879C8;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				275B7F092F8536E3003DBE6C /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 27E97BBE2F781EDA001879C8 /* Products */;
 			projectDirPath = "";
@@ -595,6 +604,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		275B7F092F8536E3003DBE6C /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		275B7F0A2F8536E3003DBE6C /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 275B7F092F8536E3003DBE6C /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 27E97BB52F781EDA001879C8 /* Project object */;
 }
