@@ -2,6 +2,7 @@
 // ARMikronav – v2.0 | shouldWarn() Kernlogik
 
 import Foundation
+import Combine
 
 struct Barrier: Codable, Identifiable {
     let id: UUID
