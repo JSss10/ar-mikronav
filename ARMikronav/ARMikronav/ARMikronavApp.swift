@@ -56,7 +56,7 @@ struct AuthenticatedRootView: View {
                     profileState = .ready
                 }
             case .ready:
-                HomePlaceholderView()
+                HomeView()
             }
         }
         .task {
@@ -71,35 +71,5 @@ struct AuthenticatedRootView: View {
         } catch {
             profileState = .needsOnboarding
         }
-    }
-}
-
-// Temporärer Home-Placeholder bis MapView (KW 15 später) fertig ist.
-struct HomePlaceholderView: View {
-    @EnvironmentObject var authService: AuthService
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "map.fill")
-                .font(.system(size: 80))
-                .foregroundColor(.accentColor)
-
-            Text("Profil eingerichtet!")
-                .font(.title)
-                .bold()
-
-            Text("Kartenansicht kommt später in KW 15")
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-
-            Button("Abmelden") {
-                Task {
-                    try? await authService.signOut()
-                }
-            }
-            .buttonStyle(.bordered)
-            .padding(.top, 40)
-        }
-        .padding()
     }
 }
