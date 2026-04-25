@@ -17,6 +17,14 @@ struct Barrier: Codable, Identifiable {
     let sourceId: String?
     let isActive: Bool
     let lastVerified: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id, type, subtype, value, unit, latitude, longitude, source
+        case valueSource = "value_source"
+        case sourceId = "source_id"
+        case isActive = "is_active"
+        case lastVerified = "last_verified"
+    }
 }
 
 enum BarrierType: String, Codable {
