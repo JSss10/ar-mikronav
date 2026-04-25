@@ -5,6 +5,7 @@
 // Zeigt Userposition (UserAnnotation) und Barrieren als Annotations.
 
 import SwiftUI
+import Combine
 import MapKit
 import CoreLocation
 
