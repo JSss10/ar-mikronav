@@ -23,11 +23,13 @@ final class MapViewModel: ObservableObject {
     private var lastLoadCenter: CLLocation?
     private var cancellables = Set<AnyCancellable>()
 
-    init(
-        locationService: LocationService = .shared,
-        repository: BarrierRepository = .shared,
-        radius: Double = AppConfig.defaultBarrierRadius
-    ) {
+    init() {
+        self.locationService = .shared
+        self.repository = .shared
+        self.radius = AppConfig.defaultBarrierRadius
+    }
+
+    init(locationService: LocationService, repository: BarrierRepository, radius: Double) {
         self.locationService = locationService
         self.repository = repository
         self.radius = radius
