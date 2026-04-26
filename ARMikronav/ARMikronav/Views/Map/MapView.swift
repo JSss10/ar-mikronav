@@ -14,6 +14,7 @@ struct MapView: View {
     @StateObject private var locationService = LocationService.shared
 
     @State private var cameraPosition: MapCameraPosition = .region(MapView.defaultRegion)
+    @State private var selectedBarrier: Barrier?
 
     static let defaultRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(
@@ -36,6 +37,7 @@ struct MapView: View {
                     )
                 ) {
                     BarrierAnnotation(barrier: barrier)
+                        .onTapGesture { selectedBarrier = barrier }
                 }
             }
         }
@@ -73,6 +75,9 @@ struct MapView: View {
                     .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
                     .padding()
             }
+        }
+        .sheet(item: $selectedBarrier) { barrier in
+            BarrierDetailSheet(barrier: barrier, profile: nil)
         }
     }
 }
