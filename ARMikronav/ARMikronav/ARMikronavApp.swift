@@ -43,7 +43,7 @@ struct AuthenticatedRootView: View {
     enum ProfileState {
         case loading
         case needsOnboarding
-        case ready
+        case ready(UserProfile)
     }
 
     var body: some View {
@@ -53,10 +53,10 @@ struct AuthenticatedRootView: View {
                 SplashView()
             case .needsOnboarding:
                 OnboardingCoordinator {
-                    profileState = .ready
+                    Task { await checkProfile() }
                 }
-            case .ready:
-                HomeView()
+            case .ready(let profile):
+                HomeView(profile: profile)
             }
         }
         .task {
@@ -66,8 +66,11 @@ struct AuthenticatedRootView: View {
 
     private func checkProfile() async {
         do {
-            let profile = try await ProfileService.shared.loadProfile()
-            profileState = (profile == nil) ? .needsOnboarding : .ready
+            if let profile = try await ProfileService.shared.loadProfile() {
+                profileState = .ready(profile)
+            } else {
+                profileState = .needsOnboarding
+            }
         } catch {
             profileState = .needsOnboarding
         }

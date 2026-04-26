@@ -8,10 +8,11 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var authService: AuthService
+    let profile: UserProfile
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            MapView()
+            MapView(profile: profile)
                 .ignoresSafeArea(edges: .bottom)
 
             Button {
