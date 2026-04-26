@@ -2,14 +2,14 @@
 // ARMikronav
 //
 // Detail-Bottom-Sheet für eine Barriere.
-// Zeigt Typ + Icon, formatierten Wert gegen persönliches Limit (sofern Profil bekannt)
+// Zeigt Typ + Icon, formatierten Wert gegen persönliches Limit
 // und eine Warum-Erklärung. AR-Button ist bis Task A2 deaktiviert.
 
 import SwiftUI
 
 struct BarrierDetailSheet: View {
     let barrier: Barrier
-    let profile: UserProfile?
+    let profile: UserProfile
 
     var body: some View {
         ScrollView {
@@ -56,7 +56,7 @@ struct BarrierDetailSheet: View {
 
     @ViewBuilder
     private var comparison: some View {
-        if let profile, let limitText = formattedLimit(for: profile) {
+        if let limitText = formattedLimit {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Dein Limit")
                     .font(.subheadline.weight(.semibold))
@@ -124,7 +124,7 @@ struct BarrierDetailSheet: View {
         }
     }
 
-    private func formattedLimit(for profile: UserProfile) -> String? {
+    private var formattedLimit: String? {
         switch barrier.type {
         case .steps:
             return profile.wheelchairType.canClimbStairs ? "Du kannst Stufen überwinden" : "Stufen sind nicht passierbar"
@@ -150,13 +150,10 @@ struct BarrierDetailSheet: View {
     }
 
     private var explanationText: String {
-        if let profile, shouldWarn(barrier: barrier, profile: profile) {
-            return personalReason(for: profile)
-        }
-        return genericReason
+        shouldWarn(barrier: barrier, profile: profile) ? personalReason : neutralReason
     }
 
-    private func personalReason(for profile: UserProfile) -> String {
+    private var personalReason: String {
         switch barrier.type {
         case .steps:
             return "Stufen sind mit deinem Rollstuhltyp nicht überwindbar."
@@ -175,15 +172,15 @@ struct BarrierDetailSheet: View {
         }
     }
 
-    private var genericReason: String {
+    private var neutralReason: String {
         switch barrier.type {
-        case .steps:        return "Stufen können je nach Rollstuhltyp ein Hindernis sein."
-        case .curb:         return "Bordsteine können je nach Höhe blockierend wirken."
-        case .curbMissing:  return "Fehlende Absenkung erschwert den Übergang von Strasse zu Gehweg."
-        case .incline:      return "Steile Strecken brauchen mehr Kraft oder einen geeigneten Antrieb."
-        case .surface:      return "Die Oberfläche ist uneben und kann Erschütterungen oder Kraftverlust verursachen."
-        case .narrow:       return "Engstellen können das Durchqueren mit breiteren Rollstühlen verhindern."
-        case .temporary:    return "Eine Baustelle, ein Markt oder ein Hindernis blockiert den Weg vorübergehend."
+        case .steps:        return "Diese Stufen liegen innerhalb dessen, was du bewältigen kannst."
+        case .curb:         return "Der Bordstein liegt unter deinem Limit."
+        case .curbMissing:  return "Fehlende Absenkung – siehe Detail."
+        case .incline:      return "Die Steigung liegt unter deinem Limit."
+        case .surface:      return "Die Oberfläche passt zu deiner gewählten Toleranz."
+        case .narrow:       return "Der Durchgang ist breit genug für dich."
+        case .temporary:    return "Hier ist der Weg aktuell blockiert."
         }
     }
 }
