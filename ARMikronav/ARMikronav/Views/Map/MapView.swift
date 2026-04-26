@@ -10,11 +10,14 @@ import MapKit
 import CoreLocation
 
 struct MapView: View {
+    let profile: UserProfile
+
     @StateObject private var viewModel = MapViewModel()
     @StateObject private var locationService = LocationService.shared
 
     @State private var cameraPosition: MapCameraPosition = .region(MapView.defaultRegion)
     @State private var selectedBarrier: Barrier?
+    @State private var showingFilter = false
 
     static let defaultRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(
@@ -28,7 +31,7 @@ struct MapView: View {
         Map(position: $cameraPosition) {
             UserAnnotation()
 
-            ForEach(viewModel.barriers) { barrier in
+            ForEach(viewModel.filteredBarriers) { barrier in
                 Annotation(
                     barrier.type.localizedLabel,
                     coordinate: CLLocationCoordinate2D(
@@ -59,6 +62,18 @@ struct MapView: View {
                 )
             }
         }
+        .overlay(alignment: .topLeading) {
+            Button {
+                showingFilter = true
+            } label: {
+                Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                    .font(.title)
+                    .padding(10)
+                    .background(.thinMaterial, in: Circle())
+            }
+            .padding()
+            .accessibilityLabel("Filter")
+        }
         .overlay(alignment: .top) {
             if viewModel.isLoading {
                 ProgressView()
@@ -77,7 +92,12 @@ struct MapView: View {
             }
         }
         .sheet(item: $selectedBarrier) { barrier in
-            BarrierDetailSheet(barrier: barrier, profile: nil)
+            BarrierDetailSheet(barrier: barrier, profile: profile)
+        }
+        .sheet(isPresented: $showingFilter) {
+            FilterSheet(initial: viewModel.filterState) { newFilter in
+                viewModel.applyFilter(newFilter)
+            }
         }
     }
 }
