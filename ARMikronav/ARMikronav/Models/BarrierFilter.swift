@@ -6,8 +6,6 @@
 
 import Foundation
 
-extension BarrierType: CaseIterable {}
-
 struct BarrierFilterState: Equatable {
     var enabledTypes: Set<BarrierType>
     var radius: Double

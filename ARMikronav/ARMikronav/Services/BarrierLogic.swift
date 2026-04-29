@@ -27,7 +27,7 @@ struct Barrier: Codable, Identifiable {
     }
 }
 
-enum BarrierType: String, Codable {
+enum BarrierType: String, Codable, CaseIterable {
     case steps, curb, curbMissing = "curb_missing"
     case incline, surface, narrow, temporary
 }
