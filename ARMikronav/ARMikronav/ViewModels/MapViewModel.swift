@@ -14,25 +14,35 @@ final class MapViewModel: ObservableObject {
     @Published private(set) var barriers: [Barrier] = []
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var loadError: String?
+    @Published private(set) var filterState: BarrierFilterState = .default
 
     private let locationService: LocationService
     private let repository: BarrierRepository
-    private let radius: Double
     private let reloadThreshold: CLLocationDistance = 100
 
     private var lastLoadCenter: CLLocation?
     private var cancellables = Set<AnyCancellable>()
 
+    var filteredBarriers: [Barrier] {
+        barriers.filter { filterState.enabledTypes.contains($0.type) }
+    }
+
     init() {
         self.locationService = .shared
         self.repository = .shared
-        self.radius = AppConfig.defaultBarrierRadius
     }
 
-    init(locationService: LocationService, repository: BarrierRepository, radius: Double) {
+    init(locationService: LocationService, repository: BarrierRepository) {
         self.locationService = locationService
         self.repository = repository
-        self.radius = radius
+    }
+
+    func applyFilter(_ newFilter: BarrierFilterState) {
+        let radiusChanged = newFilter.radius != filterState.radius
+        filterState = newFilter
+
+        guard radiusChanged, let center = lastLoadCenter else { return }
+        Task { await loadBarriers(around: center.coordinate) }
     }
 
     func start() {
@@ -63,7 +73,7 @@ final class MapViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            barriers = try await repository.fetchBarriers(near: coordinate, radius: radius)
+            barriers = try await repository.fetchBarriers(near: coordinate, radius: filterState.radius)
         } catch {
             loadError = error.localizedDescription
         }
