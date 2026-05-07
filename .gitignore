@@ -20,8 +20,11 @@ DerivedData/
 Package.resolved
 
 # Konfiguration (Secrets)
-Config.swift
+# Secrets.swift liegt unter ARMikronav/ARMikronav/Config/Secrets.swift
+# (Vorlage: Secrets.example.swift). Niemals einchecken.
 **/Secrets.swift
+Secrets.xcconfig
+Config.swift
 .env
 .env.local
 
