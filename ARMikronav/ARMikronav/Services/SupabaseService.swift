@@ -12,13 +12,13 @@ final class SupabaseService {
     let client: SupabaseClient
     
     private init() {
-        guard let url = URL(string: AppConfig.supabaseURL) else {
-            fatalError("Invalid Supabase URL in Config.swift")
+        guard let url = URL(string: Secrets.supabaseURL) else {
+            fatalError("Invalid Supabase URL in Secrets.swift")
         }
-        
+
         self.client = SupabaseClient(
             supabaseURL: url,
-            supabaseKey: AppConfig.supabaseAnonKey
+            supabaseKey: Secrets.supabaseAnonKey
         )
     }
 }
