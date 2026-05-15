@@ -6,6 +6,7 @@
 // beim Wechsel erhalten, weil beide Modi auf dem gleichen ViewModel laufen.
 
 import SwiftUI
+import CoreLocation
 
 struct HomeView: View {
     @EnvironmentObject var authService: AuthService
