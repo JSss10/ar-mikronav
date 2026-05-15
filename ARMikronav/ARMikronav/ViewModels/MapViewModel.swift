@@ -22,6 +22,7 @@ final class MapViewModel: ObservableObject {
 
     private var lastLoadCenter: CLLocation?
     private var cancellables = Set<AnyCancellable>()
+    private var hasStarted = false
 
     var filteredBarriers: [Barrier] {
         barriers.filter { filterState.enabledTypes.contains($0.type) }
@@ -46,6 +47,9 @@ final class MapViewModel: ObservableObject {
     }
 
     func start() {
+        guard !hasStarted else { return }
+        hasStarted = true
+
         locationService.startUpdating()
 
         locationService.$currentLocation
