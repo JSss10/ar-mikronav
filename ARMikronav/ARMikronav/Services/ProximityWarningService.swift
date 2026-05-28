@@ -18,7 +18,11 @@ final class ProximityWarningService: ObservableObject {
     private let warningDistance: CLLocationDistance
     private var suppressedBarrierId: UUID?
 
-    init(warningDistance: CLLocationDistance = AppConfig.approachWarningDistance) {
+    init() {
+        self.warningDistance = AppConfig.approachWarningDistance
+    }
+
+    init(warningDistance: CLLocationDistance) {
         self.warningDistance = warningDistance
     }
 
