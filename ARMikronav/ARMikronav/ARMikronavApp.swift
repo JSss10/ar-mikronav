@@ -10,7 +10,7 @@ import Auth
 @main
 struct ARMikronavApp: App {
     @StateObject private var authService = AuthService.shared
-    
+
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -21,7 +21,7 @@ struct ARMikronavApp: App {
 
 struct RootView: View {
     @EnvironmentObject var authService: AuthService
-    
+
     var body: some View {
         Group {
             if authService.isLoading {
@@ -36,27 +36,30 @@ struct RootView: View {
 }
 
 // Routet nach erfolgreichem Login: Onboarding wenn noch kein Profil, sonst Home.
+// Hält das Profil separat, damit es als Binding an HomeView und weiter an Settings
+// gereicht werden kann (S1: Companion-Toggle, Profil-Edit).
 struct AuthenticatedRootView: View {
     @EnvironmentObject var authService: AuthService
-    @State private var profileState: ProfileState = .loading
+    @State private var profile: UserProfile?
+    @State private var loadState: LoadState = .loading
 
-    enum ProfileState {
+    enum LoadState {
         case loading
         case needsOnboarding
-        case ready(UserProfile)
+        case ready
     }
 
     var body: some View {
         Group {
-            switch profileState {
+            switch loadState {
             case .loading:
                 SplashView()
             case .needsOnboarding:
                 OnboardingCoordinator {
                     Task { await checkProfile() }
                 }
-            case .ready(let profile):
-                HomeView(profile: profile)
+            case .ready:
+                HomeView(profile: profileBinding)
             }
         }
         .task {
@@ -64,15 +67,47 @@ struct AuthenticatedRootView: View {
         }
     }
 
+    private var profileBinding: Binding<UserProfile> {
+        Binding(
+            get: { profile ?? .placeholder },
+            set: { newValue in
+                profile = newValue
+                Task { try? await ProfileService.shared.saveProfile(newValue) }
+            }
+        )
+    }
+
     private func checkProfile() async {
+        loadState = .loading
         do {
-            if let profile = try await ProfileService.shared.loadProfile() {
-                profileState = .ready(profile)
+            if let loaded = try await ProfileService.shared.loadProfile() {
+                profile = loaded
+                loadState = .ready
             } else {
-                profileState = .needsOnboarding
+                loadState = .needsOnboarding
             }
         } catch {
-            profileState = .needsOnboarding
+            loadState = .needsOnboarding
         }
+    }
+}
+
+private extension UserProfile {
+    static var placeholder: UserProfile {
+        UserProfile(
+            id: UUID(),
+            mobilityCategory: .wheelchair,
+            wheelchairType: .manual,
+            widthCm: 65,
+            heightCm: 130,
+            weightKg: 75,
+            maxIncline: 6,
+            maxCurbHeight: 3,
+            surfaceTolerance: .fineCobble,
+            companionStatus: .alwaysAlone,
+            companionTodayOverride: false,
+            createdAt: Date(),
+            updatedAt: Date()
+        )
     }
 }
