@@ -18,6 +18,7 @@ struct ARModeView: View {
     @StateObject private var arService = ARSessionService()
     @StateObject private var warningService = ProximityWarningService()
     @StateObject private var locationService = LocationService.shared
+    @StateObject private var notificationStore = NotificationSettingsStore.shared
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -34,7 +35,8 @@ struct ARModeView: View {
                 onClose: onClose
             )
 
-            if let warning = warningService.activeWarning {
+            if notificationStore.settings.warningsEnabled,
+               let warning = warningService.activeWarning {
                 WarningBannerView(warning: warning) {
                     warningService.dismissCurrent()
                 }
