@@ -15,15 +15,21 @@ import Combine
 final class ProximityWarningService: ObservableObject {
     @Published private(set) var activeWarning: BarrierWarning?
 
-    private let warningDistance: CLLocationDistance
+    private let injectedWarningDistance: CLLocationDistance?
     private var suppressedBarrierId: UUID?
 
+    /// Liest den Warn-Radius live aus den User-Settings, damit Änderungen im
+    /// SettingsView ohne Re-Init wirksam werden.
+    private var warningDistance: CLLocationDistance {
+        injectedWarningDistance ?? NotificationSettingsStore.shared.settings.warningRadius
+    }
+
     init() {
-        self.warningDistance = AppConfig.approachWarningDistance
+        self.injectedWarningDistance = nil
     }
 
     init(warningDistance: CLLocationDistance) {
-        self.warningDistance = warningDistance
+        self.injectedWarningDistance = warningDistance
     }
 
     func evaluate(userLocation: CLLocation?, barriers: [Barrier], profile: UserProfile) {

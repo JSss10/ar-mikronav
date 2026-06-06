@@ -17,6 +17,7 @@ struct SettingsView: View {
                 profileSection
                 companionSection
                 editSection
+                notificationsSection
                 placeholderSections
             }
             .navigationTitle("Einstellungen")
@@ -26,6 +27,18 @@ struct SettingsView: View {
                     Button("Fertig") { dismiss() }
                         .bold()
                 }
+            }
+        }
+    }
+
+    // MARK: - Benachrichtigungen
+
+    private var notificationsSection: some View {
+        Section {
+            NavigationLink {
+                NotificationSettingsView()
+            } label: {
+                Label("Benachrichtigungen", systemImage: "bell")
             }
         }
     }
@@ -86,7 +99,6 @@ struct SettingsView: View {
 
     private var placeholderSections: some View {
         Section {
-            placeholderRow("Benachrichtigungen", systemImage: "bell")
             placeholderRow("Datenschutz", systemImage: "lock")
             placeholderRow("Über die App", systemImage: "info.circle")
         } footer: {
