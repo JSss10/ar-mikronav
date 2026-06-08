@@ -22,7 +22,7 @@ final class FeedbackService: @unchecked Sendable {
         correctValue: Double?,
         comment: String?
     ) async throws {
-        guard let userId = await AuthService.shared.currentUser?.id else {
+        guard let userId = AuthService.shared.currentUser?.id else {
             throw FeedbackServiceError.notAuthenticated
         }
 
