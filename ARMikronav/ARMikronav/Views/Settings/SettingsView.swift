@@ -18,7 +18,7 @@ struct SettingsView: View {
                 companionSection
                 editSection
                 notificationsSection
-                placeholderSections
+                privacyAndAboutSection
             }
             .navigationTitle("Einstellungen")
             .navigationBarTitleDisplayMode(.inline)
@@ -95,20 +95,21 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Platzhalter
+    // MARK: - Datenschutz + About
 
-    private var placeholderSections: some View {
+    private var privacyAndAboutSection: some View {
         Section {
-            placeholderRow("Datenschutz", systemImage: "lock")
-            placeholderRow("Über die App", systemImage: "info.circle")
-        } footer: {
-            Text("Weitere Bereiche kommen in den nächsten Versionen.")
+            NavigationLink {
+                PrivacyView()
+            } label: {
+                Label("Datenschutz", systemImage: "lock")
+            }
+            NavigationLink {
+                AboutView()
+            } label: {
+                Label("Über die App", systemImage: "info.circle")
+            }
         }
-    }
-
-    private func placeholderRow(_ title: String, systemImage: String) -> some View {
-        Label(title, systemImage: systemImage)
-            .foregroundStyle(.secondary)
     }
 
     // MARK: - Helpers
