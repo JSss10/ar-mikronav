@@ -11,6 +11,9 @@ struct BarrierDetailSheet: View {
     let barrier: Barrier
     let profile: UserProfile
 
+    @State private var showingFeedback = false
+    @State private var feedbackSubmitted = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -19,11 +22,17 @@ struct BarrierDetailSheet: View {
                 explanation
                 sourceFooter
                 arButton
+                feedbackButton
             }
             .padding(20)
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .sheet(isPresented: $showingFeedback) {
+            FeedbackFormView(barrier: barrier) {
+                feedbackSubmitted = true
+            }
+        }
     }
 
     // MARK: - Sections
@@ -103,6 +112,28 @@ struct BarrierDetailSheet: View {
         .controlSize(.large)
         .disabled(true)
         .accessibilityHint("Noch nicht verfügbar")
+    }
+
+    @ViewBuilder
+    private var feedbackButton: some View {
+        if feedbackSubmitted {
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Text("Feedback gesendet – danke!")
+                    .font(.subheadline)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            Button {
+                showingFeedback = true
+            } label: {
+                Label("Stimmt nicht mehr?", systemImage: "exclamationmark.bubble")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+        }
     }
 
     // MARK: - Formatting
