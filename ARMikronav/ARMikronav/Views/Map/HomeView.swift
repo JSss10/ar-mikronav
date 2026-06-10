@@ -24,21 +24,36 @@ struct HomeView: View {
 
     var body: some View {
         Group {
-            switch mode {
-            case .map:
-                mapContent
-            case .ar:
-                ARModeView(
-                    profile: profile,
-                    viewModel: viewModel,
-                    originCoordinate: locationService.currentLocation?.coordinate,
-                    onClose: { mode = .map }
-                )
+            if needsLocationPermission {
+                LocationPermissionView(locationService: locationService)
+            } else {
+                switch mode {
+                case .map:
+                    mapContent
+                case .ar:
+                    ARModeView(
+                        profile: profile,
+                        viewModel: viewModel,
+                        originCoordinate: locationService.currentLocation?.coordinate,
+                        onClose: { mode = .map }
+                    )
+                }
             }
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView(profile: $profile)
                 .environmentObject(authService)
+        }
+    }
+
+    private var needsLocationPermission: Bool {
+        switch locationService.authorizationStatus {
+        case .notDetermined, .denied, .restricted:
+            return true
+        case .authorizedWhenInUse, .authorizedAlways:
+            return false
+        @unknown default:
+            return true
         }
     }
 
