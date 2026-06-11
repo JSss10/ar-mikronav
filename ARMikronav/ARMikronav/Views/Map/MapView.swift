@@ -16,6 +16,7 @@ struct MapView: View {
     @ObservedObject var viewModel: MapViewModel
 
     @StateObject private var locationService = LocationService.shared
+    @StateObject private var connectivity = ConnectivityMonitor.shared
 
     @State private var cameraPosition: MapCameraPosition = .region(MapView.defaultRegion)
     @State private var selectedBarrier: Barrier?
@@ -77,11 +78,23 @@ struct MapView: View {
             .accessibilityLabel("Filter")
         }
         .overlay(alignment: .top) {
-            if viewModel.isLoading {
-                ProgressView()
-                    .padding(8)
-                    .background(.thinMaterial, in: Capsule())
-                    .padding(.top, 8)
+            VStack(spacing: 8) {
+                if !connectivity.isOnline {
+                    OfflineOverlay()
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                if viewModel.isLoading {
+                    ProgressView()
+                        .padding(8)
+                        .background(.thinMaterial, in: Capsule())
+                }
+            }
+            .padding(.top, 8)
+            .animation(.easeInOut(duration: 0.25), value: connectivity.isOnline)
+        }
+        .overlay {
+            if showEmptyState {
+                EmptyStateView { showingFilter = true }
             }
         }
         .overlay(alignment: .bottom) {
@@ -101,5 +114,12 @@ struct MapView: View {
                 viewModel.applyFilter(newFilter)
             }
         }
+    }
+
+    private var showEmptyState: Bool {
+        !viewModel.isLoading
+            && viewModel.loadError == nil
+            && viewModel.filteredBarriers.isEmpty
+            && locationService.currentLocation != nil
     }
 }
