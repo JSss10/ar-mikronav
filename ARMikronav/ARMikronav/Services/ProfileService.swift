@@ -1,12 +1,15 @@
 // ProfileService.swift
 // ARMikronav – Service zum Speichern des UserProfile.
 //
-// Aktueller Stand: Profil wird lokal in UserDefaults persistiert.
-// TODO: Sobald der Supabase-Client (aus dem Auth-Flow) referenziert werden kann,
-//       in saveProfile() einen Sync auf user_metadata ergänzen.
+// Offline-first: das Profil liegt primär in UserDefaults, damit App-Start und
+// Edits ohne Netzwerk funktionieren. Beim Speichern wird zusätzlich ein
+// Best-Effort-Sync auf Supabase user_metadata gefahren. Beim Laden auf einem
+// frischen Gerät (UserDefaults leer) holt sich der Service das Profil aus
+// user_metadata zurück und cached es lokal. (B1)
 
 import Foundation
 import Auth
+import Supabase
 
 protocol ProfileServiceProtocol: Sendable {
     var currentUserId: UUID? { get }
@@ -33,19 +36,37 @@ final class ProfileService: ProfileServiceProtocol, @unchecked Sendable {
         // 1. Lokal cachen (offline-first)
         UserDefaults.standard.set(data, forKey: UserDefaultsKey.userProfile)
 
-        // 2. TODO: Sync auf Supabase user_metadata
-        // try await SupabaseClient.shared.auth.update(
-        //     user: UserAttributes(data: profile.asJSON())
-        // )
+        // 2. Best-effort Sync auf Supabase user_metadata
+        guard let jsonString = String(data: data, encoding: .utf8) else { return }
+        let attributes = UserAttributes(data: [UserMetadataKey.profileJSON: .string(jsonString)])
+        _ = try? await SupabaseService.shared.client.auth.update(user: attributes)
     }
 
     func loadProfile() async throws -> UserProfile? {
-        guard let data = UserDefaults.standard.data(forKey: UserDefaultsKey.userProfile) else {
-            return nil
-        }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode(UserProfile.self, from: data)
+
+        // 1. Lokaler Cache hat Vorrang
+        if let data = UserDefaults.standard.data(forKey: UserDefaultsKey.userProfile) {
+            return try decoder.decode(UserProfile.self, from: data)
+        }
+
+        // 2. Fallback: user_metadata (z. B. nach App-Reinstall oder neuem Gerät)
+        guard let user = AuthService.shared.currentUser,
+              case .string(let jsonString) = user.userMetadata[UserMetadataKey.profileJSON],
+              let data = jsonString.data(using: .utf8) else {
+            return nil
+        }
+
+        let profile = try decoder.decode(UserProfile.self, from: data)
+        UserDefaults.standard.set(data, forKey: UserDefaultsKey.userProfile)
+        return profile
+    }
+
+    /// Löscht das lokal gecachte Profil aus den UserDefaults. Server-Account-
+    /// Löschung erfordert Admin-Aktion (siehe PrivacyView, S3).
+    func deleteLocalProfile() {
+        UserDefaults.standard.removeObject(forKey: UserDefaultsKey.userProfile)
     }
 }
 
@@ -56,4 +77,8 @@ enum ProfileServiceError: Error {
 
 private enum UserDefaultsKey {
     static let userProfile = "armikronav.userProfile"
+}
+
+private enum UserMetadataKey {
+    static let profileJSON = "profile_json"
 }
