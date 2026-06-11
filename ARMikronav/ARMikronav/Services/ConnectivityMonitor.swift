@@ -18,13 +18,18 @@ final class ConnectivityMonitor: ObservableObject {
     private let queue = DispatchQueue(label: "armikronav.connectivity", qos: .utility)
 
     init() {
-        monitor.pathUpdateHandler = { [weak self] path in
-            let online = path.status == .satisfied
-            Task { @MainActor in
+        let (stream, continuation) = AsyncStream.makeStream(of: Bool.self)
+
+        monitor.pathUpdateHandler = { path in
+            continuation.yield(path.status == .satisfied)
+        }
+        monitor.start(queue: queue)
+
+        Task { @MainActor [weak self] in
+            for await online in stream {
                 self?.isOnline = online
             }
         }
-        monitor.start(queue: queue)
     }
 
     deinit {
