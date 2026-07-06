@@ -66,11 +66,47 @@ struct Screen16_Summary: View {
                 SummaryRow(label: "Begleitung", value: draft.companionStatus.displayName)
             }
 
+            warningPreview
+
             Text("Du kannst dein Profil später in den Einstellungen jederzeit anpassen.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.top, 4)
+        }
+    }
+
+    // Wireframe 1.6: "Du wirst gewarnt bei:" – konkrete Schwellen aus dem Draft.
+    private var warningPreview: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Du wirst gewarnt bei:")
+                .font(.body.weight(.semibold))
+
+            warningLine("Steigungen über \(Int(draft.maxIncline)) %")
+            warningLine(String(format: "Bordsteinen über %.0f cm", draft.maxCurbHeight))
+            warningLine("Engstellen unter \(draft.widthCm + 10) cm")
+            if draft.surfaceTolerance != .almostAll {
+                warningLine("Unebenen Oberflächen (\(draft.surfaceTolerance.displayName))")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.accentColor.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.accentColor.opacity(0.4), lineWidth: 1.5)
+        )
+    }
+
+    private func warningLine(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("·")
+                .font(.body.weight(.bold))
+            Text(text)
+                .font(.subheadline)
         }
     }
 }
