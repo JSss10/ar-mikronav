@@ -5,6 +5,11 @@
 import Foundation
 
 struct DraftProfile {
+    // Profil-Setup – Screen 1.0. Vorbelegt aus Auth-user_metadata (Registrierung),
+    // Pflicht bei Apple/Google Sign-in, wo kein Name miterfasst wird.
+    var firstName: String = ""
+    var lastName: String = ""
+
     var mobilityCategory: MobilityCategory?
     var wheelchairSubtype: WheelchairSubtype?
 

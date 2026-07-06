@@ -18,6 +18,8 @@ struct OnboardingCoordinator: View {
             ScrollView {
                 Group {
                     switch viewModel.currentStep {
+                    case .profileSetup:
+                        Screen10_ProfileSetup(draft: $viewModel.draft)
                     case .mobilityCategory:
                         Screen11_MobilityCategory(draft: $viewModel.draft)
                     case .wheelchairType:
