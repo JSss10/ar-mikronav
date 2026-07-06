@@ -17,7 +17,8 @@ struct SignUpView: View {
     
     @State private var isLoading: Bool = false
     @State private var errorMessage: String? = nil
-    @State private var showSuccess: Bool = false
+    @State private var showVerification: Bool = false
+    @State private var showPassword: Bool = false
     
     private var isFormValid: Bool {
         !firstName.isEmpty &&
@@ -75,14 +76,34 @@ struct SignUpView: View {
                         .autocorrectionDisabled()
                 }
                 
-                // Passwort
+                // Passwort (mit "zeigen"-Toggle, Wireframe 0.2)
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Passwort (min. 6 Zeichen)")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    SecureField("••••••••", text: $password)
-                        .textFieldStyle(.roundedBorder)
+                    HStack {
+                        Group {
+                            if showPassword {
+                                TextField("••••••••", text: $password)
+                            } else {
+                                SecureField("••••••••", text: $password)
+                            }
+                        }
                         .textContentType(.newPassword)
+                        .autocapitalization(.none)
+                        .autocorrectionDisabled()
+
+                        Button(showPassword ? "verbergen" : "zeigen") {
+                            showPassword.toggle()
+                        }
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    }
+                    .padding(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color(.systemGray4), lineWidth: 0.5)
+                    )
                 }
                 
                 // Passwort bestätigen
@@ -129,10 +150,8 @@ struct SignUpView: View {
             .padding(.horizontal, 24)
         }
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Erfolgreich registriert", isPresented: $showSuccess) {
-            Button("OK") { dismiss() }
-        } message: {
-            Text("Bitte bestätige deine E-Mail-Adresse, um dein Konto zu aktivieren.")
+        .navigationDestination(isPresented: $showVerification) {
+            EmailVerificationView(email: email)
         }
     }
     
@@ -151,7 +170,7 @@ struct SignUpView: View {
             // Wenn Email-Bestätigung deaktiviert ist, ist man direkt eingeloggt
             // Sonst muss man die E-Mail bestätigen
             if !authService.isAuthenticated {
-                showSuccess = true
+                showVerification = true
             }
         } catch {
             errorMessage = "Registrierung fehlgeschlagen: \(error.localizedDescription)"

@@ -77,8 +77,14 @@ final class AuthService: ObservableObject {
     }
     
     // MARK: - Password Reset
-    
+
     func resetPassword(email: String) async throws {
         try await client.auth.resetPasswordForEmail(email)
+    }
+
+    // MARK: - E-Mail-Bestätigung erneut senden
+
+    func resendConfirmation(email: String) async throws {
+        try await client.auth.resend(email: email, type: .signup)
     }
 }
