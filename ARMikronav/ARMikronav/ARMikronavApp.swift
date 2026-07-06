@@ -35,13 +35,16 @@ struct RootView: View {
     }
 }
 
-// Routet nach erfolgreichem Login: Onboarding wenn noch kein Profil, sonst Home.
-// Hält das Profil separat, damit es als Binding an HomeView und weiter an Settings
-// gereicht werden kann (S1: Companion-Toggle, Profil-Edit).
+// Routet nach erfolgreichem Login:
+// Consent → Onboarding (wenn kein Profil) → Notification-Permission (einmalig) →
+// Home. Hält das Profil separat, damit es als Binding an HomeView
+// und weiter an Settings gereicht werden kann (S1).
 struct AuthenticatedRootView: View {
     @EnvironmentObject var authService: AuthService
     @State private var profile: UserProfile?
     @State private var loadState: LoadState = .loading
+    @State private var hasConsent = ConsentStore.hasConsent
+    @State private var notificationAsked = NotificationPermissionStore.wasAsked
 
     enum LoadState {
         case loading
@@ -51,15 +54,29 @@ struct AuthenticatedRootView: View {
 
     var body: some View {
         Group {
-            switch loadState {
-            case .loading:
-                SplashView()
-            case .needsOnboarding:
-                OnboardingCoordinator {
-                    Task { await checkProfile() }
+            if !hasConsent {
+                NavigationStack {
+                    ConsentView {
+                        hasConsent = true
+                    }
                 }
-            case .ready:
-                HomeView(profile: profileBinding)
+            } else {
+                switch loadState {
+                case .loading:
+                    SplashView()
+                case .needsOnboarding:
+                    OnboardingCoordinator {
+                        Task { await checkProfile() }
+                    }
+                case .ready:
+                    if !notificationAsked {
+                        NotificationPermissionView {
+                            notificationAsked = true
+                        }
+                    } else {
+                        HomeView(profile: profileBinding)
+                    }
+                }
             }
         }
         .task {
