@@ -68,12 +68,6 @@ final class ProfileService: ProfileServiceProtocol, @unchecked Sendable {
     func deleteLocalProfile() {
         UserDefaults.standard.removeObject(forKey: UserDefaultsKey.userProfile)
     }
-
-    /// Löscht das lokal gecachte Profil aus den UserDefaults. Server-Account-
-    /// Löschung erfordert Admin-Aktion (siehe PrivacyView, S3).
-    func deleteLocalProfile() {
-        UserDefaults.standard.removeObject(forKey: UserDefaultsKey.userProfile)
-    }
 }
 
 enum ProfileServiceError: Error {
