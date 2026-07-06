@@ -1,7 +1,7 @@
 // WelcomeView.swift
 // ARMikronav
 //
-// Screen 0.2 - Welcome / Sign in / Sign up Auswahl
+// Welcome / Sign in / Sign up Auswahl
 
 import SwiftUI
 
@@ -22,20 +22,20 @@ struct WelcomeView: View {
                         .bold()
                         .multilineTextAlignment(.center)
                     
-                    Text("Persönliche Barrieren-Warnung\nim Kamerabild")
+                    Text("Barrieren erkennen, bevor du dort ankommst.")
                         .font(.body)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                 }
-                
+
                 Spacer()
-                
+
                 // Buttons
                 VStack(spacing: 12) {
                     NavigationLink {
-                        SignUpView()
+                        IntroCarouselView()
                     } label: {
-                        Text("Konto erstellen")
+                        Text("Registrieren")
                             .font(.headline)
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
