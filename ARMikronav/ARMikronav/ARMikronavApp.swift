@@ -45,6 +45,7 @@ struct AuthenticatedRootView: View {
     @State private var loadState: LoadState = .loading
     @State private var hasConsent = ConsentStore.hasConsent
     @State private var notificationAsked = NotificationPermissionStore.wasAsked
+    @State private var tutorialSeen = TutorialStore.wasSeen
 
     enum LoadState {
         case loading
@@ -69,7 +70,11 @@ struct AuthenticatedRootView: View {
                         Task { await checkProfile() }
                     }
                 case .ready:
-                    if !notificationAsked {
+                    if !tutorialSeen {
+                        TutorialView {
+                            tutorialSeen = true
+                        }
+                    } else if !notificationAsked {
                         NotificationPermissionView {
                             notificationAsked = true
                         }
