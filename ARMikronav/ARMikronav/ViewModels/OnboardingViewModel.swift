@@ -4,10 +4,12 @@
 import Foundation
 import SwiftUI
 import Combine
+import Auth
+import Supabase
 
 @MainActor
 final class OnboardingViewModel: ObservableObject {
-    @Published var currentStep: OnboardingStep = .mobilityCategory
+    @Published var currentStep: OnboardingStep = .profileSetup
     @Published var draft: DraftProfile = DraftProfile()
     @Published var isSaving: Bool = false
     @Published var errorMessage: String?
@@ -17,6 +19,18 @@ final class OnboardingViewModel: ObservableObject {
 
     init(profileService: ProfileServiceProtocol? = nil) {
         self.profileService = profileService ?? ProfileService.shared
+        prefillNamesFromAuth()
+    }
+
+    /// Screen 1.0: Vor-/Nachname aus der Registrierung vorbelegen (user_metadata).
+    private func prefillNamesFromAuth() {
+        guard let metadata = AuthService.shared.currentUser?.userMetadata else { return }
+        if case .string(let first) = metadata["first_name"] {
+            draft.firstName = first
+        }
+        if case .string(let last) = metadata["last_name"] {
+            draft.lastName = last
+        }
     }
 
     // MARK: - Navigation
@@ -39,6 +53,9 @@ final class OnboardingViewModel: ObservableObject {
 
     var canProceed: Bool {
         switch currentStep {
+        case .profileSetup:
+            return !draft.firstName.trimmingCharacters(in: .whitespaces).isEmpty
+                && !draft.lastName.trimmingCharacters(in: .whitespaces).isEmpty
         case .mobilityCategory:
             return draft.mobilityCategory == .wheelchair
         case .wheelchairType:
@@ -75,22 +92,34 @@ final class OnboardingViewModel: ObservableObject {
 
         do {
             try await profileService.saveProfile(profile)
+            await syncNamesToAuth()
             didComplete = true
         } catch {
             errorMessage = "Speichern fehlgeschlagen: \(error.localizedDescription)"
         }
+    }
+
+    /// Best-effort: Namen aus Screen 1.0 zurück in die Auth-user_metadata schreiben
+    /// (relevant, wenn der User sie im Onboarding geändert hat).
+    private func syncNamesToAuth() async {
+        let attributes = UserAttributes(data: [
+            "first_name": .string(draft.firstName),
+            "last_name": .string(draft.lastName)
+        ])
+        _ = try? await SupabaseService.shared.client.auth.update(user: attributes)
     }
 }
 
 // MARK: - OnboardingStep
 
 enum OnboardingStep: Int, CaseIterable {
-    case mobilityCategory = 1
-    case wheelchairType   = 2
-    case measurements     = 3
-    case abilities        = 4
-    case support          = 5
-    case summary          = 6
+    case profileSetup     = 1
+    case mobilityCategory = 2
+    case wheelchairType   = 3
+    case measurements     = 4
+    case abilities        = 5
+    case support          = 6
+    case summary          = 7
 
     var progress: Double {
         Double(rawValue) / Double(Self.allCases.count)
@@ -98,7 +127,8 @@ enum OnboardingStep: Int, CaseIterable {
 
     var title: String {
         switch self {
-        case .mobilityCategory: return "Wer bist du?"
+        case .profileSetup:     return "Wer bist du?"
+        case .mobilityCategory: return "Wie bist du unterwegs?"
         case .wheelchairType:   return "Dein Rollstuhl"
         case .measurements:     return "Masse"
         case .abilities:        return "Deine Fähigkeiten"
@@ -109,6 +139,7 @@ enum OnboardingStep: Int, CaseIterable {
 
     var subtitle: String {
         switch self {
+        case .profileSetup:     return "Dein Name für das Profil"
         case .mobilityCategory: return "Wähle deine Mobilitätssituation"
         case .wheelchairType:   return "Welchen Rollstuhl nutzt du?"
         case .measurements:     return "Für genauere Barrierenwarnungen"
