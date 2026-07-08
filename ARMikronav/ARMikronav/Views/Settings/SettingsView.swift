@@ -11,6 +11,11 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var profile: UserProfile
 
+    // Wireframe 4.6: Daten-Präferenzen. Der WLAN-Toggle wird vom künftigen
+    // Offline-Caching (B3) ausgewertet; der Cache-Key ist dort definiert.
+    @AppStorage("armikronav.wifiOnlyUpdates") private var wifiOnlyUpdates = false
+    @State private var showingCacheDeleteConfirm = false
+
     var body: some View {
         NavigationStack {
             Form {
@@ -18,6 +23,7 @@ struct SettingsView: View {
                 companionSection
                 editSection
                 notificationsSection
+                generalSection
                 privacyAndAboutSection
             }
             .navigationTitle("Einstellungen")
@@ -27,6 +33,14 @@ struct SettingsView: View {
                     Button("Fertig") { dismiss() }
                         .bold()
                 }
+            }
+            .alert("Barrieren-Daten löschen?", isPresented: $showingCacheDeleteConfirm) {
+                Button("Löschen", role: .destructive) {
+                    deleteBarrierCache()
+                }
+                Button("Abbrechen", role: .cancel) {}
+            } message: {
+                Text("Gecachte Daten werden entfernt und beim nächsten Start neu geladen. Offline sind dann keine Barrieren verfügbar.")
             }
         }
     }
@@ -41,6 +55,33 @@ struct SettingsView: View {
                 Label("Benachrichtigungen", systemImage: "bell")
             }
         }
+    }
+
+    // MARK: - Allgemein (4.6: Sprache, Daten)
+
+    private var generalSection: some View {
+        Section("Allgemein") {
+            NavigationLink {
+                LanguageSettingsView()
+            } label: {
+                Label("Sprache", systemImage: "globe")
+            }
+
+            Toggle(isOn: $wifiOnlyUpdates) {
+                Label("Nur über WLAN aktualisieren", systemImage: "wifi")
+            }
+
+            Button(role: .destructive) {
+                showingCacheDeleteConfirm = true
+            } label: {
+                Label("Barrieren-Daten löschen", systemImage: "trash")
+            }
+        }
+    }
+
+    private func deleteBarrierCache() {
+        // Cache-Key des kommenden Offline-Cachings (B3); heute noch leer.
+        UserDefaults.standard.removeObject(forKey: "armikronav.barrierCache")
     }
 
     // MARK: - Profil
