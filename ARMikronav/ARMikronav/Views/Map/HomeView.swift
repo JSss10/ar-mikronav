@@ -17,6 +17,7 @@ struct HomeView: View {
     @StateObject private var locationService = LocationService.shared
     @State private var mode: DisplayMode = .map
     @State private var showingSettings = false
+    @State private var showingSignOutConfirm = false
 
     enum DisplayMode {
         case map, ar
@@ -84,9 +85,10 @@ struct HomeView: View {
         .accessibilityLabel("Einstellungen")
     }
 
+    // Wireframe 4.1a: destruktive Aktion mit Bestätigungs-Action-Sheet.
     private var signOutButton: some View {
         Button {
-            Task { try? await authService.signOut() }
+            showingSignOutConfirm = true
         } label: {
             Image(systemName: "rectangle.portrait.and.arrow.right")
                 .font(.title3)
@@ -94,6 +96,16 @@ struct HomeView: View {
                 .background(.thinMaterial, in: Circle())
         }
         .accessibilityLabel("Abmelden")
+        .confirmationDialog(
+            "Du kannst dich jederzeit wieder anmelden. Dein Profil bleibt gespeichert.",
+            isPresented: $showingSignOutConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Abmelden", role: .destructive) {
+                Task { try? await authService.signOut() }
+            }
+            Button("Abbrechen", role: .cancel) {}
+        }
     }
 
     private var arFAB: some View {
