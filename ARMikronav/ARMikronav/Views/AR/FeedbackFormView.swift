@@ -6,6 +6,7 @@
 // Wird vom BarrierDetailSheet als Sheet aufgerufen.
 
 import SwiftUI
+import PhotosUI
 
 struct FeedbackFormView: View {
     let barrier: Barrier
@@ -18,6 +19,13 @@ struct FeedbackFormView: View {
     @State private var isSubmitting = false
     @State private var errorMessage: String?
 
+    // Foto (Wireframe 3.3a)
+    @State private var photoData: Data?
+    @State private var showingPhotoOptions = false
+    @State private var showingCamera = false
+    @State private var showingLibrary = false
+    @State private var libraryItem: PhotosPickerItem?
+
     var body: some View {
         NavigationStack {
             Form {
@@ -26,6 +34,7 @@ struct FeedbackFormView: View {
                     correctValueSection
                 }
                 commentSection
+                photoSection
                 if let errorMessage {
                     Section {
                         Text(errorMessage)
@@ -55,6 +64,60 @@ struct FeedbackFormView: View {
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                 }
             }
+            // Wireframe 3.3a: Action Sheet für die Foto-Quelle
+            .confirmationDialog("Foto hinzufügen", isPresented: $showingPhotoOptions, titleVisibility: .hidden) {
+                Button("Foto aufnehmen") { showingCamera = true }
+                Button("Aus Galerie wählen") { showingLibrary = true }
+                Button("Abbrechen", role: .cancel) {}
+            }
+            .fullScreenCover(isPresented: $showingCamera) {
+                CameraPicker { image in
+                    photoData = image.jpegData(compressionQuality: 0.7)
+                }
+                .ignoresSafeArea()
+            }
+            .photosPicker(isPresented: $showingLibrary, selection: $libraryItem, matching: .images)
+            .onChange(of: libraryItem) { _, item in
+                guard let item else { return }
+                Task {
+                    photoData = try? await item.loadTransferable(type: Data.self)
+                    libraryItem = nil
+                }
+            }
+        }
+    }
+
+    // MARK: - Foto (3.3a)
+
+    @ViewBuilder
+    private var photoSection: some View {
+        Section {
+            if let photoData, let image = UIImage(data: photoData) {
+                HStack(spacing: 12) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 72, height: 72)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    Text("Foto angehängt")
+                        .font(.subheadline)
+                    Spacer()
+                    Button(role: .destructive) {
+                        self.photoData = nil
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .accessibilityLabel("Foto entfernen")
+                }
+            } else {
+                Button {
+                    showingPhotoOptions = true
+                } label: {
+                    Label("Foto hinzufügen", systemImage: "camera")
+                }
+            }
+        } footer: {
+            Text("Dein Feedback hilft anderen Nutzer:innen. Vielen Dank!")
         }
     }
 
@@ -120,7 +183,8 @@ struct FeedbackFormView: View {
                     barrierId: barrier.id,
                     type: feedbackType,
                     correctValue: value,
-                    comment: commentToSend.isEmpty ? nil : commentToSend
+                    comment: commentToSend.isEmpty ? nil : commentToSend,
+                    photoData: photoData
                 )
                 isSubmitting = false
                 onSubmitted()
