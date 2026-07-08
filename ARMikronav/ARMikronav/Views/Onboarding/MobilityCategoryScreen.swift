@@ -1,44 +1,56 @@
 // Screen11_MobilityCategory.swift
-// ARMikronav – Onboarding Schritt 1/6: Mobilitätskategorie wählen.
-// 10 Kategorien sichtbar, nur "wheelchair" ist im Prototyp auswählbar.
+// ARMikronav – Onboarding Schritt 2/7: Mobilitätskategorie wählen.
+// Alle Kategorien sind wählbar; bei nicht-Rollstuhl-Profilen erscheint der
+// Dialog 1.1a ("in zukünftiger Version verfügbar"), die Auswahl wird aber
+// gespeichert. Weiter geht es im Prototyp nur mit dem Rollstuhl-Profil.
 
 import SwiftUI
 
 struct Screen11_MobilityCategory: View {
     @Binding var draft: DraftProfile
+    @State private var showingUnavailableDialog = false
 
-    private let categories: [(MobilityCategory, String, String, Bool)] = [
-        (.wheelchair,         "Rollstuhlnutzende",          "figure.roll",                 true),
-        (.walkingDisability,  "Gehbehinderung",             "figure.walk.motion",          false),
-        (.rollator,           "Rollator",                   "figure.walk",                 false),
-        (.visualImpairment,   "Sehbehinderung",             "eye.trianglebadge.exclamationmark", false),
-        (.blind,              "Blindheit",                  "eye.slash",                   false),
-        (.hearingImpairment,  "Hörbehinderung",             "ear.badge.waveform",          false),
-        (.deaf,               "Gehörlosigkeit",             "ear.trianglebadge.exclamationmark", false),
-        (.stroller,           "Kinderwagen / temporär",     "figure.and.child.holdinghands", false),
-        (.elderly,            "Altersbedingt",              "figure.walk.arrival",         false),
-        (.none,               "Ohne Einschränkung",         "figure.walk",                 false)
+    private let categories: [(MobilityCategory, String, String)] = [
+        (.wheelchair,         "Rollstuhlnutzende",          "figure.roll"),
+        (.walkingDisability,  "Gehbehinderung",             "figure.walk.motion"),
+        (.rollator,           "Rollator",                   "figure.walk"),
+        (.visualImpairment,   "Sehbehinderung",             "eye.trianglebadge.exclamationmark"),
+        (.blind,              "Blindheit",                  "eye.slash"),
+        (.hearingImpairment,  "Hörbehinderung",             "ear.badge.waveform"),
+        (.deaf,               "Gehörlosigkeit",             "ear.trianglebadge.exclamationmark"),
+        (.stroller,           "Kinderwagen / temporär",     "figure.and.child.holdinghands"),
+        (.elderly,            "Altersbedingt",              "figure.walk.arrival"),
+        (.none,               "Ohne Einschränkung",         "figure.walk")
     ]
 
     var body: some View {
         VStack(spacing: 12) {
-            ForEach(categories, id: \.0) { category, label, icon, enabled in
+            ForEach(categories, id: \.0) { category, label, icon in
                 CategoryRow(
                     label: label,
                     icon: icon,
-                    enabled: enabled,
                     selected: draft.mobilityCategory == category
                 ) {
-                    guard enabled else { return }
                     draft.mobilityCategory = category
+                    if category != .wheelchair {
+                        showingUnavailableDialog = true
+                    }
                 }
             }
 
-            Text("Im Prototyp ist aktuell nur die Rollstuhl-Kategorie verfügbar. Weitere Mobilitätsformen folgen in zukünftigen Versionen.")
+            Text("Im Prototyp ist aktuell nur die Rollstuhl-Kategorie vollständig umgesetzt.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.top, 8)
+        }
+        .alert("Dieses Profil wird in einer zukünftigen Version verfügbar.", isPresented: $showingUnavailableDialog) {
+            Button("Verstanden") {}
+            Button("Rollstuhl-Profil wählen") {
+                draft.mobilityCategory = .wheelchair
+            }
+        } message: {
+            Text("Im Prototyp ist aktuell nur das Rollstuhl-Profil vollständig umgesetzt. Deine Auswahl wird gespeichert.")
         }
     }
 }
@@ -46,7 +58,6 @@ struct Screen11_MobilityCategory: View {
 private struct CategoryRow: View {
     let label: String
     let icon: String
-    let enabled: Bool
     let selected: Bool
     let action: () -> Void
 
@@ -56,22 +67,15 @@ private struct CategoryRow: View {
                 Image(systemName: icon)
                     .font(.title2)
                     .frame(width: 32)
-                    .foregroundStyle(enabled ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(Color.accentColor)
 
                 Text(label)
                     .font(.body.weight(.medium))
-                    .foregroundStyle(enabled ? Color.primary : Color.secondary)
+                    .foregroundStyle(Color.primary)
 
                 Spacer()
 
-                if !enabled {
-                    Text("Bald")
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Color.gray.opacity(0.15), in: Capsule())
-                        .foregroundStyle(.secondary)
-                } else if selected {
+                if selected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.title3)
                         .foregroundStyle(Color.accentColor)
@@ -88,8 +92,7 @@ private struct CategoryRow: View {
             )
         }
         .buttonStyle(.plain)
-        .disabled(!enabled)
         .accessibilityLabel(label)
-        .accessibilityHint(enabled ? "Wählen" : "Nicht verfügbar im Prototyp")
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
