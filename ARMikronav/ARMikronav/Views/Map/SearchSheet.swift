@@ -2,7 +2,7 @@
 // ARMikronav
 //
 // POI-Suche mit Ergebnisliste (sortiert nach Distanz, mit
-// Zugänglichkeits-Status) und letzten Suchen. Tap auf ein Ergebnis schliesst
+// Zugänglichkeits-Status) und letzten Suchen. Tap auf ein Ergebnis schließt
 // das Sheet und übergibt den POI an die Karte (zentrieren + Detail).
 
 import SwiftUI
@@ -31,6 +31,8 @@ struct SearchSheet: View {
                 } else if hasSearched && results.isEmpty {
                     emptyState
                     Spacer()
+                    recentSearches
+                        .padding(.bottom, 16)
                 } else if !results.isEmpty {
                     resultsList
                 } else {
@@ -140,13 +142,18 @@ struct SearchSheet: View {
         .padding(.horizontal)
     }
 
+    // Empty-State mit Handlungs-Hinweis und letzten Suchen darunter.
     private var emptyState: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             Image(systemName: "magnifyingglass.circle")
-                .font(.system(size: 40))
+                .font(.system(size: 44))
                 .foregroundStyle(.secondary)
             Text("Keine zugänglichen Orte für \u{201E}\(query)\u{201C} in der Nähe gefunden.")
-                .font(.subheadline)
+                .font(.subheadline.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Text("Versuche einen anderen Suchbegriff oder vergrössere den Kartenausschnitt.")
+                .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
