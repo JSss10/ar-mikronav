@@ -26,6 +26,7 @@ struct ProfileEditView: View {
             abilitiesSection
             surfaceSection
             companionSection
+            livePreviewSection
         }
         .navigationTitle("Profil bearbeiten")
         .navigationBarTitleDisplayMode(.inline)
@@ -113,6 +114,19 @@ struct ProfileEditView: View {
                     Text(status.displayName).tag(status)
                 }
             }
+        }
+    }
+
+    // Wireframe 4.2: Live-Vorschau der Warn-Schwellen aus dem aktuellen Draft.
+    private var livePreviewSection: some View {
+        Section {
+            Text("Du wirst gewarnt bei: Steigung >\(Int(draft.effectiveMaxIncline))%, Bordstein >\(Int(draft.effectiveMaxCurb))cm, Engstelle <\(draft.effectiveWidthNeeded)cm")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("Live-Vorschau")
+        } footer: {
+            Text("Speichern wirkt sofort auf alle Warnungen.")
         }
     }
 }

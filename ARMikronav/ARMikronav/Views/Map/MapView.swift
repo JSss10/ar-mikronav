@@ -26,6 +26,9 @@ struct MapView: View {
     @State private var showingFilter = false
     @State private var showingSearch = false
 
+    // Kartentyp aus den App-Einstellungen (4.6)
+    @AppStorage("armikronav.mapStyle") private var mapStylePreference = "standard"
+
     private static let categoryChips = ["Café", "WC", "Restaurant", "Apotheke", "Haltestelle"]
 
     static let defaultRegion = MKCoordinateRegion(
@@ -66,6 +69,7 @@ struct MapView: View {
                 }
             }
         }
+        .mapStyle(mapStylePreference == "hybrid" ? .hybrid : .standard)
         .mapControls {
             MapUserLocationButton()
             MapCompass()

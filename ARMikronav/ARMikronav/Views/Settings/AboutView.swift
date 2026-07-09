@@ -11,6 +11,7 @@ struct AboutView: View {
         Form {
             appSection
             sourcesSection
+            linksSection
             librariesSection
             projectSection
         }
@@ -31,19 +32,38 @@ struct AboutView: View {
     private var sourcesSection: some View {
         Section {
             sourceRow(
-                "OpenStreetMap",
+                "OpenStreetMap (ODbL)",
                 "Barrieren-Geometrien (Stufen, Bordsteine, Steigungen, Oberflächen)",
                 "https://www.openstreetmap.org/copyright"
             )
             sourceRow(
-                "ginto.guide",
+                "ginto / Accessibility Cloud",
                 "Barrierefreiheits-Bewertungen für POIs",
                 "https://ginto.guide"
+            )
+            sourceRow(
+                "Wheelmap",
+                "Rollstuhl-Tags für öffentliche Orte",
+                "https://wheelmap.org"
             )
         } header: {
             Text("Datenquellen")
         } footer: {
             Text("OSM-Daten unterliegen der Open Database License (ODbL). ginto-Daten werden über die offizielle API bezogen.")
+        }
+    }
+
+    private var linksSection: some View {
+        Section {
+            NavigationLink {
+                PrivacyView()
+            } label: {
+                Label("Datenschutzerklärung", systemImage: "lock")
+            }
+
+            Link(destination: URL(string: "mailto:jessica.schneiter@bluewin.ch?subject=ARMikronav%20Feedback")!) {
+                Label("Feedback senden", systemImage: "envelope")
+            }
         }
     }
 
@@ -66,7 +86,7 @@ struct AboutView: View {
                 Text("AR-gestützte Mikronavigation für Rollstuhlnutzende – ein prototypisches System zur Entscheidungsunterstützung in barrierekritischen urbanen Situationen.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("SAE Institute, 2026 · Jessica Schneiter")
+                Text("Entwickelt von Jessica Schneiter\nSAE Institute Zürich · B.Sc. Web Development\nSupervisor: Julian Heeb (ginto)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
