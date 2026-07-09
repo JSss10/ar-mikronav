@@ -28,12 +28,16 @@ struct MapView: View {
 
     private static let categoryChips = ["Café", "WC", "Restaurant", "Apotheke", "Haltestelle"]
 
+    // Enger Zoom (~150 m Bildausschnitt), damit nur Barrieren in unmittelbarer
+    // Nähe des aktuellen Standorts sichtbar sind.
+    static let closeUpSpan = MKCoordinateSpan(latitudeDelta: 0.0015, longitudeDelta: 0.0015)
+
     static let defaultRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(
             latitude: (AppConfig.testAreaMinLat + AppConfig.testAreaMaxLat) / 2,
             longitude: (AppConfig.testAreaMinLng + AppConfig.testAreaMaxLng) / 2
         ),
-        span: MKCoordinateSpan(latitudeDelta: 0.006, longitudeDelta: 0.006)
+        span: closeUpSpan
     )
 
     var body: some View {
@@ -79,7 +83,7 @@ struct MapView: View {
                 cameraPosition = .region(
                     MKCoordinateRegion(
                         center: location.coordinate,
-                        span: MKCoordinateSpan(latitudeDelta: 0.006, longitudeDelta: 0.006)
+                        span: Self.closeUpSpan
                     )
                 )
             }
