@@ -1,32 +1,29 @@
 // SettingsView.swift
 // ARMikronav
 //
-// Einstellungs-Hauptseite. Zeigt Profil-Übersicht und den "Heute mit Begleitung"-
-// Toggle, der direkt auf das gebundene UserProfile schreibt. Weitere Settings
-// (Benachrichtigungen, Datenschutz, Konto) folgen in S2/S3.
+// Wireframe 4.1 – Account-Übersicht: Profilkopf mit Name/E-Mail/Rollstuhl,
+// Schwellen-Zeile, "Heute mit Begleitperson"-Toggle und das Menü zu allen
+// Unterseiten (Profildaten 4.2, Passwort 4.3, Orte 4.4, Benachrichtigungen
+// 4.5, Einstellungen 4.6, Tutorial 4.7, Über 4.8, Datenschutz 4.9).
 
 import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var authService: AuthService
     @Binding var profile: UserProfile
 
-    // Wireframe 4.6: Daten-Präferenzen. Der WLAN-Toggle wird vom künftigen
-    // Offline-Caching (B3) ausgewertet; der Cache-Key ist dort definiert.
-    @AppStorage("armikronav.wifiOnlyUpdates") private var wifiOnlyUpdates = false
-    @State private var showingCacheDeleteConfirm = false
+    @State private var showingSignOutConfirm = false
 
     var body: some View {
         NavigationStack {
             Form {
-                profileSection
+                profileHeader
                 companionSection
-                editSection
-                notificationsSection
-                generalSection
-                privacyAndAboutSection
+                menuSection
+                signOutSection
             }
-            .navigationTitle("Einstellungen")
+            .navigationTitle("Profil")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -34,133 +31,155 @@ struct SettingsView: View {
                         .bold()
                 }
             }
-            .alert("Barrieren-Daten löschen?", isPresented: $showingCacheDeleteConfirm) {
-                Button("Löschen", role: .destructive) {
-                    deleteBarrierCache()
-                }
-                Button("Abbrechen", role: .cancel) {}
-            } message: {
-                Text("Gecachte Daten werden entfernt und beim nächsten Start neu geladen. Offline sind dann keine Barrieren verfügbar.")
-            }
         }
     }
 
-    // MARK: - Benachrichtigungen
+    // MARK: - Profilkopf (4.1)
 
-    private var notificationsSection: some View {
+    private var profileHeader: some View {
         Section {
-            NavigationLink {
-                NotificationSettingsView()
-            } label: {
-                Label("Benachrichtigungen", systemImage: "bell")
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(Color(.systemGray5))
+                        .frame(width: 56, height: 56)
+                    Image(systemName: "person.fill")
+                        .font(.title2)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(displayName)
+                        .font(.headline)
+                    if let email = authService.currentUser?.email {
+                        Text(email)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(profile.wheelchairType.displayName)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
+            .padding(.vertical, 4)
+
+            Text(thresholdSummary.uppercased())
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
         }
     }
 
-    // MARK: - Allgemein (4.6: Sprache, Daten)
-
-    private var generalSection: some View {
-        Section("Allgemein") {
-            NavigationLink {
-                LanguageSettingsView()
-            } label: {
-                Label("Sprache", systemImage: "globe")
-            }
-
-            Toggle(isOn: $wifiOnlyUpdates) {
-                Label("Nur über WLAN aktualisieren", systemImage: "wifi")
-            }
-
-            Button(role: .destructive) {
-                showingCacheDeleteConfirm = true
-            } label: {
-                Label("Barrieren-Daten löschen", systemImage: "trash")
-            }
-        }
+    private var displayName: String {
+        guard let metadata = authService.currentUser?.userMetadata else { return "Profil" }
+        var parts: [String] = []
+        if case .string(let first) = metadata["first_name"] { parts.append(first) }
+        if case .string(let last) = metadata["last_name"] { parts.append(last) }
+        return parts.isEmpty ? "Profil" : parts.joined(separator: " ")
     }
 
-    private func deleteBarrierCache() {
-        // Cache-Key des kommenden Offline-Cachings (B3); heute noch leer.
-        UserDefaults.standard.removeObject(forKey: "armikronav.barrierCache")
-    }
-
-    // MARK: - Profil
-
-    private var profileSection: some View {
-        Section("Mein Profil") {
-            row("Rollstuhltyp", profile.wheelchairType.displayName)
-            row("Mobilitätskategorie", profile.mobilityCategory.displayName)
-            row("Breite", "\(profile.widthCm) cm  (effektiv \(profile.effectiveWidthNeeded) cm)")
-            row("Sitzhöhe", "\(profile.heightCm) cm")
-            row("Gewicht", "\(profile.weightKg) kg")
-            row("Max. Steigung", "\(Int(profile.effectiveMaxIncline)) %")
-            row("Max. Bordstein", "\(Int(profile.effectiveMaxCurb)) cm")
-            row("Oberflächentoleranz", profile.surfaceTolerance.displayName)
-        }
+    private var thresholdSummary: String {
+        "Steigung max \(Int(profile.effectiveMaxIncline))% · Bordstein max \(Int(profile.effectiveMaxCurb))cm · Breite min \(profile.effectiveWidthNeeded)cm"
     }
 
     // MARK: - Begleitung
 
     private var companionSection: some View {
         Section {
-            Toggle("Heute mit Begleitung", isOn: $profile.companionTodayOverride)
-        } header: {
-            Text("Begleitung")
+            Toggle("Heute mit Begleitperson", isOn: $profile.companionTodayOverride)
         } footer: {
-            Text(companionFooter)
+            Text(profile.companionTodayOverride
+                 ? "Deine Limits sind heute leicht erhöht (mehr Steigung und Bordsteinhöhe erlaubt)."
+                 : "Verschiebt deine Schwellenwerte temporär, wenn dich heute jemand begleitet.")
         }
     }
 
-    private var companionFooter: String {
-        let base: String
-        switch profile.companionStatus {
-        case .alwaysAlone: base = "Standard: alleine unterwegs."
-        case .sometimes:   base = "Standard: manchmal in Begleitung."
-        case .usually:     base = "Standard: meistens in Begleitung."
-        }
-        let suffix = profile.companionTodayOverride
-            ? " Heute hebt der Toggle dein Limit etwas an (mehr Steigung und Bordsteinhöhe erlaubt)."
-            : ""
-        return base + suffix
-    }
+    // MARK: - Menü (4.1)
 
-    // MARK: - Edit-Link
-
-    private var editSection: some View {
+    private var menuSection: some View {
         Section {
             NavigationLink {
                 ProfileEditView(profile: $profile)
             } label: {
-                Label("Profil bearbeiten", systemImage: "pencil")
+                Label("Profildaten anpassen", systemImage: "person.text.rectangle")
             }
-        }
-    }
 
-    // MARK: - Datenschutz + About
+            NavigationLink {
+                ChangePasswordView()
+            } label: {
+                Label("Passwort ändern", systemImage: "key")
+            }
 
-    private var privacyAndAboutSection: some View {
-        Section {
+            NavigationLink {
+                SavedPlacesView()
+            } label: {
+                Label("Gespeicherte Orte", systemImage: "bookmark")
+            }
+
+            NavigationLink {
+                NotificationSettingsView()
+            } label: {
+                Label("Benachrichtigungen", systemImage: "bell")
+            }
+
+            NavigationLink {
+                AppSettingsView()
+            } label: {
+                Label("Einstellungen", systemImage: "gearshape")
+            }
+
+            NavigationLink {
+                TutorialFromSettings()
+            } label: {
+                Label("Tutorial", systemImage: "questionmark.circle")
+            }
+
+            NavigationLink {
+                AboutView()
+            } label: {
+                Label("Impressum / Über die App", systemImage: "info.circle")
+            }
+
             NavigationLink {
                 PrivacyView()
             } label: {
                 Label("Datenschutz", systemImage: "lock")
             }
-            NavigationLink {
-                AboutView()
-            } label: {
-                Label("Über die App", systemImage: "info.circle")
-            }
         }
     }
 
-    // MARK: - Helpers
+    // MARK: - Abmelden (4.1a)
 
-    private func row(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(label)
-            Spacer()
-            Text(value)
-                .foregroundStyle(.secondary)
+    private var signOutSection: some View {
+        Section {
+            Button(role: .destructive) {
+                showingSignOutConfirm = true
+            } label: {
+                Text("Abmelden")
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .confirmationDialog(
+                "Du kannst dich jederzeit wieder anmelden. Dein Profil bleibt gespeichert.",
+                isPresented: $showingSignOutConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Abmelden", role: .destructive) {
+                    Task { try? await authService.signOut() }
+                }
+                Button("Abbrechen", role: .cancel) {}
+            }
         }
+    }
+}
+
+/// Wireframe 4.7: Tutorial-Wiedereinstieg aus den Einstellungen –
+/// "Los geht's"/"Überspringen" führen zurück zur Einstellungs-Ebene.
+private struct TutorialFromSettings: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        TutorialView {
+            dismiss()
+        }
+        .navigationBarBackButtonHidden(false)
     }
 }
