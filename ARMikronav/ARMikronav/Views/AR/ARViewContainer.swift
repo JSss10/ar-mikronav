@@ -6,7 +6,8 @@
 // (sauberes Kamerabild) – sie melden sich ausschließlich über
 // das Warn-Banner. Im POI-Modus projiziert der Coordinator die
 // GPS-Positionen der POIs in den Bildschirmraum; die Karten selbst rendert
-// das SwiftUI-Overlay in ARModeView.
+// das SwiftUI-Overlay in ARModeView. Bei aktiver Navigation rendert der
+// Coordinator zusätzlich die Route als Boden-Pfad (ARRouteRenderer).
 
 import SwiftUI
 import ARKit
@@ -17,6 +18,7 @@ struct ARViewContainer: UIViewRepresentable {
     @ObservedObject var service: ARSessionService
     let origin: CLLocationCoordinate2D?
     var pois: [POI]
+    var route: ActiveRoute?
     let projector: ARPOIProjector
 
     func makeCoordinator() -> Coordinator {
@@ -38,6 +40,7 @@ struct ARViewContainer: UIViewRepresentable {
     func updateUIView(_ uiView: ARView, context: Context) {
         context.coordinator.origin = origin
         context.coordinator.pois = pois
+        context.coordinator.route = route
     }
 
     static func dismantleUIView(_ uiView: ARView, coordinator: Coordinator) {
@@ -52,9 +55,12 @@ struct ARViewContainer: UIViewRepresentable {
         weak var arView: ARView?
         var origin: CLLocationCoordinate2D?
         var pois: [POI] = []
+        var route: ActiveRoute?
 
         private let projector: ARPOIProjector
         private var projectionTask: Task<Void, Never>?
+        private var routeAnchor: AnchorEntity?
+        private var renderedRouteID: UUID?
 
         init(projector: ARPOIProjector) {
             self.projector = projector
@@ -75,6 +81,29 @@ struct ARViewContainer: UIViewRepresentable {
         }
 
         private func tick() {
+            syncRouteEntities()
+            projectPOIs()
+        }
+
+        /// Baut die Route-Entities neu auf, sobald sich die aktive Route
+        /// ändert (Start, Ziel-Wechsel oder Stop).
+        private func syncRouteEntities() {
+            guard let arView, let origin else { return }
+            guard route?.id != renderedRouteID else { return }
+
+            if let routeAnchor {
+                arView.scene.removeAnchor(routeAnchor)
+            }
+            routeAnchor = nil
+            renderedRouteID = route?.id
+
+            guard let route else { return }
+            let anchor = ARRouteRenderer.makeRouteAnchor(for: route, origin: origin)
+            arView.scene.addAnchor(anchor)
+            routeAnchor = anchor
+        }
+
+        private func projectPOIs() {
             guard let arView, let origin, !pois.isEmpty else {
                 if !projector.projected.isEmpty {
                     projector.projected = []

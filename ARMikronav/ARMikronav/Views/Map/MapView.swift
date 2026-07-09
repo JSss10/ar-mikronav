@@ -15,6 +15,8 @@ import CoreLocation
 struct MapView: View {
     let profile: UserProfile
     @ObservedObject var viewModel: MapViewModel
+    /// Startet die AR-Navigation zum POI (HomeView wechselt in den AR-Modus).
+    var onStartARRoute: ((POI) -> Void)? = nil
 
     @StateObject private var locationService = LocationService.shared
     @StateObject private var connectivity = ConnectivityMonitor.shared
@@ -43,6 +45,21 @@ struct MapView: View {
     var body: some View {
         Map(position: $cameraPosition) {
             UserAnnotation()
+
+            // Aktive Navigations-Route (geteilt mit dem AR-Modus).
+            if let route = viewModel.activeRoute {
+                MapPolyline(coordinates: route.coordinates)
+                    .stroke(
+                        AppColor.accentPrimary,
+                        style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round)
+                    )
+                Marker(
+                    route.destinationName,
+                    systemImage: "mappin",
+                    coordinate: route.destinationCoordinate
+                )
+                .tint(AppColor.accentPrimary)
+            }
 
             ForEach(viewModel.filteredBarriers) { barrier in
                 Annotation(
@@ -112,6 +129,16 @@ struct MapView: View {
                         .padding(8)
                         .background(.thinMaterial, in: Capsule())
                 }
+                if viewModel.isCalculatingRoute {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text("Route wird berechnet…")
+                            .font(.footnote)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(.thinMaterial, in: Capsule())
+                }
             }
             .padding(.top, 8)
             .animation(.easeInOut(duration: 0.25), value: connectivity.isOnline)
@@ -143,7 +170,7 @@ struct MapView: View {
             BarrierDetailSheet(barrier: barrier, profile: profile)
         }
         .sheet(item: $selectedPOI) { poi in
-            POIDetailSheet(poi: poi)
+            POIDetailSheet(poi: poi, onStartARRoute: onStartARRoute)
         }
         .sheet(isPresented: $showingFilter) {
             FilterSheet(initial: viewModel.filterState) { newFilter in
