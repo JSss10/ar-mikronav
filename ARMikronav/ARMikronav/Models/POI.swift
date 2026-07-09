@@ -61,12 +61,45 @@ enum POIAccessStatus {
         }
     }
 
+    /// Signalfarbe für grafische Elemente (Marker, Icons). Styleguide §2.3:
+    /// die gesättigten Status-Icon-Farben (>= 3:1 Grafikkontrast).
     var tint: Color {
         switch self {
-        case .accessible:    return .green
-        case .limited:       return .orange
-        case .notAccessible: return .red
-        case .unknown:       return .gray
+        case .accessible:    return AppColor.Status.openIcon
+        case .limited:       return AppColor.Status.limitedIcon
+        case .notAccessible: return AppColor.Status.blockedIcon
+        case .unknown:       return AppColor.textSecondary
+        }
+    }
+
+    /// Textfarbe auf der zugehörigen Statusfläche (`fillColor`). AAA auf der Fläche.
+    var textColor: Color {
+        switch self {
+        case .accessible:    return AppColor.Status.openText
+        case .limited:       return AppColor.Status.limitedText
+        case .notAccessible: return AppColor.Status.blockedText
+        case .unknown:       return AppColor.textSecondary
+        }
+    }
+
+    /// Getönte Hintergrundfläche des Status-Badges.
+    var fillColor: Color {
+        switch self {
+        case .accessible:    return AppColor.Status.openFill
+        case .limited:       return AppColor.Status.limitedFill
+        case .notAccessible: return AppColor.Status.blockedFill
+        case .unknown:       return AppColor.surfaceRaised
+        }
+    }
+
+    /// SF-Symbol mit Grundform + Symbol (P2: Farbe trägt nie allein Information).
+    /// Kreis+Häkchen · Dreieck+Ausrufezeichen · Achteck+Kreuz.
+    var symbolName: String {
+        switch self {
+        case .accessible:    return "checkmark.circle.fill"
+        case .limited:       return "exclamationmark.triangle.fill"
+        case .notAccessible: return "xmark.octagon.fill"
+        case .unknown:       return "questionmark.circle.fill"
         }
     }
 }
