@@ -38,6 +38,7 @@ struct BarrierFeedback: Encodable {
     let feedbackType: FeedbackType
     let correctValue: Double?
     let comment: String?
+    let photoUrl: String?
 
     enum CodingKeys: String, CodingKey {
         case barrierId = "barrier_id"
@@ -45,5 +46,6 @@ struct BarrierFeedback: Encodable {
         case feedbackType = "feedback_type"
         case correctValue = "correct_value"
         case comment
+        case photoUrl = "photo_url"
     }
 }
