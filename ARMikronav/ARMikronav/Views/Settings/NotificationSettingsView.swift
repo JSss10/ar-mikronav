@@ -1,7 +1,8 @@
 // NotificationSettingsView.swift
 // ARMikronav
 //
-// Konfiguriert Warn-Radius und Banner-Verhalten der Proximity-Warnung im AR-Modus.
+// Wireframe 4.5 – Push/Annäherung/Ton/Vibration, Warn-Radius (15–100 m)
+// und der Opt-in für neue Barrieren-Daten im Testgebiet.
 
 import SwiftUI
 
@@ -10,9 +11,9 @@ struct NotificationSettingsView: View {
 
     var body: some View {
         Form {
-            warningsSection
+            togglesSection
             radiusSection
-            soundSection
+            newDataSection
         }
         .navigationTitle("Benachrichtigungen")
         .navigationBarTitleDisplayMode(.inline)
@@ -20,9 +21,13 @@ struct NotificationSettingsView: View {
 
     // MARK: - Sections
 
-    private var warningsSection: some View {
+    private var togglesSection: some View {
         Section {
-            Toggle("Warnungen anzeigen", isOn: $store.settings.warningsEnabled)
+            Toggle("Annäherungs-Warnungen", isOn: $store.settings.warningsEnabled)
+            Toggle("Ton bei Warnung", isOn: $store.settings.soundEnabled)
+                .disabled(!store.settings.warningsEnabled)
+            Toggle("Vibration bei Warnung", isOn: $store.settings.vibrationEnabled)
+                .disabled(!store.settings.warningsEnabled)
         } footer: {
             Text("Bei Annäherung an eine für dein Profil kritische Barriere erscheint ein Banner.")
         }
@@ -32,7 +37,7 @@ struct NotificationSettingsView: View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("Warn-Radius")
+                    Text("Warnungs-Radius")
                     Spacer()
                     Text("\(Int(store.settings.warningRadius)) m")
                         .foregroundStyle(.secondary)
@@ -51,10 +56,11 @@ struct NotificationSettingsView: View {
         }
     }
 
-    private var soundSection: some View {
+    private var newDataSection: some View {
         Section {
-            Toggle("Sound", isOn: $store.settings.soundEnabled)
-                .disabled(!store.settings.warningsEnabled)
+            Toggle("Neue Barrieren-Daten im Testgebiet", isOn: $store.settings.newDataAlerts)
+        } footer: {
+            Text("Stelle sicher, dass Benachrichtigungen in den iOS-Einstellungen erlaubt sind.")
         }
     }
 }
