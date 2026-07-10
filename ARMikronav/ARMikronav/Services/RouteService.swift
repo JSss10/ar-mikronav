@@ -1,8 +1,12 @@
 // RouteService.swift
 // ARMikronav
 //
-// Berechnet Fussgänger-Routen via MapKit (MKDirections) und liefert den
-// Fortschritt (Restdistanz/Restzeit) entlang einer aktiven Route.
+// Berechnet rollstuhlgerechte Routen via OpenRouteService (Profil
+// "wheelchair", mit den persönlichen Limits aus dem UserProfile) und
+// liefert den Fortschritt (Restdistanz/Restzeit) entlang einer aktiven
+// Route. Findet ORS keine rollstuhlgerechte Route (oder ist kein API-Key
+// konfiguriert), fällt der Service auf die MapKit-Fussgängerroute zurück –
+// gekennzeichnet über RouteKind, damit die UI den Fallback ausweist.
 // Die Route wird als Wegpunkt-Liste gehalten, damit Karte (MapPolyline)
 // und AR-Rendering (ARRouteRenderer) dieselbe Geometrie verwenden.
 
@@ -11,15 +15,24 @@ import MapKit
 import CoreLocation
 import simd
 
-/// Eine berechnete Fussgänger-Route zu einem Ziel (POI).
+/// Wie die Route berechnet wurde.
+enum RouteKind: Equatable {
+    /// Rollstuhlgerechte Route (OpenRouteService, Profil-Limits berücksichtigt).
+    case wheelchair
+    /// MapKit-Fussgängerroute als Fallback – Barrieren nicht berücksichtigt.
+    case walkingFallback
+}
+
+/// Eine berechnete Route zu einem Ziel (POI).
 struct ActiveRoute: Identifiable, Equatable {
     let id: UUID
     let destinationName: String
     let destinationCoordinate: CLLocationCoordinate2D
-    /// Wegpunkte aus dem MKRoute-Polyline (Start → Ziel).
+    /// Wegpunkte des Routen-Polylines (Start → Ziel).
     let coordinates: [CLLocationCoordinate2D]
     let totalDistanceM: CLLocationDistance
     let expectedTravelTimeS: TimeInterval
+    let kind: RouteKind
 
     init(
         id: UUID = UUID(),
@@ -27,7 +40,8 @@ struct ActiveRoute: Identifiable, Equatable {
         destinationCoordinate: CLLocationCoordinate2D,
         coordinates: [CLLocationCoordinate2D],
         totalDistanceM: CLLocationDistance,
-        expectedTravelTimeS: TimeInterval
+        expectedTravelTimeS: TimeInterval,
+        kind: RouteKind = .wheelchair
     ) {
         self.id = id
         self.destinationName = destinationName
@@ -35,6 +49,7 @@ struct ActiveRoute: Identifiable, Equatable {
         self.coordinates = coordinates
         self.totalDistanceM = totalDistanceM
         self.expectedTravelTimeS = expectedTravelTimeS
+        self.kind = kind
     }
 
     static func == (lhs: ActiveRoute, rhs: ActiveRoute) -> Bool {
@@ -54,13 +69,104 @@ struct RouteProgress: Equatable {
 enum RouteService {
     enum RouteError: LocalizedError {
         case noRoute
+        case orsNotConfigured
+        case orsRequestFailed
 
         var errorDescription: String? {
-            "Keine Fussgänger-Route gefunden."
+            switch self {
+            case .noRoute:
+                return "Keine Route gefunden."
+            case .orsNotConfigured:
+                return "OpenRouteService-API-Key fehlt (Secrets.swift)."
+            case .orsRequestFailed:
+                return "Rollstuhl-Routing nicht erreichbar."
+            }
         }
     }
 
-    /// Berechnet eine Fussgänger-Route vom Start zum Ziel.
+    private static let orsDirectionsURL =
+        URL(string: "https://api.openrouteservice.org/v2/directions/wheelchair/geojson")!
+
+    /// Berechnet die Route zum Ziel: zuerst rollstuhlgerecht via
+    /// OpenRouteService mit den Limits aus dem Profil. Schlägt das fehl
+    /// (kein API-Key, Netzfehler, keine rollstuhlgerechte Route), kommt
+    /// die MapKit-Fussgängerroute als gekennzeichneter Fallback.
+    static func route(
+        from start: CLLocationCoordinate2D,
+        to destination: CLLocationCoordinate2D,
+        destinationName: String,
+        profile: UserProfile
+    ) async throws -> ActiveRoute {
+        do {
+            return try await wheelchairRoute(
+                from: start,
+                to: destination,
+                destinationName: destinationName,
+                profile: profile
+            )
+        } catch {
+            return try await walkingRoute(
+                from: start,
+                to: destination,
+                destinationName: destinationName
+            )
+        }
+    }
+
+    // MARK: - Rollstuhl-Route (OpenRouteService)
+
+    /// Fragt das ORS-Profil "wheelchair" an. Die Restriktionen kommen aus
+    /// dem UserProfile: max. Steigung, max. Bordsteinhöhe, benötigte Breite
+    /// (inkl. Begleitungs-Bonus via effective*-Werte) und Oberflächentoleranz.
+    static func wheelchairRoute(
+        from start: CLLocationCoordinate2D,
+        to destination: CLLocationCoordinate2D,
+        destinationName: String,
+        profile: UserProfile
+    ) async throws -> ActiveRoute {
+        let apiKey = Secrets.openRouteServiceAPIKey
+        guard !apiKey.isEmpty else { throw RouteError.orsNotConfigured }
+
+        var request = URLRequest(url: orsDirectionsURL)
+        request.httpMethod = "POST"
+        request.setValue(apiKey, forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 15
+
+        let body = ORSDirectionsRequest(
+            coordinates: [
+                [start.longitude, start.latitude],
+                [destination.longitude, destination.latitude],
+            ],
+            options: .init(profileParams: .init(restrictions: .init(profile: profile)))
+        )
+        request.httpBody = try JSONEncoder().encode(body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw RouteError.orsRequestFailed
+        }
+
+        let geoJSON = try JSONDecoder().decode(ORSDirectionsResponse.self, from: data)
+        guard let feature = geoJSON.features.first,
+              feature.geometry.coordinates.count >= 2 else {
+            throw RouteError.noRoute
+        }
+
+        return ActiveRoute(
+            destinationName: destinationName,
+            destinationCoordinate: destination,
+            coordinates: feature.geometry.coordinates.map {
+                CLLocationCoordinate2D(latitude: $0[1], longitude: $0[0])
+            },
+            totalDistanceM: feature.properties.summary.distance,
+            expectedTravelTimeS: feature.properties.summary.duration,
+            kind: .wheelchair
+        )
+    }
+
+    /// Berechnet eine Fussgänger-Route via MapKit (Fallback ohne
+    /// Barrieren-Berücksichtigung).
     static func walkingRoute(
         from start: CLLocationCoordinate2D,
         to destination: CLLocationCoordinate2D,
@@ -79,7 +185,8 @@ enum RouteService {
             destinationCoordinate: destination,
             coordinates: route.polyline.coordinateList(),
             totalDistanceM: route.distance,
-            expectedTravelTimeS: route.expectedTravelTime
+            expectedTravelTimeS: route.expectedTravelTime,
+            kind: .walkingFallback
         )
     }
 
@@ -163,5 +270,86 @@ extension MKPolyline {
         )
         getCoordinates(&coords, range: NSRange(location: 0, length: pointCount))
         return coords
+    }
+}
+
+// MARK: - OpenRouteService DTOs
+// https://openrouteservice.org/dev/#/api-docs/v2/directions/{profile}/geojson/post
+
+/// Request-Body für POST /v2/directions/wheelchair/geojson.
+/// Koordinaten in GeoJSON-Reihenfolge: [Längengrad, Breitengrad].
+private struct ORSDirectionsRequest: Encodable {
+    let coordinates: [[Double]]
+    let options: Options
+
+    struct Options: Encodable {
+        let profileParams: ProfileParams
+
+        enum CodingKeys: String, CodingKey {
+            case profileParams = "profile_params"
+        }
+    }
+
+    struct ProfileParams: Encodable {
+        let restrictions: Restrictions
+    }
+
+    struct Restrictions: Encodable {
+        /// Maximale Steigung in Prozent.
+        let maximumIncline: Int
+        /// Maximale Bordsteinhöhe in Metern.
+        let maximumSlopedKerb: Double
+        /// Minimale Wegbreite in Metern.
+        let minimumWidth: Double
+        /// Schlechteste noch akzeptierte Oberfläche (OSM surface=*).
+        let surfaceType: String
+
+        enum CodingKeys: String, CodingKey {
+            case maximumIncline = "maximum_incline"
+            case maximumSlopedKerb = "maximum_sloped_kerb"
+            case minimumWidth = "minimum_width"
+            case surfaceType = "surface_type"
+        }
+
+        init(profile: UserProfile) {
+            maximumIncline = Int(profile.effectiveMaxIncline.rounded())
+            maximumSlopedKerb = profile.effectiveMaxCurb / 100 // cm → m
+            minimumWidth = Double(profile.effectiveWidthNeeded) / 100 // cm → m
+            surfaceType = Self.surfaceType(for: profile.surfaceTolerance)
+        }
+
+        private static func surfaceType(for tolerance: SurfaceTolerance) -> String {
+            switch tolerance {
+            case .smoothOnly: return "paved"
+            case .fineCobble: return "cobblestone:flattened"
+            case .almostAll: return "cobblestone"
+            }
+        }
+    }
+}
+
+/// GeoJSON-Antwort von ORS: Route als LineString plus Distanz/Dauer-Summary.
+private struct ORSDirectionsResponse: Decodable {
+    let features: [Feature]
+
+    struct Feature: Decodable {
+        let geometry: Geometry
+        let properties: Properties
+    }
+
+    struct Geometry: Decodable {
+        /// LineString-Koordinaten: [[Längengrad, Breitengrad], …]
+        let coordinates: [[Double]]
+    }
+
+    struct Properties: Decodable {
+        let summary: Summary
+    }
+
+    struct Summary: Decodable {
+        /// Gesamtdistanz in Metern.
+        let distance: Double
+        /// Erwartete Dauer in Sekunden.
+        let duration: Double
     }
 }

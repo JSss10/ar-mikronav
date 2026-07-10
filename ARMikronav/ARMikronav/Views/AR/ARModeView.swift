@@ -157,7 +157,7 @@ struct ARModeView: View {
         }
         .sheet(item: $selectedPOI) { poi in
             POIDetailSheet(poi: poi, onStartARRoute: { poi in
-                Task { await viewModel.startNavigation(to: poi) }
+                Task { await viewModel.startNavigation(to: poi, profile: profile) }
             })
         }
     }

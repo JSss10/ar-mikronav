@@ -23,6 +23,12 @@ enum Secrets {
 
     // ginto Guide API – Bearer-Token aus dem Partner-Account.
     static let gintoAPIKey = "YOUR_GINTO_BEARER_TOKEN"
+
+    // OpenRouteService – kostenloser API-Key für das Rollstuhl-Routing:
+    // https://openrouteservice.org/dev/#/signup
+    // Leer lassen ist möglich: dann fällt die Navigation auf die
+    // MapKit-Fussgängerroute zurück (ohne Barrieren-Berücksichtigung).
+    static let openRouteServiceAPIKey = "YOUR_ORS_API_KEY"
 }
 
 #endif
