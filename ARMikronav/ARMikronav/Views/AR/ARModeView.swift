@@ -82,6 +82,7 @@ struct ARModeView: View {
                 service: arService,
                 origin: originCoordinate,
                 pois: viewModel.pois,
+                route: viewModel.activeRoute,
                 projector: projector
             )
             .ignoresSafeArea()
@@ -89,11 +90,39 @@ struct ARModeView: View {
             // Projizierte POI-Karten
             poiCards
 
-            AROverlayView(
-                barriers: viewModel.filteredBarriers,
-                userCoordinate: originCoordinate,
-                onClose: onClose
-            )
+            // Bei aktiver Navigation ersetzt das Routen-Panel (Karte + Ziel-
+            // Infos + Stop) die Standard-Overlays unten.
+            if let route = viewModel.activeRoute {
+                VStack(spacing: 10) {
+                    Spacer()
+
+                    HStack {
+                        Spacer()
+                        Button(action: onClose) {
+                            Text("Zur Karte")
+                                .font(.subheadline.weight(.semibold))
+                                .padding(.horizontal, 18)
+                                .padding(.vertical, 10)
+                                .background(.regularMaterial, in: Capsule())
+                        }
+                        .accessibilityLabel("Zurück zur Karte, Navigation läuft weiter")
+                    }
+                    .padding(.horizontal, 16)
+
+                    ARRoutePanel(
+                        route: route,
+                        progress: viewModel.routeProgress,
+                        onStop: { viewModel.stopNavigation() }
+                    )
+                    .padding(.bottom, 12)
+                }
+            } else {
+                AROverlayView(
+                    barriers: viewModel.filteredBarriers,
+                    userCoordinate: originCoordinate,
+                    onClose: onClose
+                )
+            }
 
             VStack(spacing: 10) {
                 poiChipRow
@@ -116,6 +145,7 @@ struct ARModeView: View {
             }
         }
         .animation(.spring(duration: 0.35), value: warningService.activeWarning?.barrier.id)
+        .animation(.spring(duration: 0.35), value: viewModel.activeRoute?.id)
         .onReceive(locationService.$currentLocation) { _ in
             evaluateProximity()
         }
@@ -126,7 +156,9 @@ struct ARModeView: View {
             BarrierDetailSheet(barrier: barrier, profile: profile)
         }
         .sheet(item: $selectedPOI) { poi in
-            POIDetailSheet(poi: poi)
+            POIDetailSheet(poi: poi, onStartARRoute: { poi in
+                Task { await viewModel.startNavigation(to: poi) }
+            })
         }
     }
 

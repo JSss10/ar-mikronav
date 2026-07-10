@@ -59,10 +59,20 @@ struct HomeView: View {
     }
 
     private var mapContent: some View {
-        MapView(profile: profile, viewModel: viewModel)
+        MapView(profile: profile, viewModel: viewModel, onStartARRoute: startARRoute)
             .ignoresSafeArea(edges: .bottom)
             .overlay(alignment: .topTrailing) { topRightStack }
             .overlay(alignment: .bottomTrailing) { arFAB }
+    }
+
+    /// "Route in AR starten" aus dem POI-Detail: Route berechnen,
+    /// bei Erfolg in den AR-Modus wechseln.
+    private func startARRoute(to poi: POI) {
+        Task {
+            if await viewModel.startNavigation(to: poi) {
+                mode = .ar
+            }
+        }
     }
 
     private var topRightStack: some View {

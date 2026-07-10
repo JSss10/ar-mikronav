@@ -22,6 +22,12 @@ final class MapViewModel: ObservableObject {
     @Published var activeCategory: String?
     @Published private(set) var recentSearches: [String] = []
 
+    // AR-Navigation: aktive Fussgänger-Route zu einem POI plus
+    // fortlaufend aktualisierter Fortschritt (Restdistanz/Restzeit).
+    @Published private(set) var activeRoute: ActiveRoute?
+    @Published private(set) var routeProgress: RouteProgress?
+    @Published private(set) var isCalculatingRoute = false
+
     private let locationService: LocationService
     private let repository: BarrierRepository
     private let poiRepository: POIRepository
@@ -80,6 +86,9 @@ final class MapViewModel: ObservableObject {
     }
 
     private func handleLocationUpdate(_ location: CLLocation) {
+        if let route = activeRoute {
+            routeProgress = RouteService.progress(of: route, at: location)
+        }
         if let last = lastLoadCenter, location.distance(from: last) < reloadThreshold {
             return
         }
@@ -97,6 +106,42 @@ final class MapViewModel: ObservableObject {
         } catch {
             loadError = error.localizedDescription
         }
+    }
+
+    // MARK: - AR-Navigation
+
+    /// Berechnet die Fussgänger-Route zum POI und startet die Navigation.
+    /// - Returns: `true`, wenn eine Route gefunden wurde.
+    @discardableResult
+    func startNavigation(to poi: POI) async -> Bool {
+        guard let start = locationService.currentLocation?.coordinate else {
+            loadError = "Standort unbekannt – Navigation nicht möglich."
+            return false
+        }
+        isCalculatingRoute = true
+        defer { isCalculatingRoute = false }
+
+        do {
+            let route = try await RouteService.walkingRoute(
+                from: start,
+                to: CLLocationCoordinate2D(latitude: poi.latitude, longitude: poi.longitude),
+                destinationName: poi.name
+            )
+            activeRoute = route
+            routeProgress = RouteProgress(
+                remainingDistanceM: route.totalDistanceM,
+                remainingTimeS: route.expectedTravelTimeS
+            )
+            return true
+        } catch {
+            loadError = error.localizedDescription
+            return false
+        }
+    }
+
+    func stopNavigation() {
+        activeRoute = nil
+        routeProgress = nil
     }
 
     /// Kategorie-Chip getippt: lädt POIs zur Kategorie, nochmaliges Tippen deaktiviert.
