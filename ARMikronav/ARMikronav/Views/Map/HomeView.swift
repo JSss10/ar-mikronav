@@ -69,7 +69,7 @@ struct HomeView: View {
     /// bei Erfolg in den AR-Modus wechseln.
     private func startARRoute(to poi: POI) {
         Task {
-            if await viewModel.startNavigation(to: poi) {
+            if await viewModel.startNavigation(to: poi, profile: profile) {
                 mode = .ar
             }
         }

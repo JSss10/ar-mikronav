@@ -120,7 +120,7 @@ struct POIDetailSheet: View {
         .accessibilityHint(
             onStartARRoute == nil
                 ? "Noch nicht verfügbar"
-                : "Berechnet die Fussgänger-Route und zeigt sie im Kamerabild"
+                : "Berechnet die rollstuhlgerechte Route und zeigt sie im Kamerabild"
         )
     }
 
@@ -164,7 +164,7 @@ struct POIDetailSheet: View {
             .accessibilityHint(
                 onShowRoute == nil
                     ? "Öffnet die Route in Apple Karten"
-                    : "Berechnet die Fussgänger-Route und zeigt sie auf der Karte"
+                    : "Berechnet die rollstuhlgerechte Route und zeigt sie auf der Karte"
             )
         }
     }

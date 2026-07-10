@@ -311,7 +311,7 @@ struct MapView: View {
     /// die Karte auf den gesamten Routenverlauf zoomen.
     private func showRoute(to poi: POI) {
         Task {
-            guard await viewModel.startNavigation(to: poi),
+            guard await viewModel.startNavigation(to: poi, profile: profile),
                   let route = viewModel.activeRoute else { return }
             fitCamera(to: route)
         }

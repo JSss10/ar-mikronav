@@ -22,7 +22,7 @@ final class MapViewModel: ObservableObject {
     @Published var activeCategory: String?
     @Published private(set) var recentSearches: [String] = []
 
-    // AR-Navigation: aktive Fussgänger-Route zu einem POI plus
+    // Navigation: aktive rollstuhlgerechte Route zu einem POI plus
     // fortlaufend aktualisierter Fortschritt (Restdistanz/Restzeit).
     @Published private(set) var activeRoute: ActiveRoute?
     @Published private(set) var routeProgress: RouteProgress?
@@ -110,10 +110,12 @@ final class MapViewModel: ObservableObject {
 
     // MARK: - AR-Navigation
 
-    /// Berechnet die Fussgänger-Route zum POI und startet die Navigation.
+    /// Berechnet die rollstuhlgerechte Route zum POI (mit den Limits aus
+    /// dem Profil) und startet die Navigation. Fällt auf die MapKit-
+    /// Fussgängerroute zurück, wenn keine Rollstuhl-Route verfügbar ist.
     /// - Returns: `true`, wenn eine Route gefunden wurde.
     @discardableResult
-    func startNavigation(to poi: POI) async -> Bool {
+    func startNavigation(to poi: POI, profile: UserProfile) async -> Bool {
         guard let start = locationService.currentLocation?.coordinate else {
             loadError = "Standort unbekannt – Navigation nicht möglich."
             return false
@@ -122,10 +124,11 @@ final class MapViewModel: ObservableObject {
         defer { isCalculatingRoute = false }
 
         do {
-            let route = try await RouteService.walkingRoute(
+            let route = try await RouteService.route(
                 from: start,
                 to: CLLocationCoordinate2D(latitude: poi.latitude, longitude: poi.longitude),
-                destinationName: poi.name
+                destinationName: poi.name,
+                profile: profile
             )
             activeRoute = route
             routeProgress = RouteProgress(

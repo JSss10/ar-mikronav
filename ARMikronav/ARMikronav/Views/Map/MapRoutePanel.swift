@@ -25,7 +25,9 @@ struct MapRoutePanel: View {
 }
 
 /// Infozeile einer aktiven Route: Zielname, Restzeit/-distanz und
-/// Stop-Button, mit "Ziel erreicht"-Zustand bei Ankunft.
+/// Stop-Button, mit "Ziel erreicht"-Zustand bei Ankunft. Bei der
+/// Fussgänger-Fallback-Route (kein Rollstuhl-Routing verfügbar)
+/// erscheint ein Warnhinweis.
 struct RouteInfoBar: View {
     let route: ActiveRoute
     let progress: RouteProgress?
@@ -35,9 +37,14 @@ struct RouteInfoBar: View {
         progress?.hasArrived ?? false
     }
 
+    private var routeIcon: String {
+        if hasArrived { return "checkmark.circle.fill" }
+        return route.kind == .wheelchair ? "figure.roll" : "figure.walk"
+    }
+
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: hasArrived ? "checkmark.circle.fill" : "arrow.up")
+            Image(systemName: routeIcon)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(hasArrived ? AppColor.Status.openIcon : AppColor.textPrimary)
 
@@ -49,6 +56,14 @@ struct RouteInfoBar: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
+                if !hasArrived, route.kind == .walkingFallback {
+                    Label(
+                        "Fussgängerroute – Barrieren nicht berücksichtigt",
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(AppColor.Status.limitedText)
+                }
             }
 
             Spacer(minLength: 8)
@@ -91,6 +106,10 @@ struct RouteInfoBar: View {
         if hasArrived {
             return "Ziel erreicht: \(route.destinationName)"
         }
-        return "Navigation zu \(route.destinationName), noch \(progressText)"
+        var summary = "Navigation zu \(route.destinationName), noch \(progressText)"
+        if route.kind == .walkingFallback {
+            summary += ". Achtung: Fussgängerroute, Barrieren nicht berücksichtigt"
+        }
+        return summary
     }
 }
