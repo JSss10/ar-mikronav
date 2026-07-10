@@ -145,13 +145,30 @@ struct MapView: View {
             .animation(.spring(duration: 0.35), value: proximityService.activeWarning?.barrier.id)
         }
         .overlay(alignment: .bottomLeading) {
-            VStack(alignment: .leading, spacing: 10) {
-                filterButton
-                categoryChipRow
+            // Während der Navigation ersetzt das Routen-Panel Filter und Chips.
+            if viewModel.activeRoute == nil {
+                VStack(alignment: .leading, spacing: 10) {
+                    filterButton
+                    categoryChipRow
+                }
+                .padding(.leading)
+                .padding(.bottom, 12)
             }
-            .padding(.leading)
-            .padding(.bottom, 12)
         }
+        .overlay(alignment: .bottom) {
+            if let route = viewModel.activeRoute {
+                MapRoutePanel(
+                    route: route,
+                    progress: viewModel.routeProgress,
+                    onStop: { viewModel.stopNavigation() }
+                )
+                .padding(.leading)
+                .padding(.trailing, 96) // Platz für den AR-FAB (HomeView)
+                .padding(.bottom, 12)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.35), value: viewModel.activeRoute)
         .overlay {
             if showEmptyState {
                 EmptyStateView { showingFilter = true }
@@ -170,7 +187,11 @@ struct MapView: View {
             BarrierDetailSheet(barrier: barrier, profile: profile)
         }
         .sheet(item: $selectedPOI) { poi in
-            POIDetailSheet(poi: poi, onStartARRoute: onStartARRoute)
+            POIDetailSheet(
+                poi: poi,
+                onStartARRoute: onStartARRoute,
+                onShowRoute: { poi in showRoute(to: poi) }
+            )
         }
         .sheet(isPresented: $showingFilter) {
             FilterSheet(initial: viewModel.filterState) { newFilter in
@@ -285,6 +306,31 @@ struct MapView: View {
     }
 
     // MARK: - Helpers
+
+    /// "Route anzeigen" aus dem POI-Detail: Route in-App berechnen und
+    /// die Karte auf den gesamten Routenverlauf zoomen.
+    private func showRoute(to poi: POI) {
+        Task {
+            guard await viewModel.startNavigation(to: poi),
+                  let route = viewModel.activeRoute else { return }
+            fitCamera(to: route)
+        }
+    }
+
+    /// Zoomt die Kamera so, dass die komplette Route mit Rand sichtbar ist.
+    private func fitCamera(to route: ActiveRoute) {
+        var rect = MKMapRect.null
+        for coordinate in route.coordinates {
+            let point = MKMapPoint(coordinate)
+            rect = rect.union(MKMapRect(x: point.x, y: point.y, width: 0, height: 0))
+        }
+        guard !rect.isNull else { return }
+
+        let padding = max(rect.width, rect.height) * 0.3
+        withAnimation(.easeInOut) {
+            cameraPosition = .rect(rect.insetBy(dx: -padding, dy: -padding))
+        }
+    }
 
     private func focus(on poi: POI) {
         withAnimation(.easeInOut) {

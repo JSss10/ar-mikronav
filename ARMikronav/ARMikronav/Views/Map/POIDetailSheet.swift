@@ -3,7 +3,7 @@
 //
 // POI-Detail als Bottom-Sheet: Name, Distanz, Zugänglichkeits-
 // Status fürs Profil, Detail-Werte aus accessibility_details, Quellen und
-// Aktionen (Route in AR starten, Ort speichern, Route via Apple Maps).
+// Aktionen (Route in AR starten, Ort speichern, Route auf der Karte anzeigen).
 
 import SwiftUI
 import MapKit
@@ -14,6 +14,9 @@ struct POIDetailSheet: View {
     /// Startet die AR-Navigation zu diesem POI. Ohne Callback bleibt der
     /// Button deaktiviert (Kontext ohne AR-Zugang).
     var onStartARRoute: ((POI) -> Void)? = nil
+    /// Berechnet die Route in-App und zeigt sie auf der Karte. Ohne Callback
+    /// öffnet "Route anzeigen" als Fallback Apple Maps.
+    var onShowRoute: ((POI) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @State private var saveState: SaveState = .idle
@@ -146,13 +149,23 @@ struct POIDetailSheet: View {
             .disabled(saveState == .saving || saveState == .saved)
 
             Button {
-                openInMaps()
+                if let onShowRoute {
+                    dismiss()
+                    onShowRoute(poi)
+                } else {
+                    openInMaps()
+                }
             } label: {
                 Label("Route anzeigen", systemImage: "arrow.triangle.turn.up.right.diamond")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
+            .accessibilityHint(
+                onShowRoute == nil
+                    ? "Öffnet die Route in Apple Karten"
+                    : "Berechnet die Fussgänger-Route und zeigt sie auf der Karte"
+            )
         }
     }
 
