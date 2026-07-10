@@ -3,7 +3,7 @@
 //
 // POI-Detail als Bottom-Sheet: Name, Distanz, Zugänglichkeits-
 // Status fürs Profil, Detail-Werte aus accessibility_details, Quellen und
-// Aktionen (AR folgt später, Ort speichern, Route via Apple Maps).
+// Aktionen (Route in AR starten, Ort speichern, Route via Apple Maps).
 
 import SwiftUI
 import MapKit
@@ -11,7 +11,11 @@ import Supabase
 
 struct POIDetailSheet: View {
     let poi: POI
+    /// Startet die AR-Navigation zu diesem POI. Ohne Callback bleibt der
+    /// Button deaktiviert (Kontext ohne AR-Zugang).
+    var onStartARRoute: ((POI) -> Void)? = nil
 
+    @Environment(\.dismiss) private var dismiss
     @State private var saveState: SaveState = .idle
 
     enum SaveState {
@@ -100,15 +104,21 @@ struct POIDetailSheet: View {
 
     private var arButton: some View {
         Button {
-            // AR-POI-Ansicht folgt in einer späteren Version.
+            guard let onStartARRoute else { return }
+            dismiss()
+            onStartARRoute(poi)
         } label: {
-            Label("In AR ansehen", systemImage: "arkit")
+            Label("Route in AR starten", systemImage: "arkit")
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
-        .disabled(true)
-        .accessibilityHint("Noch nicht verfügbar")
+        .disabled(onStartARRoute == nil)
+        .accessibilityHint(
+            onStartARRoute == nil
+                ? "Noch nicht verfügbar"
+                : "Berechnet die Fussgänger-Route und zeigt sie im Kamerabild"
+        )
     }
 
     private var actionRow: some View {
