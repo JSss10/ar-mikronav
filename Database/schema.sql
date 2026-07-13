@@ -1,7 +1,11 @@
--- AR-Mikronavigation – Supabase Schema v2.0
--- Stand: 28.03.2026 | Phase 2
+-- AR-Mikronavigation – Supabase Schema v2.1
+-- Stand: 13.07.2026 | Phase 2
 
-CREATE EXTENSION IF NOT EXISTS postgis;
+-- PostGIS ins Schema "extensions" statt "public" installieren:
+-- verhindert die Supabase-Advisor-Warnung "rls_disabled_in_public"
+-- für die Extension-Tabelle spatial_ref_sys. Das Schema "extensions"
+-- liegt bei Supabase standardmässig im search_path.
+CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA extensions;
 
 -- 1. barriers
 CREATE TABLE barriers (
@@ -107,3 +111,18 @@ CREATE POLICY "saved_delete" ON saved_places FOR DELETE USING (auth.uid() = user
 
 ALTER TABLE test_areas ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "test_areas_read" ON test_areas FOR SELECT USING (true);
+
+-- 8. Explizite Grants für die Data-API-Rollen
+-- Seit 30.05.2026 vergibt Supabase für neue Tabellen keine impliziten
+-- Grants mehr (ab 30.10.2026 auch für bestehende Projekte). Ohne GRANT
+-- liefert PostgREST den Fehler 42501.
+
+GRANT SELECT ON barriers, poi_accessibility, test_areas
+    TO anon, authenticated;
+
+GRANT SELECT, INSERT ON user_feedback TO authenticated;
+GRANT SELECT, INSERT, DELETE ON saved_places TO authenticated;
+
+GRANT SELECT, INSERT, UPDATE, DELETE
+    ON barriers, poi_accessibility, test_areas, user_feedback, saved_places
+    TO service_role;
