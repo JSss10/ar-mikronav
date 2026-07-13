@@ -21,6 +21,7 @@ struct MapView: View {
     @StateObject private var locationService = LocationService.shared
     @StateObject private var connectivity = ConnectivityMonitor.shared
     @StateObject private var proximityService = ProximityWarningService()
+    @StateObject private var barrierNotifications = BarrierNotificationService.shared
 
     @State private var cameraPosition: MapCameraPosition = .region(MapView.defaultRegion)
     @State private var selectedBarrier: Barrier?
@@ -108,13 +109,23 @@ struct MapView: View {
         .onReceive(locationService.$currentLocation) { _ in
             evaluateProximity()
         }
+        .onReceive(barrierNotifications.$tappedBarrierId) { barrierId in
+            guard let barrierId,
+                  let barrier = viewModel.filteredBarriers.first(where: { $0.id == barrierId })
+            else { return }
+            barrierNotifications.tappedBarrierId = nil
+            selectedBarrier = barrier
+        }
         .overlay(alignment: .top) {
             VStack(spacing: 8) {
                 searchBar
                     .padding(.leading)
                     .padding(.trailing, 116) // Platz für Settings/Abmelden (HomeView)
 
-                if let warning = proximityService.activeWarning {
+                // Fallback-Banner nur ohne Mitteilungs-Berechtigung; sonst
+                // kommt die Warnung als System-Mitteilung (UserNotifications).
+                if !barrierNotifications.isAuthorized,
+                   let warning = proximityService.activeWarning {
                     approachBanner(warning)
                         .padding(.horizontal)
                         .transition(.move(edge: .top).combined(with: .opacity))

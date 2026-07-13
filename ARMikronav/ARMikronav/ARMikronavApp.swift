@@ -11,6 +11,13 @@ import Auth
 struct ARMikronavApp: App {
     @StateObject private var authService = AuthService.shared
 
+    init() {
+        // UNUserNotificationCenter-Delegate früh setzen, damit Barriere-
+        // Warnungen als System-Mitteilungen zugestellt und Taps darauf
+        // verarbeitet werden können.
+        BarrierNotificationService.activate()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
