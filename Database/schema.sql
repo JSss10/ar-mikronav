@@ -126,3 +126,113 @@ GRANT SELECT, INSERT, DELETE ON saved_places TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE
     ON barriers, poi_accessibility, test_areas, user_feedback, saved_places
     TO service_role;
+
+-- 9. RPC-Funktionen für die App (Umkreissuche)
+-- Fester search_path (public, extensions) verhindert die Advisor-Warnung
+-- "function_search_path_mutable"; extensions wird für PostGIS benötigt.
+
+CREATE OR REPLACE FUNCTION barriers_within_radius(
+    lat            DOUBLE PRECISION,
+    lng            DOUBLE PRECISION,
+    radius_meters  DOUBLE PRECISION
+)
+RETURNS TABLE (
+    id             UUID,
+    type           VARCHAR,
+    subtype        VARCHAR,
+    value          DECIMAL,
+    unit           VARCHAR,
+    latitude       DOUBLE PRECISION,
+    longitude      DOUBLE PRECISION,
+    value_source   VARCHAR,
+    source         VARCHAR,
+    source_id      VARCHAR,
+    is_active      BOOLEAN,
+    last_verified  TIMESTAMP,
+    created_at     TIMESTAMP,
+    updated_at     TIMESTAMP
+)
+LANGUAGE sql
+STABLE
+SET search_path TO 'public', 'extensions'
+AS $$
+    SELECT
+        b.id,
+        b.type,
+        b.subtype,
+        b.value,
+        b.unit,
+        ST_Y(b.location::geometry) AS latitude,
+        ST_X(b.location::geometry) AS longitude,
+        b.value_source,
+        b.source,
+        b.source_id,
+        b.is_active,
+        b.last_verified,
+        b.created_at,
+        b.updated_at
+    FROM barriers AS b
+    WHERE b.is_active = true
+      AND ST_DWithin(
+          b.location,
+          ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography,
+          radius_meters
+      )
+    ORDER BY b.location <-> ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography;
+$$;
+
+CREATE OR REPLACE FUNCTION pois_within_radius(
+    lat            DOUBLE PRECISION,
+    lng            DOUBLE PRECISION,
+    radius_meters  DOUBLE PRECISION,
+    search         TEXT DEFAULT NULL
+)
+RETURNS TABLE (
+    id                    UUID,
+    name                  VARCHAR,
+    category              VARCHAR,
+    latitude              DOUBLE PRECISION,
+    longitude             DOUBLE PRECISION,
+    address               VARCHAR,
+    wheelchair_accessible VARCHAR,
+    accessibility_details JSONB,
+    source                VARCHAR,
+    distance_m            DOUBLE PRECISION
+)
+LANGUAGE sql
+STABLE
+SET search_path TO 'public', 'extensions'
+AS $$
+    SELECT
+        p.id,
+        p.name,
+        p.category,
+        ST_Y(p.location::geometry)  AS latitude,
+        ST_X(p.location::geometry)  AS longitude,
+        p.address,
+        p.wheelchair_accessible,
+        p.accessibility_details,
+        p.source,
+        ST_Distance(
+            p.location,
+            ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography
+        ) AS distance_m
+    FROM poi_accessibility AS p
+    WHERE ST_DWithin(
+          p.location,
+          ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography,
+          radius_meters
+      )
+      AND (
+          search IS NULL
+          OR p.name ILIKE '%' || search || '%'
+          OR p.category ILIKE '%' || search || '%'
+      )
+    ORDER BY distance_m
+    LIMIT 50;
+$$;
+
+GRANT EXECUTE ON FUNCTION
+    barriers_within_radius(DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION),
+    pois_within_radius(DOUBLE PRECISION, DOUBLE PRECISION, DOUBLE PRECISION, TEXT)
+    TO anon, authenticated, service_role;
