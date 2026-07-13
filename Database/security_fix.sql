@@ -101,7 +101,26 @@ EXCEPTION
 END $$;
 
 -- ============================================================
--- 4. Kontrolle: alle Tabellen in public ohne RLS auflisten
+-- 4. Fester search_path für eigene Funktionen
+--    Behebt: Advisor-Warnung "function_search_path_mutable".
+--    "extensions" muss im Pfad bleiben, da PostGIS dort liegt.
+-- ============================================================
+
+DO $$
+DECLARE f record;
+BEGIN
+    FOR f IN
+        SELECT oid::regprocedure AS sig
+        FROM pg_proc
+        WHERE pronamespace = 'public'::regnamespace
+          AND proname IN ('barriers_within_radius', 'pois_within_radius')
+    LOOP
+        EXECUTE format('ALTER FUNCTION %s SET search_path = public, extensions', f.sig);
+    END LOOP;
+END $$;
+
+-- ============================================================
+-- 5. Kontrolle: alle Tabellen in public ohne RLS auflisten
 --    (Ergebnis sollte leer sein bzw. nur spatial_ref_sys zeigen,
 --     falls Schritt 3 mangels Rechten übersprungen wurde)
 -- ============================================================
