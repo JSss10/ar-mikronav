@@ -30,6 +30,9 @@ RETURNS TABLE (
 )
 LANGUAGE sql
 STABLE
+-- Fixierter search_path (Supabase-Linter: function_search_path_mutable).
+-- `extensions` ist enthalten, falls PostGIS dort statt in `public` installiert ist.
+SET search_path = public, extensions, pg_temp
 AS $$
     SELECT
         b.id,
@@ -46,7 +49,7 @@ AS $$
         b.last_verified,
         b.created_at,
         b.updated_at
-    FROM barriers AS b
+    FROM public.barriers AS b
     WHERE b.is_active = true
       AND ST_DWithin(
           b.location,

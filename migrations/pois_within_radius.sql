@@ -28,6 +28,9 @@ RETURNS TABLE (
 )
 LANGUAGE sql
 STABLE
+-- Fixierter search_path (Supabase-Linter: function_search_path_mutable).
+-- `extensions` ist enthalten, falls PostGIS dort statt in `public` installiert ist.
+SET search_path = public, extensions, pg_temp
 AS $$
     SELECT
         p.id,
@@ -43,7 +46,7 @@ AS $$
             p.location,
             ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography
         ) AS distance_m
-    FROM poi_accessibility AS p
+    FROM public.poi_accessibility AS p
     WHERE ST_DWithin(
           p.location,
           ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography,
