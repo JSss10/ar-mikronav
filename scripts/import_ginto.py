@@ -42,15 +42,16 @@ PROFILE_SCEWO = "Z2lkOi8vcmFpbHMtYXBwL1JhdGluZ1Byb2ZpbGVzOjpSYXRpbmdQcm9maWxlLzM
 # GraphQL Query mit Paginierung
 # ============================================================
 # Zusatzfelder pro Eintrag: laut Schema-Introspektion (Entry) gibt es
-# mainImage { url } (Hauptbild) und url (ginto-Detailseite). Die Varianten
-# bleiben als Fallback, falls sich das Schema aendert (die erste
-# funktionierende gewinnt).
+# mainImage (Hauptbild) und url (ginto-Detailseite). mainImage.url verlangt
+# ein imageSize-Argument; da die Enum-Werte nicht dokumentiert sind, werden
+# gaengige Werte durchprobiert (die erste funktionierende Variante gewinnt).
 EXTRA_FIELD_VARIANTS = [
-    "url mainImage { url }",
-    "mainImage { url }",
-    "images { url }",
-    "photos { url }",
-    "",  # Fallback: ohne Bilder/Link importieren
+    "url mainImage { url(imageSize: MEDIUM) }",
+    "url mainImage { url(imageSize: LARGE) }",
+    "url mainImage { url(imageSize: SMALL) }",
+    "url mainImage { url(imageSize: ORIGINAL) }",
+    "url",  # Fallback: nur ginto-Link, ohne Bild
+    "",     # Fallback: ohne Bild und Link importieren
 ]
 
 
