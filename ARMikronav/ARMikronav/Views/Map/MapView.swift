@@ -54,15 +54,19 @@ struct MapView: View {
                         AppColor.accentPrimary,
                         style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round)
                     )
-                Marker(
-                    route.destinationName,
-                    systemImage: "mappin",
-                    coordinate: route.destinationCoordinate
-                )
-                .tint(AppColor.accentPrimary)
+                // Ziel-Pin nur als Fallback ohne Ziel-POI – sonst markiert der
+                // POI-Marker (displayedPOIs) das Ziel.
+                if viewModel.navigationTarget == nil {
+                    Marker(
+                        route.destinationName,
+                        systemImage: "mappin",
+                        coordinate: route.destinationCoordinate
+                    )
+                    .tint(AppColor.accentPrimary)
+                }
             }
 
-            ForEach(viewModel.filteredBarriers) { barrier in
+            ForEach(viewModel.displayedBarriers) { barrier in
                 Annotation(
                     barrier.type.localizedLabel,
                     coordinate: CLLocationCoordinate2D(
@@ -75,7 +79,7 @@ struct MapView: View {
                 }
             }
 
-            ForEach(viewModel.pois) { poi in
+            ForEach(viewModel.displayedPOIs) { poi in
                 Annotation(
                     poi.name,
                     coordinate: CLLocationCoordinate2D(
@@ -372,23 +376,33 @@ struct MapView: View {
     }
 }
 
-/// Kreisförmiger POI-Marker: weisser Ring, innerer Kreis in der Status-Farbe
-/// (grün/orange/rot/grau) mit dem Kategorie-Icon (Restaurant, Café, WC …).
+/// Kreisförmiger POI-Marker: weisser Ring, innerer Kreis in Violett 700
+/// (eine Stufe heller als das Akzent-Violett) mit dem Kategorie-Icon
+/// (Restaurant, Café, WC …). Der Zugänglichkeits-Status sitzt als kleiner
+/// farbiger Punkt oben rechts am Ring.
 struct POIMarker: View {
     let poi: POI
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(.white)
-                .frame(width: 34, height: 34)
-                .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
+        ZStack(alignment: .topTrailing) {
+            ZStack {
+                Circle()
+                    .fill(.white)
+                    .frame(width: 34, height: 34)
+                    .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
+                Circle()
+                    .fill(AppColor.Violet.v700)
+                    .frame(width: 26, height: 26)
+                Image(systemName: poi.categorySymbol)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+
             Circle()
                 .fill(poi.accessStatus.tint)
-                .frame(width: 26, height: 26)
-            Image(systemName: poi.categorySymbol)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white)
+                .frame(width: 11, height: 11)
+                .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
+                .offset(x: 2, y: -2)
         }
         .accessibilityLabel("\(poi.name), \(poi.accessStatus.shortLabel)")
     }

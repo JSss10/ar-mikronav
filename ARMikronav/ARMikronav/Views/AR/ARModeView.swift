@@ -82,7 +82,7 @@ struct ARModeView: View {
             ARViewContainer(
                 service: arService,
                 origin: originCoordinate,
-                pois: viewModel.pois,
+                pois: viewModel.displayedPOIs,
                 route: viewModel.activeRoute,
                 projector: projector
             )
@@ -119,7 +119,7 @@ struct ARModeView: View {
                 }
             } else {
                 AROverlayView(
-                    barriers: viewModel.filteredBarriers,
+                    barriers: viewModel.displayedBarriers,
                     userCoordinate: originCoordinate,
                     onClose: onClose
                 )
@@ -255,7 +255,8 @@ struct ARModeView: View {
 
 /// Kreis-Badge mit Kategorie-Icon, das über einem gepunkteten Strich am
 /// projizierten POI-Punkt "schwebt" (Ankerpunkt unten). Der innere Kreis
-/// trägt die Zugänglichkeits-Statusfarbe, das Icon die Kategorie.
+/// trägt Violett 700 (wie der Karten-Marker), der kleine Punkt oben rechts
+/// die Zugänglichkeits-Statusfarbe.
 struct POIARMarker: View {
     let poi: POI
 
@@ -287,17 +288,25 @@ struct POIARMarker: View {
     }
 
     private var badge: some View {
-        ZStack {
-            Circle()
-                .fill(.white)
-                .frame(width: Self.badgeSize, height: Self.badgeSize)
-                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+        ZStack(alignment: .topTrailing) {
+            ZStack {
+                Circle()
+                    .fill(.white)
+                    .frame(width: Self.badgeSize, height: Self.badgeSize)
+                    .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                Circle()
+                    .fill(AppColor.Violet.v700)
+                    .frame(width: Self.badgeSize - 12, height: Self.badgeSize - 12)
+                Image(systemName: poi.categorySymbol)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+
             Circle()
                 .fill(poi.accessStatus.tint)
-                .frame(width: Self.badgeSize - 12, height: Self.badgeSize - 12)
-            Image(systemName: poi.categorySymbol)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white)
+                .frame(width: 15, height: 15)
+                .overlay(Circle().strokeBorder(.white, lineWidth: 2))
+                .offset(x: 1, y: -1)
         }
     }
 }

@@ -240,6 +240,32 @@ enum RouteService {
         )
     }
 
+    /// Kürzeste Distanz (Meter) von einer Koordinate zum Routen-Polyline.
+    /// Für die Korridor-Filterung der Barrieren entlang der aktiven Route.
+    static func distance(from coordinate: CLLocationCoordinate2D, to route: ActiveRoute) -> CLLocationDistance {
+        let coords = route.coordinates
+        guard coords.count >= 2 else {
+            let target = coords.first ?? route.destinationCoordinate
+            return CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+                .distance(from: CLLocation(latitude: target.latitude, longitude: target.longitude))
+        }
+
+        // Lokales Ost/Nord-Meter-Koordinatensystem um die Koordinate:
+        // sie selbst liegt im Ursprung (0,0).
+        let points = coords.map { metersEastNorth(of: $0, relativeTo: coordinate) }
+
+        var best = Double.greatestFiniteMagnitude
+        for i in 0..<(points.count - 1) {
+            let a = points[i]
+            let b = points[i + 1]
+            let ab = b - a
+            let lengthSquared = simd_length_squared(ab)
+            let t = lengthSquared > 0 ? min(1, max(0, simd_dot(-a, ab) / lengthSquared)) : 0
+            best = min(best, simd_length(a + t * ab))
+        }
+        return best
+    }
+
     // MARK: - Helpers
 
     private static func remainingTime(for remainingDistance: Double, on route: ActiveRoute) -> TimeInterval {

@@ -27,6 +27,8 @@ final class MapViewModel: ObservableObject {
     @Published private(set) var activeRoute: ActiveRoute?
     @Published private(set) var routeProgress: RouteProgress?
     @Published private(set) var isCalculatingRoute = false
+    /// Ziel-POI der aktiven Navigation (nil, wenn keine Route läuft).
+    @Published private(set) var navigationTarget: POI?
 
     private let locationService: LocationService
     private let repository: BarrierRepository
@@ -40,6 +42,39 @@ final class MapViewModel: ObservableObject {
 
     var filteredBarriers: [Barrier] {
         barriers.filter { filterState.enabledTypes.contains($0.type) }
+    }
+
+    /// Halbe Korridor-Breite: Barrieren weiter als 30 m neben dem Routen-
+    /// Polyline gelten als "nicht auf der Route" und bleiben ausgeblendet.
+    private let routeCorridorM: CLLocationDistance = 30
+
+    /// Barrieren, die auf der Karte/AR angezeigt werden:
+    /// – aktive Route → nur Barrieren im Korridor entlang der Route
+    /// – POIs eingeblendet (Kategorie-Chip oder Suche) → keine Barrieren
+    /// – sonst → alle profilrelevanten Barrieren
+    var displayedBarriers: [Barrier] {
+        if let route = activeRoute {
+            return filteredBarriers.filter { barrier in
+                RouteService.distance(
+                    from: CLLocationCoordinate2D(
+                        latitude: barrier.latitude,
+                        longitude: barrier.longitude
+                    ),
+                    to: route
+                ) <= routeCorridorM
+            }
+        }
+        if activeCategory != nil || !pois.isEmpty {
+            return []
+        }
+        return filteredBarriers
+    }
+
+    /// POIs, die auf der Karte/AR angezeigt werden: während einer aktiven
+    /// Navigation nur noch das Ziel, sonst alle geladenen POIs.
+    var displayedPOIs: [POI] {
+        guard activeRoute != nil else { return pois }
+        return navigationTarget.map { [$0] } ?? []
     }
 
     var searchCenter: CLLocationCoordinate2D? {
@@ -131,6 +166,7 @@ final class MapViewModel: ObservableObject {
                 profile: profile
             )
             activeRoute = route
+            navigationTarget = poi
             routeProgress = RouteProgress(
                 remainingDistanceM: route.totalDistanceM,
                 remainingTimeS: route.expectedTravelTimeS
@@ -144,6 +180,7 @@ final class MapViewModel: ObservableObject {
 
     func stopNavigation() {
         activeRoute = nil
+        navigationTarget = nil
         routeProgress = nil
     }
 
