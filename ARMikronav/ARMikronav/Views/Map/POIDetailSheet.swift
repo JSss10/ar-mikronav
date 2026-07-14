@@ -196,6 +196,11 @@ struct POIDetailSheet: View {
         HStack(spacing: 6) {
             Image(systemName: "info.circle")
             Text("Quelle: \(poi.source.uppercased())")
+
+            if let gintoURL = poi.gintoURL {
+                Text("·")
+                Link("Auf ginto ansehen", destination: gintoURL)
+            }
         }
         .font(.footnote)
         .foregroundStyle(.secondary)
