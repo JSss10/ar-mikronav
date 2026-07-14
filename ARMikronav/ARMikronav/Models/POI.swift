@@ -94,23 +94,32 @@ struct POI: Decodable, Identifiable {
 
             guard grade != nil || conformance != nil else { return nil }
             return GintoRating(
+                profileKey: profile.key,
                 profileLabel: profile.label,
                 grade: grade,
                 conformancePercent: conformance
             )
         }
     }
+
+    /// Die ginto-Bewertung für den eigenen Rollstuhltyp – nur diese wird
+    /// im POI-Detail angezeigt, nicht alle Profile.
+    func gintoRating(for wheelchairType: WheelchairType) -> GintoRating? {
+        gintoRatings.first { $0.profileKey == wheelchairType.gintoRatingProfileKey }
+    }
 }
 
 /// Eine ginto-Zugänglichkeits-Bewertung für ein Rollstuhl-Profil.
 struct GintoRating: Identifiable {
+    /// ginto-Profil-Schlüssel in accessibility_details: manual/power/scewo.
+    let profileKey: String
     let profileLabel: String
     /// ginto-Einstufung: COMPLETELY / PARTIALLY / BADLY.
     let grade: String?
     /// Erfüllte Zugänglichkeits-Kriterien in Prozent (0–100).
     let conformancePercent: Double?
 
-    var id: String { profileLabel }
+    var id: String { profileKey }
 
     var status: POIAccessStatus {
         switch grade?.uppercased() {
