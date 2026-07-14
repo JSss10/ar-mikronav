@@ -13,10 +13,11 @@ import SwiftUI
 struct MapRoutePanel: View {
     let route: ActiveRoute
     let progress: RouteProgress?
+    var maneuver: RouteManeuver? = nil
     let onStop: () -> Void
 
     var body: some View {
-        RouteInfoBar(route: route, progress: progress, onStop: onStop)
+        RouteInfoBar(route: route, progress: progress, maneuver: maneuver, onStop: onStop)
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
@@ -24,13 +25,14 @@ struct MapRoutePanel: View {
     }
 }
 
-/// Infozeile einer aktiven Route: Zielname, Restzeit/-distanz und
-/// Stop-Button, mit "Ziel erreicht"-Zustand bei Ankunft. Bei der
-/// Fussgänger-Fallback-Route (kein Rollstuhl-Routing verfügbar)
-/// erscheint ein Warnhinweis.
+/// Infozeile einer aktiven Route: Richtungspfeil mit Abbiege-Anweisung
+/// (geradeaus/links/rechts), Zielname, Restzeit/-distanz und Stop-Button,
+/// mit "Ziel erreicht"-Zustand bei Ankunft. Bei der Fussgänger-Fallback-
+/// Route (kein Rollstuhl-Routing verfügbar) erscheint ein Warnhinweis.
 struct RouteInfoBar: View {
     let route: ActiveRoute
     let progress: RouteProgress?
+    var maneuver: RouteManeuver? = nil
     let onStop: () -> Void
 
     private var hasArrived: Bool {
@@ -39,7 +41,19 @@ struct RouteInfoBar: View {
 
     private var routeIcon: String {
         if hasArrived { return "checkmark.circle.fill" }
+        if let maneuver { return maneuver.direction.symbolName }
         return route.kind == .wheelchair ? "figure.roll" : "figure.walk"
+    }
+
+    private var headlineText: String {
+        if hasArrived { return "Ziel erreicht" }
+        return maneuver?.instruction ?? route.destinationName
+    }
+
+    private var subheadlineText: String {
+        if hasArrived { return route.destinationName }
+        guard maneuver != nil else { return progressText }
+        return "\(route.destinationName) · \(progressText)"
     }
 
     var body: some View {
@@ -49,12 +63,13 @@ struct RouteInfoBar: View {
                 .foregroundStyle(hasArrived ? AppColor.Status.openIcon : AppColor.textPrimary)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(hasArrived ? "Ziel erreicht" : route.destinationName)
+                Text(headlineText)
                     .font(.headline)
                     .lineLimit(1)
-                Text(hasArrived ? route.destinationName : progressText)
+                Text(subheadlineText)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
                     .monospacedDigit()
                 if !hasArrived, route.kind == .walkingFallback {
                     Label(
@@ -107,6 +122,9 @@ struct RouteInfoBar: View {
             return "Ziel erreicht: \(route.destinationName)"
         }
         var summary = "Navigation zu \(route.destinationName), noch \(progressText)"
+        if let maneuver {
+            summary = "\(maneuver.instruction). \(summary)"
+        }
         if route.kind == .walkingFallback {
             summary += ". Achtung: Fussgängerroute, Barrieren nicht berücksichtigt"
         }
