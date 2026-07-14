@@ -35,6 +35,100 @@ struct POI: Decodable, Identifiable {
         default:        return .unknown
         }
     }
+
+    // MARK: - ginto-Detailinformationen (accessibility_details JSONB)
+
+    /// Bild-URLs des Ortes aus dem ginto-Import (accessibility_details.images,
+    /// als Strings oder Objekte mit "url"). Leer, wenn keine Bilder vorliegen.
+    var imageURLs: [URL] {
+        guard case .array(let items)? = accessibilityDetails?["images"] else { return [] }
+        return items.compactMap { item in
+            switch item {
+            case .string(let urlString):
+                return URL(string: urlString)
+            case .object(let dict):
+                guard case .string(let urlString)? = dict["url"] else { return nil }
+                return URL(string: urlString)
+            default:
+                return nil
+            }
+        }
+    }
+
+    /// Link auf die ginto-Detailseite des Eintrags (accessibility_details.ginto_url).
+    var gintoURL: URL? {
+        guard case .string(let urlString)? = accessibilityDetails?["ginto_url"] else { return nil }
+        return URL(string: urlString)
+    }
+
+    /// Deutscher Kategorie-Name aus ginto (accessibility_details.categories[0].name),
+    /// z.B. "Café" statt des DB-Keys "coffee".
+    var categoryDisplayName: String? {
+        guard case .array(let categories)? = accessibilityDetails?["categories"],
+              case .object(let first)? = categories.first,
+              case .string(let name)? = first["name"]
+        else { return nil }
+        return name
+    }
+
+    /// ginto-Bewertungen je Rollstuhl-Profil (manual/power/scewo) mit
+    /// Einstufung und Konformität in Prozent.
+    var gintoRatings: [GintoRating] {
+        let profiles: [(key: String, label: String)] = [
+            ("manual", "Manueller Rollstuhl"),
+            ("power", "Elektrorollstuhl"),
+            ("scewo", "Scewo BRO"),
+        ]
+        return profiles.compactMap { profile in
+            guard case .object(let dict)? = accessibilityDetails?[profile.key] else { return nil }
+
+            var grade: String?
+            if case .string(let value)? = dict["grade"] { grade = value }
+
+            var conformance: Double?
+            switch dict["conformance"] {
+            case .double(let value):  conformance = value
+            case .integer(let value): conformance = Double(value)
+            default: break
+            }
+
+            guard grade != nil || conformance != nil else { return nil }
+            return GintoRating(
+                profileLabel: profile.label,
+                grade: grade,
+                conformancePercent: conformance
+            )
+        }
+    }
+}
+
+/// Eine ginto-Zugänglichkeits-Bewertung für ein Rollstuhl-Profil.
+struct GintoRating: Identifiable {
+    let profileLabel: String
+    /// ginto-Einstufung: COMPLETELY / PARTIALLY / BADLY.
+    let grade: String?
+    /// Erfüllte Zugänglichkeits-Kriterien in Prozent (0–100).
+    let conformancePercent: Double?
+
+    var id: String { profileLabel }
+
+    var status: POIAccessStatus {
+        switch grade?.uppercased() {
+        case "COMPLETELY": return .accessible
+        case "PARTIALLY":  return .limited
+        case "BADLY":      return .notAccessible
+        default:           return .unknown
+        }
+    }
+
+    var gradeLabel: String {
+        switch status {
+        case .accessible:    return "Vollständig zugänglich"
+        case .limited:       return "Teilweise zugänglich"
+        case .notAccessible: return "Schlecht zugänglich"
+        case .unknown:       return "Keine Einstufung"
+        }
+    }
 }
 
 enum POIAccessStatus {

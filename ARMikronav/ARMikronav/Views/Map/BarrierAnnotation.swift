@@ -10,12 +10,12 @@ extension BarrierType {
     var symbolName: String {
         switch self {
         case .steps:        return "stairs"
-        case .curb:         return "square.stack.3d.up"
-        case .curbMissing:  return "square.stack.3d.up.slash"
-        case .incline:      return "triangle"
-        case .surface:      return "circle.grid.cross"
-        case .narrow:       return "arrow.left.and.right"
-        case .temporary:    return "exclamationmark.triangle"
+        case .curb:         return "arrow.up.to.line"                              // Kante hoch
+        case .curbMissing:  return "nosign"                                        // kein Übergang möglich
+        case .incline:      return "arrow.up.right"                                // Steigung
+        case .surface:      return "circle.grid.3x3.fill"                          // Pflastersteine
+        case .narrow:       return "arrow.right.and.line.vertical.and.arrow.left"  // Engstelle
+        case .temporary:    return "cone.fill"                                     // Baustelle/Hindernis
         }
     }
 

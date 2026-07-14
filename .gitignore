@@ -47,3 +47,5 @@ Config.swift
 # Provisioning
 *.mobileprovision
 *.provisionprofile
+# Python (scripts/)
+__pycache__/

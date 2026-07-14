@@ -67,6 +67,26 @@ struct RouteServiceTests {
         #expect(abs(progress.remainingDistanceM - 100) < 5)
     }
 
+    /// Korridor-Distanz: Punkte auf bzw. neben der Route liefern die
+    /// senkrechte Distanz zum nächstgelegenen Segment.
+    @Test func distanceToRouteMeasuresPerpendicularOffset() {
+        let route = straightRoute
+
+        let onPath = CLLocationCoordinate2D(latitude: 47.370899, longitude: 8.5400)
+        #expect(RouteService.distance(from: onPath, to: route) < 2)
+
+        // ~20 m östlich des Streckenmittelpunkts.
+        let offPath = CLLocationCoordinate2D(latitude: 47.370899, longitude: 8.540265)
+        let offDistance = RouteService.distance(from: offPath, to: route)
+        #expect(abs(offDistance - 20) < 3)
+
+        // ~100 m südlich des Starts: Distanz zum Startpunkt, nicht zur
+        // Verlängerung des Segments.
+        let behindStart = CLLocationCoordinate2D(latitude: 47.369101, longitude: 8.5400)
+        let behindDistance = RouteService.distance(from: behindStart, to: route)
+        #expect(abs(behindDistance - 100) < 5)
+    }
+
     /// Route mit Knick: Restweg folgt beiden Segmenten.
     @Test func progressFollowsMultiSegmentRoute() {
         let corner = CLLocationCoordinate2D(latitude: 47.370899, longitude: 8.5400)
