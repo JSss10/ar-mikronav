@@ -1,8 +1,9 @@
 // POIDetailSheet.swift
 // ARMikronav
 //
-// POI-Detail als Bottom-Sheet: Name, Distanz, Zugänglichkeits-
-// Status fürs Profil, Detail-Werte aus accessibility_details, Quellen und
+// POI-Detail als Bottom-Sheet: Name, Kategorie, Adresse, Distanz, Fotos
+// (ginto), Zugänglichkeits-Status fürs Profil, ginto-Bewertungen je
+// Rollstuhl-Profil, Detail-Werte aus accessibility_details, Quellen und
 // Aktionen (Route in AR starten, Ort speichern, Route auf der Karte anzeigen).
 
 import SwiftUI
@@ -29,7 +30,9 @@ struct POIDetailSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
+                photoCarousel
                 statusBadge
+                ratingsCard
                 detailsCard
                 sourceFooter
                 arButton
@@ -44,15 +47,61 @@ struct POIDetailSheet: View {
     // MARK: - Sections
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(poi.name)
-                .font(.title2)
-                .bold()
-            Spacer()
-            Text("\(Int(poi.distanceM)) m")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(poi.name)
+                    .font(.title2)
+                    .bold()
+                Spacer()
+                Text("\(Int(poi.distanceM)) m")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+
+            if let subtitle = headerSubtitle {
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// Kategorie (deutscher ginto-Name) und Adresse, soweit vorhanden.
+    private var headerSubtitle: String? {
+        let parts = [poi.categoryDisplayName, poi.address].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    /// Horizontales Foto-Karussell (ginto-Bilder des Ortes).
+    @ViewBuilder
+    private var photoCarousel: some View {
+        let urls = poi.imageURLs
+        if !urls.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(urls, id: \.absoluteString) { url in
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            case .failure:
+                                Image(systemName: "photo")
+                                    .font(.title2)
+                                    .foregroundStyle(.secondary)
+                            default:
+                                ProgressView()
+                            }
+                        }
+                        .frame(width: 220, height: 150)
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+            }
+            .accessibilityLabel("Fotos von \(poi.name)")
         }
     }
 
@@ -63,6 +112,53 @@ struct POIDetailSheet: View {
                 .frame(width: 12, height: 12)
             Text(poi.accessStatus.label)
                 .font(.body.weight(.medium))
+        }
+    }
+
+    /// ginto-Bewertungen je Rollstuhl-Profil (Manuell / Elektro / Scewo BRO)
+    /// mit Einstufung und erfüllten Kriterien in Prozent.
+    @ViewBuilder
+    private var ratingsCard: some View {
+        let ratings = poi.gintoRatings
+        if !ratings.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Zugänglichkeit im Detail")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                VStack(spacing: 0) {
+                    ForEach(ratings) { rating in
+                        HStack(spacing: 10) {
+                            Image(systemName: rating.status.symbolName)
+                                .foregroundStyle(rating.status.tint)
+                            Text(rating.profileLabel)
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(rating.gradeLabel)
+                                    .foregroundStyle(.secondary)
+                                if let percent = rating.conformancePercent {
+                                    Text("\(Int(percent)) % der Kriterien erfüllt")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .overlay(
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.15))
+                                .frame(height: 0.5),
+                            alignment: .bottom
+                        )
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(.secondarySystemBackground))
+                )
+            }
         }
     }
 
