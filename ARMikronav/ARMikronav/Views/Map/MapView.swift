@@ -83,7 +83,7 @@ struct MapView: View {
                         longitude: poi.longitude
                     )
                 ) {
-                    POIMarker(status: poi.accessStatus)
+                    POIMarker(poi: poi)
                         .onTapGesture { selectedPOI = poi }
                 }
             }
@@ -372,17 +372,24 @@ struct MapView: View {
     }
 }
 
-/// Tropfen-Marker für POIs mit Status-Farbe (grün/orange/rot/grau).
+/// Kreisförmiger POI-Marker: weisser Ring, innerer Kreis in der Status-Farbe
+/// (grün/orange/rot/grau) mit dem Kategorie-Icon (Restaurant, Café, WC …).
 struct POIMarker: View {
-    let status: POIAccessStatus
+    let poi: POI
 
     var body: some View {
         ZStack {
-            Image(systemName: "mappin.circle.fill")
-                .font(.system(size: 30))
-                .foregroundStyle(.white, status.tint)
-                .shadow(radius: 2)
+            Circle()
+                .fill(.white)
+                .frame(width: 34, height: 34)
+                .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
+            Circle()
+                .fill(poi.accessStatus.tint)
+                .frame(width: 26, height: 26)
+            Image(systemName: poi.categorySymbol)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
         }
-        .accessibilityLabel(status.shortLabel)
+        .accessibilityLabel("\(poi.name), \(poi.accessStatus.shortLabel)")
     }
 }

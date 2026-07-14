@@ -203,7 +203,7 @@ struct ARModeView: View {
     private var poiCards: some View {
         GeometryReader { _ in
             ForEach(projector.projected) { item in
-                POIARCard(poi: item.poi)
+                POIARMarker(poi: item.poi)
                     .position(item.point)
                     .onTapGesture { selectedPOI = item.poi }
             }
@@ -251,35 +251,63 @@ struct ARModeView: View {
     }
 }
 
-// MARK: - POI-Karte im AR-Raum
+// MARK: - POI-Marker im AR-Raum
 
-struct POIARCard: View {
+/// Kreis-Badge mit Kategorie-Icon, das über einem gepunkteten Strich am
+/// projizierten POI-Punkt "schwebt" (Ankerpunkt unten). Der innere Kreis
+/// trägt die Zugänglichkeits-Statusfarbe, das Icon die Kategorie.
+struct POIARMarker: View {
     let poi: POI
 
+    private static let badgeSize: CGFloat = 52
+    private static let stemHeight: CGFloat = 44
+    private static let anchorSize: CGFloat = 7
+
     var body: some View {
-        HStack(spacing: 8) {
+        VStack(spacing: 2) {
+            badge
+
+            DashedVerticalLine()
+                .stroke(style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [1, 6]))
+                .foregroundStyle(.white)
+                .frame(width: 2, height: Self.stemHeight)
+                .shadow(color: .black.opacity(0.35), radius: 1)
+
+            Circle()
+                .fill(.white)
+                .frame(width: Self.anchorSize, height: Self.anchorSize)
+                .shadow(color: .black.opacity(0.35), radius: 1)
+        }
+        // .position() zentriert die View am projizierten Punkt; nach oben
+        // verschieben, damit der Ankerpunkt (unten) auf dem Punkt liegt.
+        .offset(y: -(Self.badgeSize + Self.stemHeight) / 2)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(poi.name), \(poi.accessStatus.shortLabel), \(Int(poi.distanceM)) Meter")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var badge: some View {
+        ZStack {
+            Circle()
+                .fill(.white)
+                .frame(width: Self.badgeSize, height: Self.badgeSize)
+                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
             Circle()
                 .fill(poi.accessStatus.tint)
-                .frame(width: 10, height: 10)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(poi.name)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                Text("\(poi.accessStatus.shortLabel) · \(Int(poi.distanceM)) m")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+                .frame(width: Self.badgeSize - 12, height: Self.badgeSize - 12)
+            Image(systemName: poi.categorySymbol)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(poi.accessStatus.tint, lineWidth: 2)
-        )
-        .shadow(radius: 3)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(poi.name), \(poi.accessStatus.shortLabel), \(Int(poi.distanceM)) Meter")
+    }
+}
+
+/// Vertikale Linie für den gepunkteten Marker-Strich.
+struct DashedVerticalLine: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        return path
     }
 }
