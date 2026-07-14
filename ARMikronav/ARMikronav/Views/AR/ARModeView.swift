@@ -22,6 +22,7 @@ struct ARModeView: View {
     @StateObject private var warningService = ProximityWarningService()
     @StateObject private var locationService = LocationService.shared
     @StateObject private var notificationStore = NotificationSettingsStore.shared
+    @StateObject private var barrierNotifications = BarrierNotificationService.shared
     @StateObject private var projector = ARPOIProjector()
 
     @State private var cameraStatus = AVCaptureDevice.authorizationStatus(for: .video)
@@ -127,7 +128,10 @@ struct ARModeView: View {
             VStack(spacing: 10) {
                 poiChipRow
 
+                // Fallback-Banner nur ohne Mitteilungs-Berechtigung; sonst
+                // kommt die Warnung als System-Mitteilung (UserNotifications).
                 if notificationStore.settings.warningsEnabled,
+                   !barrierNotifications.isAuthorized,
                    let warning = warningService.activeWarning {
                     WarningBannerView(warning: warning) {
                         warningService.dismissCurrent()
@@ -151,6 +155,13 @@ struct ARModeView: View {
         }
         .onChange(of: viewModel.filteredBarriers.map(\.id)) { _, _ in
             evaluateProximity()
+        }
+        .onReceive(barrierNotifications.$tappedBarrierId) { barrierId in
+            guard let barrierId,
+                  let barrier = viewModel.filteredBarriers.first(where: { $0.id == barrierId })
+            else { return }
+            barrierNotifications.tappedBarrierId = nil
+            selectedBarrier = barrier
         }
         .sheet(item: $selectedBarrier) { barrier in
             BarrierDetailSheet(barrier: barrier, profile: profile)

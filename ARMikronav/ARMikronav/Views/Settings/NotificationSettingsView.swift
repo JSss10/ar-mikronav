@@ -1,30 +1,63 @@
 // NotificationSettingsView.swift
 // ARMikronav
 //
-// Konfiguriert Warn-Radius und Banner-Verhalten der Proximity-Warnung im AR-Modus.
+// Konfiguriert Warn-Radius und Verhalten der Proximity-Warnung. Die Warnungen
+// werden als System-Mitteilungen (Apple UserNotifications) zugestellt; der
+// Berechtigungsstatus wird hier angezeigt und ist über die iOS-Einstellungen
+// nachholbar.
 
 import SwiftUI
+import UserNotifications
 
 struct NotificationSettingsView: View {
     @StateObject private var store = NotificationSettingsStore.shared
+    @StateObject private var notificationService = BarrierNotificationService.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Form {
+            permissionSection
             warningsSection
             radiusSection
             soundSection
         }
         .navigationTitle("Benachrichtigungen")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: scenePhase) { _, newPhase in
+            // Status neu laden, wenn der User aus den iOS-Einstellungen zurückkehrt.
+            if newPhase == .active {
+                notificationService.refreshAuthorizationStatus()
+            }
+        }
     }
 
     // MARK: - Sections
+
+    @ViewBuilder
+    private var permissionSection: some View {
+        if !notificationService.isAuthorized {
+            Section {
+                if notificationService.authorizationStatus == .notDetermined {
+                    Button("Mitteilungen erlauben") {
+                        Task { await notificationService.requestAuthorization() }
+                    }
+                } else {
+                    Button("iOS-Einstellungen öffnen") {
+                        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                        UIApplication.shared.open(url)
+                    }
+                }
+            } footer: {
+                Text("Ohne Mitteilungs-Berechtigung erscheinen Warnungen nur als Banner in der App, nicht über die iOS-Mitteilungen.")
+            }
+        }
+    }
 
     private var warningsSection: some View {
         Section {
             Toggle("Warnungen anzeigen", isOn: $store.settings.warningsEnabled)
         } footer: {
-            Text("Bei Annäherung an eine für dein Profil kritische Barriere erscheint ein Banner.")
+            Text("Bei Annäherung an eine für dein Profil kritische Barriere erhältst du eine iOS-Mitteilung.")
         }
     }
 
@@ -55,6 +88,8 @@ struct NotificationSettingsView: View {
         Section {
             Toggle("Sound", isOn: $store.settings.soundEnabled)
                 .disabled(!store.settings.warningsEnabled)
+        } footer: {
+            Text("Spielt den Mitteilungston ab, wenn eine Warnung zugestellt wird.")
         }
     }
 }

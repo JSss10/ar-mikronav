@@ -1,8 +1,9 @@
 // WarningBannerView.swift
 // ARMikronav
 //
-// Push-Style Warnbanner, das im AR-Modus oben einrollt, sobald sich der User
-// einer für ihn warnpflichtigen Barriere nähert (siehe ProximityWarningService).
+// In-App-Warnbanner als Fallback ohne Mitteilungs-Berechtigung. Mit erteilter
+// Berechtigung kommen Warnungen als System-Mitteilung über den
+// BarrierNotificationService (siehe ProximityWarningService).
 
 import SwiftUI
 

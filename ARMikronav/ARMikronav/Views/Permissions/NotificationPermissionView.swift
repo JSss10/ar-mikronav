@@ -80,8 +80,7 @@ struct NotificationPermissionView: View {
     private func requestPermission() {
         isRequesting = true
         Task {
-            _ = try? await UNUserNotificationCenter.current()
-                .requestAuthorization(options: [.alert, .sound, .badge])
+            await BarrierNotificationService.shared.requestAuthorization()
             NotificationPermissionStore.markAsked()
             isRequesting = false
             onFinished()
