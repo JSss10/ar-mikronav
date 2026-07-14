@@ -26,6 +26,8 @@ final class MapViewModel: ObservableObject {
     // fortlaufend aktualisierter Fortschritt (Restdistanz/Restzeit).
     @Published private(set) var activeRoute: ActiveRoute?
     @Published private(set) var routeProgress: RouteProgress?
+    /// Nächstes Abbiege-Manöver (Pfeil-Anweisung) auf der aktiven Route.
+    @Published private(set) var nextManeuver: RouteManeuver?
     @Published private(set) var isCalculatingRoute = false
     /// Ziel-POI der aktiven Navigation (nil, wenn keine Route läuft).
     @Published private(set) var navigationTarget: POI?
@@ -123,6 +125,7 @@ final class MapViewModel: ObservableObject {
     private func handleLocationUpdate(_ location: CLLocation) {
         if let route = activeRoute {
             routeProgress = RouteService.progress(of: route, at: location)
+            nextManeuver = RouteService.nextManeuver(of: route, at: location)
         }
         if let last = lastLoadCenter, location.distance(from: last) < reloadThreshold {
             return
@@ -171,6 +174,9 @@ final class MapViewModel: ObservableObject {
                 remainingDistanceM: route.totalDistanceM,
                 remainingTimeS: route.expectedTravelTimeS
             )
+            if let location = locationService.currentLocation {
+                nextManeuver = RouteService.nextManeuver(of: route, at: location)
+            }
             return true
         } catch {
             loadError = error.localizedDescription
@@ -182,6 +188,7 @@ final class MapViewModel: ObservableObject {
         activeRoute = nil
         navigationTarget = nil
         routeProgress = nil
+        nextManeuver = nil
     }
 
     /// Kategorie-Chip getippt: lädt POIs zur Kategorie, nochmaliges Tippen

@@ -66,6 +66,57 @@ struct RouteProgress: Equatable {
     var hasArrived: Bool { remainingDistanceM < 10 }
 }
 
+/// Richtung des nächsten Manövers entlang der Route (aus der Polyline-
+/// Geometrie abgeleitet). Positiver Winkel = Linkskurve.
+enum ManeuverDirection: Equatable {
+    case straight
+    case slightLeft
+    case slightRight
+    case left
+    case right
+
+    var symbolName: String {
+        switch self {
+        case .straight:    return "arrow.up"
+        case .slightLeft:  return "arrow.up.left"
+        case .slightRight: return "arrow.up.right"
+        case .left:        return "arrow.turn.up.left"
+        case .right:       return "arrow.turn.up.right"
+        }
+    }
+
+    /// Verb-Phrase für die Anweisung ("In 40 m …").
+    var phrase: String {
+        switch self {
+        case .straight:    return "geradeaus weiter"
+        case .slightLeft:  return "leicht links halten"
+        case .slightRight: return "leicht rechts halten"
+        case .left:        return "links abbiegen"
+        case .right:       return "rechts abbiegen"
+        }
+    }
+}
+
+/// Nächstes Manöver auf der aktiven Route: Richtung plus Distanz vom
+/// aktuellen Standort bis zum Abbiegepunkt (bzw. bis zum Ziel bei geradeaus).
+struct RouteManeuver: Equatable {
+    let direction: ManeuverDirection
+    let distanceM: CLLocationDistance
+
+    /// Fertige Anweisung, z. B. "In 40 m links abbiegen" oder "Jetzt
+    /// rechts abbiegen" kurz vor dem Abbiegepunkt.
+    var instruction: String {
+        if direction == .straight {
+            return "Geradeaus weiter"
+        }
+        let meters = max(0, Int(distanceM.rounded()))
+        if meters < 15 {
+            return "Jetzt \(direction.phrase)"
+        }
+        return "In \(meters) m \(direction.phrase)"
+    }
+}
+
 enum RouteService {
     enum RouteError: LocalizedError {
         case noRoute
@@ -240,6 +291,77 @@ enum RouteService {
         )
     }
 
+    /// Winkel (Grad), ab dem ein Knick als "leicht links/rechts" gilt.
+    private static let slightTurnThresholdDeg = 25.0
+    /// Winkel (Grad), ab dem ein Knick als volles Abbiegen gilt.
+    private static let turnThresholdDeg = 50.0
+    /// Segmente kürzer als das gelten als GPS-/Geometrie-Rauschen.
+    private static let minSegmentLengthM = 0.5
+
+    /// Bestimmt das nächste Manöver auf der Route: projiziert den Standort
+    /// auf das nächstgelegene Segment und läuft die Polyline vorwärts bis
+    /// zum ersten signifikanten Richtungsknick. Kein Knick mehr → geradeaus
+    /// bis zum Ziel (distanceM = Restweg).
+    static func nextManeuver(of route: ActiveRoute, at location: CLLocation) -> RouteManeuver? {
+        let coords = route.coordinates
+        guard coords.count >= 2 else { return nil }
+
+        // Lokales Ost/Nord-Meter-Koordinatensystem um den Standort (0,0).
+        let points = coords.map { metersEastNorth(of: $0, relativeTo: location.coordinate) }
+
+        // Nächstgelegenes Segment + Projektionspunkt (wie in progress).
+        var bestDistanceToPath = Double.greatestFiniteMagnitude
+        var bestIndex = 0
+        var bestProjection = points[0]
+
+        for i in 0..<(points.count - 1) {
+            let a = points[i]
+            let b = points[i + 1]
+            let ab = b - a
+            let lengthSquared = simd_length_squared(ab)
+            let t = lengthSquared > 0 ? min(1, max(0, simd_dot(-a, ab) / lengthSquared)) : 0
+            let projected = a + t * ab
+            let distanceToPath = simd_length(projected)
+            if distanceToPath < bestDistanceToPath {
+                bestDistanceToPath = distanceToPath
+                bestIndex = i
+                bestProjection = projected
+            }
+        }
+
+        // Vorwärts laufen und den ersten signifikanten Knick suchen.
+        var traveled = simd_distance(bestProjection, points[bestIndex + 1])
+        var incoming = points[bestIndex + 1] - bestProjection
+        if simd_length(incoming) < minSegmentLengthM {
+            incoming = points[bestIndex + 1] - points[bestIndex]
+        }
+
+        for j in (bestIndex + 1)..<(points.count - 1) {
+            let outgoing = points[j + 1] - points[j]
+            let segmentLength = simd_length(outgoing)
+            guard segmentLength >= minSegmentLengthM, simd_length(incoming) >= minSegmentLengthM else {
+                traveled += segmentLength
+                continue
+            }
+
+            let angle = signedAngleDegrees(from: incoming, to: outgoing)
+            if abs(angle) >= slightTurnThresholdDeg {
+                let direction: ManeuverDirection
+                if abs(angle) >= turnThresholdDeg {
+                    direction = angle > 0 ? .left : .right
+                } else {
+                    direction = angle > 0 ? .slightLeft : .slightRight
+                }
+                return RouteManeuver(direction: direction, distanceM: traveled)
+            }
+
+            incoming = outgoing
+            traveled += segmentLength
+        }
+
+        return RouteManeuver(direction: .straight, distanceM: traveled)
+    }
+
     /// Kürzeste Distanz (Meter) von einer Koordinate zum Routen-Polyline.
     /// Für die Korridor-Filterung der Barrieren entlang der aktiven Route.
     static func distance(from coordinate: CLLocationCoordinate2D, to route: ActiveRoute) -> CLLocationDistance {
@@ -271,6 +393,14 @@ enum RouteService {
     private static func remainingTime(for remainingDistance: Double, on route: ActiveRoute) -> TimeInterval {
         guard route.totalDistanceM > 0 else { return 0 }
         return route.expectedTravelTimeS * min(1, remainingDistance / route.totalDistanceM)
+    }
+
+    /// Vorzeichenbehafteter Winkel zwischen zwei Richtungsvektoren im
+    /// Ost/Nord-System: positiv = Linkskurve (gegen den Uhrzeigersinn).
+    private static func signedAngleDegrees(from a: SIMD2<Double>, to b: SIMD2<Double>) -> Double {
+        let cross = a.x * b.y - a.y * b.x
+        let dot = simd_dot(a, b)
+        return atan2(cross, dot) * 180 / .pi
     }
 
     /// Flach-Erde-Näherung wie in ARGeoMapper: x = Ost-Meter, y = Nord-Meter.
