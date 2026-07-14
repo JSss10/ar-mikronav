@@ -41,16 +41,20 @@ PROFILE_SCEWO = "Z2lkOi8vcmFpbHMtYXBwL1JhdGluZ1Byb2ZpbGVzOjpSYXRpbmdQcm9maWxlLzM
 # ============================================================
 # GraphQL Query mit Paginierung
 # ============================================================
-# Bilder des Ortes: das exakte Feld haengt vom ginto-Schema ab, deshalb
-# werden mehrere Varianten probiert (die erste funktionierende gewinnt).
-IMAGE_FIELD_VARIANTS = [
+# Zusatzfelder pro Eintrag: laut Schema-Introspektion (Entry) gibt es
+# mainImage { url } (Hauptbild) und url (ginto-Detailseite). Die Varianten
+# bleiben als Fallback, falls sich das Schema aendert (die erste
+# funktionierende gewinnt).
+EXTRA_FIELD_VARIANTS = [
+    "url mainImage { url }",
+    "mainImage { url }",
     "images { url }",
     "photos { url }",
-    "",  # Fallback: ohne Bilder importieren
+    "",  # Fallback: ohne Bilder/Link importieren
 ]
 
 
-def build_query(after_cursor=None, image_fields=""):
+def build_query(after_cursor=None, extra_fields=""):
     after_clause = ', after: "' + after_cursor + '"' if after_cursor else ""
 
     return """
@@ -91,7 +95,7 @@ def build_query(after_cursor=None, image_fields=""):
               grade
               conformance
             }
-            """ + image_fields + """
+            """ + extra_fields + """
           }
         }
       }
@@ -103,14 +107,14 @@ class GintoQueryError(Exception):
     pass
 
 
-def fetch_ginto_page(after_cursor=None, image_fields=""):
+def fetch_ginto_page(after_cursor=None, extra_fields=""):
     headers = {
         "Authorization": "Bearer " + GINTO_API_KEY,
         "Content-Type": "application/json",
         "Accept-Language": "de",
     }
 
-    payload = {"query": build_query(after_cursor, image_fields)}
+    payload = {"query": build_query(after_cursor, extra_fields)}
     response = requests.post(GINTO_ENDPOINT, json=payload, headers=headers, timeout=60)
     response.raise_for_status()
 
@@ -121,16 +125,16 @@ def fetch_ginto_page(after_cursor=None, image_fields=""):
     return data["data"]["entriesBySearch"]
 
 
-def resolve_image_fields():
-    """Probiert die Bild-Feld-Varianten gegen die erste Seite durch."""
+def resolve_extra_fields():
+    """Probiert die Zusatzfeld-Varianten gegen die erste Seite durch."""
     last_error = None
-    for variant in IMAGE_FIELD_VARIANTS:
+    for variant in EXTRA_FIELD_VARIANTS:
         try:
-            fetch_ginto_page(image_fields=variant)
+            fetch_ginto_page(extra_fields=variant)
             if variant:
-                print("OK Bild-Feld im Schema: " + variant)
+                print("OK Zusatzfelder im Schema: " + variant)
             else:
-                print("WARNUNG: kein Bild-Feld gefunden - Import ohne Fotos")
+                print("WARNUNG: keine Bild-/Link-Felder gefunden - Import ohne Fotos")
             return variant
         except GintoQueryError as e:
             last_error = e
@@ -141,14 +145,14 @@ def resolve_image_fields():
 def fetch_all_pois():
     print("Lade POIs aus ginto API...")
 
-    image_fields = resolve_image_fields()
+    extra_fields = resolve_extra_fields()
 
     all_pois = []
     cursor = None
     page = 1
 
     while True:
-        result = fetch_ginto_page(cursor, image_fields)
+        result = fetch_ginto_page(cursor, extra_fields)
         edges = result.get("edges", [])
         all_pois.extend([edge["node"] for edge in edges])
         
@@ -199,11 +203,17 @@ def ginto_to_poi(node):
     power = node.get("powerWheelchair") or {}
     scewo = node.get("scewoBro") or {}
     
-    # Bild-URLs, egal ob das Schema-Feld images oder photos heisst.
+    # Bild-URLs: mainImage (aktuelles Schema, ein Hauptbild) bzw.
+    # images/photos (Fallback-Varianten) auf eine Liste normalisieren.
+    raw_images = node.get("images") or node.get("photos") or []
+    main_image = node.get("mainImage")
+    if main_image:
+        raw_images = [main_image] + list(raw_images)
+
     images = []
-    for image in (node.get("images") or node.get("photos") or []):
+    for image in raw_images:
         url = image.get("url") if isinstance(image, dict) else image
-        if url:
+        if url and url not in images:
             images.append(url)
 
     accessibility_details = {
@@ -224,6 +234,8 @@ def ginto_to_poi(node):
             for c in categories
         ],
         "images": images,
+        # Link auf die ginto-Detailseite des Eintrags.
+        "ginto_url": node.get("url"),
     }
     
     wheelchair_accessible = map_grade_to_status(manual.get("grade", "unknown"))

@@ -55,6 +55,12 @@ struct POI: Decodable, Identifiable {
         }
     }
 
+    /// Link auf die ginto-Detailseite des Eintrags (accessibility_details.ginto_url).
+    var gintoURL: URL? {
+        guard case .string(let urlString)? = accessibilityDetails?["ginto_url"] else { return nil }
+        return URL(string: urlString)
+    }
+
     /// Deutscher Kategorie-Name aus ginto (accessibility_details.categories[0].name),
     /// z.B. "Café" statt des DB-Keys "coffee".
     var categoryDisplayName: String? {
