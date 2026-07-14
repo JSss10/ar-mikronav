@@ -41,9 +41,18 @@ PROFILE_SCEWO = "Z2lkOi8vcmFpbHMtYXBwL1JhdGluZ1Byb2ZpbGVzOjpSYXRpbmdQcm9maWxlLzM
 # ============================================================
 # GraphQL Query mit Paginierung
 # ============================================================
-def build_query(after_cursor=None):
+# Bilder des Ortes: das exakte Feld haengt vom ginto-Schema ab, deshalb
+# werden mehrere Varianten probiert (die erste funktionierende gewinnt).
+IMAGE_FIELD_VARIANTS = [
+    "images { url }",
+    "photos { url }",
+    "",  # Fallback: ohne Bilder importieren
+]
+
+
+def build_query(after_cursor=None, image_fields=""):
     after_clause = ', after: "' + after_cursor + '"' if after_cursor else ""
-    
+
     return """
     {
       entriesBySearch(lat: """ + str(ALTSTADT_LAT) + """, lng: """ + str(ALTSTADT_LNG) + """, query: "", within: """ + str(RADIUS_KM) + """, first: 50""" + after_clause + """) {
@@ -82,6 +91,7 @@ def build_query(after_cursor=None):
               grade
               conformance
             }
+            """ + image_fields + """
           }
         }
       }
@@ -89,34 +99,56 @@ def build_query(after_cursor=None):
     """
 
 
-def fetch_ginto_page(after_cursor=None):
+class GintoQueryError(Exception):
+    pass
+
+
+def fetch_ginto_page(after_cursor=None, image_fields=""):
     headers = {
         "Authorization": "Bearer " + GINTO_API_KEY,
         "Content-Type": "application/json",
         "Accept-Language": "de",
     }
-    
-    payload = {"query": build_query(after_cursor)}
+
+    payload = {"query": build_query(after_cursor, image_fields)}
     response = requests.post(GINTO_ENDPOINT, json=payload, headers=headers, timeout=60)
     response.raise_for_status()
-    
+
     data = response.json()
     if "errors" in data:
-        print("GraphQL Errors: " + str(data['errors']))
-        sys.exit(1)
-    
+        raise GintoQueryError(str(data["errors"]))
+
     return data["data"]["entriesBySearch"]
+
+
+def resolve_image_fields():
+    """Probiert die Bild-Feld-Varianten gegen die erste Seite durch."""
+    last_error = None
+    for variant in IMAGE_FIELD_VARIANTS:
+        try:
+            fetch_ginto_page(image_fields=variant)
+            if variant:
+                print("OK Bild-Feld im Schema: " + variant)
+            else:
+                print("WARNUNG: kein Bild-Feld gefunden - Import ohne Fotos")
+            return variant
+        except GintoQueryError as e:
+            last_error = e
+    print("GraphQL Errors: " + str(last_error))
+    sys.exit(1)
 
 
 def fetch_all_pois():
     print("Lade POIs aus ginto API...")
-    
+
+    image_fields = resolve_image_fields()
+
     all_pois = []
     cursor = None
     page = 1
-    
+
     while True:
-        result = fetch_ginto_page(cursor)
+        result = fetch_ginto_page(cursor, image_fields)
         edges = result.get("edges", [])
         all_pois.extend([edge["node"] for edge in edges])
         
@@ -167,6 +199,13 @@ def ginto_to_poi(node):
     power = node.get("powerWheelchair") or {}
     scewo = node.get("scewoBro") or {}
     
+    # Bild-URLs, egal ob das Schema-Feld images oder photos heisst.
+    images = []
+    for image in (node.get("images") or node.get("photos") or []):
+        url = image.get("url") if isinstance(image, dict) else image
+        if url:
+            images.append(url)
+
     accessibility_details = {
         "manual": {
             "grade": manual.get("grade"),
@@ -184,6 +223,7 @@ def ginto_to_poi(node):
             {"groupKey": c.get("groupKey"), "key": c.get("key"), "name": c.get("name")}
             for c in categories
         ],
+        "images": images,
     }
     
     wheelchair_accessible = map_grade_to_status(manual.get("grade", "unknown"))
