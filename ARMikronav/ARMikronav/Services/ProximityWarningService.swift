@@ -5,7 +5,8 @@
 // Findet die nächstgelegene Barriere innerhalb `warningDistance`, die für das
 // User-Profil `shouldWarn()` triggert, und publiziert ein BarrierWarning.
 // Eine einmal dismissed Barriere wird unterdrückt, bis sie ausser Reichweite gerät
-// und sich der User ihr erneut nähert.
+// und sich der User ihr erneut nähert. Neue Warnungen werden zusätzlich als
+// lokale Mitteilung über den BarrierNotificationService zugestellt.
 
 import Foundation
 import CoreLocation
@@ -17,6 +18,8 @@ final class ProximityWarningService: ObservableObject {
 
     private let injectedWarningDistance: CLLocationDistance?
     private var suppressedBarrierId: UUID?
+    /// Barriere, für die aktuell eine System-Mitteilung zugestellt ist.
+    private var notifiedBarrierId: UUID?
 
     /// Liest den Warn-Radius live aus den User-Settings, damit Änderungen im
     /// SettingsView ohne Re-Init wirksam werden.
@@ -34,7 +37,7 @@ final class ProximityWarningService: ObservableObject {
 
     func evaluate(userLocation: CLLocation?, barriers: [Barrier], profile: UserProfile) {
         guard let userLocation else {
-            activeWarning = nil
+            setActiveWarning(nil)
             return
         }
 
@@ -53,24 +56,45 @@ final class ProximityWarningService: ObservableObject {
         }
 
         guard let nearest = candidates.min(by: { $0.distance < $1.distance }) else {
-            activeWarning = nil
+            setActiveWarning(nil)
             return
         }
 
         if nearest.barrier.id == suppressedBarrierId {
-            activeWarning = nil
+            setActiveWarning(nil)
             return
         }
 
-        activeWarning = generateWarning(
+        setActiveWarning(generateWarning(
             barrier: nearest.barrier,
             profile: profile,
             distance: nearest.distance
-        )
+        ))
     }
 
     func dismissCurrent() {
         suppressedBarrierId = activeWarning?.barrier.id
-        activeWarning = nil
+        setActiveWarning(nil)
+    }
+
+    // MARK: - System-Mitteilungen
+
+    private func setActiveWarning(_ warning: BarrierWarning?) {
+        activeWarning = warning
+        syncSystemNotification(with: warning)
+    }
+
+    /// Stellt für eine neue Warnung eine lokale Mitteilung zu bzw. zieht sie
+    /// zurück, sobald keine Warnung mehr aktiv ist. Pro Barriere wird nur
+    /// einmal zugestellt, obwohl evaluate() bei jedem Location-Update läuft.
+    private func syncSystemNotification(with warning: BarrierWarning?) {
+        if let warning, NotificationSettingsStore.shared.settings.warningsEnabled {
+            guard warning.barrier.id != notifiedBarrierId else { return }
+            notifiedBarrierId = warning.barrier.id
+            BarrierNotificationService.shared.post(warning)
+        } else if let id = notifiedBarrierId {
+            notifiedBarrierId = nil
+            BarrierNotificationService.shared.withdraw(barrierId: id)
+        }
     }
 }
