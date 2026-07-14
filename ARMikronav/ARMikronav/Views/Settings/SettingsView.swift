@@ -16,6 +16,10 @@ struct SettingsView: View {
     @AppStorage("armikronav.wifiOnlyUpdates") private var wifiOnlyUpdates = false
     @State private var showingCacheDeleteConfirm = false
 
+    // Geteilte Karten-Präferenzen (auch über das Ebenen-Menü auf der
+    // Karte änderbar).
+    @StateObject private var mapPreferences = MapPreferences.shared
+
     var body: some View {
         NavigationStack {
             Form {
@@ -23,6 +27,7 @@ struct SettingsView: View {
                 companionSection
                 editSection
                 notificationsSection
+                mapSection
                 generalSection
                 privacyAndAboutSection
             }
@@ -53,6 +58,28 @@ struct SettingsView: View {
                 NotificationSettingsView()
             } label: {
                 Label("Benachrichtigungen", systemImage: "bell")
+            }
+        }
+    }
+
+    // MARK: - Karte
+
+    private var mapSection: some View {
+        Section("Karte") {
+            Picker(selection: $mapPreferences.style) {
+                ForEach(MapStyleChoice.allCases) { choice in
+                    Text(choice.label).tag(choice)
+                }
+            } label: {
+                Label("Kartenansicht", systemImage: "map")
+            }
+
+            Picker(selection: $mapPreferences.appearance) {
+                ForEach(MapAppearance.allCases) { appearance in
+                    Text(appearance.label).tag(appearance)
+                }
+            } label: {
+                Label("Kartendesign", systemImage: "circle.lefthalf.filled")
             }
         }
     }
