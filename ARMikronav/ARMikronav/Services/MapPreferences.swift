@@ -8,6 +8,7 @@
 
 import SwiftUI
 import MapKit
+import Combine
 
 /// Hell-/Dunkel-Darstellung der Karte.
 enum MapAppearance: String, CaseIterable, Identifiable {
