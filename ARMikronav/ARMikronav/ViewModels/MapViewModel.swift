@@ -147,7 +147,9 @@ final class MapViewModel: ObservableObject {
         routeProgress = nil
     }
 
-    /// Kategorie-Chip getippt: lädt POIs zur Kategorie, nochmaliges Tippen deaktiviert.
+    /// Kategorie-Chip getippt: lädt POIs zur Kategorie, nochmaliges Tippen
+    /// deaktiviert. Das deutsche Chip-Label wird auf den englischen
+    /// DB-Kategorie-Suchbegriff gemappt (sonst findet die RPC nichts).
     func toggleCategory(_ category: String) {
         if activeCategory == category {
             activeCategory = nil
@@ -155,7 +157,7 @@ final class MapViewModel: ObservableObject {
             return
         }
         activeCategory = category
-        Task { await loadPOIs(search: category) }
+        Task { await loadPOIs(search: POICategory.searchTerm(forChip: category)) }
     }
 
     /// Freitext-Suche aus dem SearchSheet. Ergebnis wird zurückgegeben UND als
@@ -167,7 +169,7 @@ final class MapViewModel: ObservableObject {
             let results = try await poiRepository.fetchPOIs(
                 near: center,
                 radius: filterState.radius,
-                search: query
+                search: POICategory.searchTerm(forChip: query)
             )
             pois = results
             activeCategory = nil
