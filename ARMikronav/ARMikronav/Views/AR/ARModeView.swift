@@ -92,28 +92,18 @@ struct ARModeView: View {
             poiCards
 
             // Bei aktiver Navigation ersetzt das Routen-Panel (Karte + Ziel-
-            // Infos + Stop) die Standard-Overlays unten.
+            // Infos + Stop) die Standard-Overlays unten. Ein Tipp auf den
+            // Kartenstreifen wechselt zurück zur Karte (Navigation läuft weiter).
             if let route = viewModel.activeRoute {
                 VStack(spacing: 10) {
                     Spacer()
 
-                    HStack {
-                        Spacer()
-                        Button(action: onClose) {
-                            Text("Zur Karte")
-                                .font(.subheadline.weight(.semibold))
-                                .padding(.horizontal, 18)
-                                .padding(.vertical, 10)
-                                .background(.regularMaterial, in: Capsule())
-                        }
-                        .accessibilityLabel("Zurück zur Karte, Navigation läuft weiter")
-                    }
-                    .padding(.horizontal, 16)
-
                     ARRoutePanel(
                         route: route,
                         progress: viewModel.routeProgress,
-                        onStop: { viewModel.stopNavigation() }
+                        maneuver: viewModel.nextManeuver,
+                        onStop: { viewModel.stopNavigation() },
+                        onMapTap: onClose
                     )
                     .padding(.bottom, 12)
                 }
@@ -127,6 +117,15 @@ struct ARModeView: View {
 
             VStack(spacing: 10) {
                 poiChipRow
+
+                // Grosser Richtungspfeil während der Navigation:
+                // geradeaus / links / rechts, direkt im Kamerabild.
+                if viewModel.activeRoute != nil,
+                   !(viewModel.routeProgress?.hasArrived ?? false),
+                   let maneuver = viewModel.nextManeuver {
+                    maneuverBanner(maneuver)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
 
                 // Fallback-Banner nur ohne Mitteilungs-Berechtigung; sonst
                 // kommt die Warnung als System-Mitteilung (UserNotifications).
@@ -150,6 +149,7 @@ struct ARModeView: View {
         }
         .animation(.spring(duration: 0.35), value: warningService.activeWarning?.barrier.id)
         .animation(.spring(duration: 0.35), value: viewModel.activeRoute?.id)
+        .animation(.spring(duration: 0.35), value: viewModel.nextManeuver?.direction)
         .onReceive(locationService.$currentLocation) { _ in
             evaluateProximity()
         }
@@ -167,10 +167,27 @@ struct ARModeView: View {
             BarrierDetailSheet(barrier: barrier, profile: profile)
         }
         .sheet(item: $selectedPOI) { poi in
-            POIDetailSheet(poi: poi, onStartARRoute: { poi in
+            POIDetailSheet(poi: poi, profile: profile, onStartARRoute: { poi in
                 Task { await viewModel.startNavigation(to: poi, profile: profile) }
             })
         }
+    }
+
+    /// Grosser Manöver-Pfeil mit Anweisung ("In 40 m links abbiegen").
+    private func maneuverBanner(_ maneuver: RouteManeuver) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: maneuver.direction.symbolName)
+                .font(.system(size: 40, weight: .bold))
+            Text(maneuver.instruction)
+                .font(.headline)
+                .monospacedDigit()
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 14)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .shadow(radius: 4)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(maneuver.instruction)
     }
 
     // MARK: - POI-Modus

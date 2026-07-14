@@ -22,6 +22,7 @@ struct MapView: View {
     @StateObject private var connectivity = ConnectivityMonitor.shared
     @StateObject private var proximityService = ProximityWarningService()
     @StateObject private var barrierNotifications = BarrierNotificationService.shared
+    @StateObject private var mapPreferences = MapPreferences.shared
 
     @State private var cameraPosition: MapCameraPosition = .region(MapView.defaultRegion)
     @State private var selectedBarrier: Barrier?
@@ -97,6 +98,9 @@ struct MapView: View {
             MapCompass()
             MapScaleView()
         }
+        // Direkt auf der Map, damit Hell-/Dunkel-Modus und Satellitenansicht
+        // nur die Karte betreffen, nicht die Overlays.
+        .mapDisplayPreferences(mapPreferences)
         .onAppear {
             viewModel.start()
         }
@@ -163,6 +167,7 @@ struct MapView: View {
             // Während der Navigation ersetzt das Routen-Panel Filter und Chips.
             if viewModel.activeRoute == nil {
                 VStack(alignment: .leading, spacing: 10) {
+                    mapStyleButton
                     filterButton
                     categoryChipRow
                 }
@@ -175,6 +180,7 @@ struct MapView: View {
                 MapRoutePanel(
                     route: route,
                     progress: viewModel.routeProgress,
+                    maneuver: viewModel.nextManeuver,
                     onStop: { viewModel.stopNavigation() }
                 )
                 .padding(.leading)
@@ -204,6 +210,7 @@ struct MapView: View {
         .sheet(item: $selectedPOI) { poi in
             POIDetailSheet(
                 poi: poi,
+                profile: profile,
                 onStartARRoute: onStartARRoute,
                 onShowRoute: { poi in showRoute(to: poi) }
             )
@@ -236,6 +243,28 @@ struct MapView: View {
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
         .accessibilityLabel("Orte suchen")
+    }
+
+    /// Menü für Kartenansicht (Karte/Satellit) und Hell-/Dunkel-Modus.
+    private var mapStyleButton: some View {
+        Menu {
+            Picker("Kartenansicht", selection: $mapPreferences.style) {
+                ForEach(MapStyleChoice.allCases) { choice in
+                    Text(choice.label).tag(choice)
+                }
+            }
+            Picker("Kartendesign", selection: $mapPreferences.appearance) {
+                ForEach(MapAppearance.allCases) { appearance in
+                    Text(appearance.label).tag(appearance)
+                }
+            }
+        } label: {
+            Image(systemName: "square.3.layers.3d")
+                .font(.title)
+                .padding(10)
+                .background(.thinMaterial, in: Circle())
+        }
+        .accessibilityLabel("Kartenstil wählen")
     }
 
     private var filterButton: some View {
