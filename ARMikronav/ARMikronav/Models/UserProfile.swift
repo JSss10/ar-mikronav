@@ -77,6 +77,16 @@ enum WheelchairType: String, Codable, CaseIterable {
             return AppConfig.gintoScewoBroID
         }
     }
+
+    /// ginto-Profil-Schlüssel in accessibility_details (manual/power/scewo)
+    /// für diesen Rollstuhltyp.
+    var gintoRatingProfileKey: String {
+        switch self {
+        case .manual, .emotion, .joystick: return "manual"
+        case .electric:                    return "power"
+        case .stairClimbing:               return "scewo"
+        }
+    }
 }
 
 enum SurfaceTolerance: String, Codable, CaseIterable {
