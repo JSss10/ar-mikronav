@@ -95,9 +95,11 @@ struct MapDisplayPreferencesModifier: ViewModifier {
 
 extension View {
     /// Karten-Stil (Karte/Satellit) und Hell-/Dunkel-Modus aus den
-    /// geteilten MapPreferences anwenden.
+    /// geteilten MapPreferences anwenden. Ohne Argument werden die
+    /// geteilten `MapPreferences.shared` verwendet (Auflösung im
+    /// MainActor-Kontext, nicht im Default-Argument).
     @MainActor
-    func mapDisplayPreferences(_ preferences: MapPreferences = .shared) -> some View {
-        modifier(MapDisplayPreferencesModifier(preferences: preferences))
+    func mapDisplayPreferences(_ preferences: MapPreferences? = nil) -> some View {
+        modifier(MapDisplayPreferencesModifier(preferences: preferences ?? .shared))
     }
 }
