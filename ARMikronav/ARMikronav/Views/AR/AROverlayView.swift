@@ -1,8 +1,10 @@
 // AROverlayView.swift
 // ARMikronav
 //
-// SwiftUI-Overlay über der ARView: runde Mini-Karte unten
-// links, "Zur Karte"-Pill unten rechts.
+// SwiftUI-Overlay über der ARView ohne aktive Route: Kartenstreifen unten
+// im gleichen Styling wie das Routen-Panel (ARRoutePanel), nah an den
+// Standort gezoomt. Ein Tipp auf die Karte wechselt zurück zur
+// Kartenansicht (ersetzt den früheren "Zur Karte"-Button).
 
 import SwiftUI
 import MapKit
@@ -16,27 +18,13 @@ struct AROverlayView: View {
     var body: some View {
         VStack {
             Spacer()
-            HStack(alignment: .bottom) {
-                miniMap
-                Spacer()
-                backToMapButton
-            }
+            miniMap
         }
-        .padding()
+        .padding(.horizontal, 12)
+        .padding(.bottom, 12)
     }
 
     // MARK: - Components
-
-    private var backToMapButton: some View {
-        Button(action: onClose) {
-            Text("Zur Karte")
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 18)
-                .padding(.vertical, 10)
-                .background(.regularMaterial, in: Capsule())
-        }
-        .accessibilityLabel("Zurück zur Karte")
-    }
 
     private var miniMap: some View {
         Group {
@@ -55,22 +43,30 @@ struct AROverlayView: View {
                         .tint(barrier.type.tint)
                     }
                 }
-                .disabled(true)
+                .mapDisplayPreferences()
+                .allowsHitTesting(false)
             } else {
                 Color.gray.opacity(0.3)
             }
         }
-        .frame(width: 120, height: 120)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.6), lineWidth: 2))
-        .shadow(radius: 4)
-        .accessibilityHidden(true)
+        .frame(height: 130)
+        .frame(maxWidth: .infinity)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(radius: 6)
+        .contentShape(RoundedRectangle(cornerRadius: 20))
+        .onTapGesture { onClose() }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Zur Karte wechseln")
+        .accessibilityAddTraits(.isButton)
     }
 
+    // Enger Ausschnitt (~200 m), damit die unmittelbare Umgebung und eine
+    // startende Route direkt erkennbar sind.
     private func region(around coordinate: CLLocationCoordinate2D) -> MKCoordinateRegion {
         MKCoordinateRegion(
             center: coordinate,
-            span: MKCoordinateSpan(latitudeDelta: 0.004, longitudeDelta: 0.004)
+            span: MKCoordinateSpan(latitudeDelta: 0.002, longitudeDelta: 0.002)
         )
     }
 }
