@@ -2,8 +2,8 @@
 // ARMikronav
 //
 // POI-Detail als Bottom-Sheet: Name, Kategorie, Adresse, Distanz, Fotos
-// (ginto), Zugänglichkeits-Status fürs Profil, ginto-Bewertungen je
-// Rollstuhl-Profil, Detail-Werte aus accessibility_details, Quellen und
+// (ginto), Zugänglichkeits-Status fürs Profil, ginto-Bewertung für den
+// eigenen Rollstuhltyp, Detail-Werte aus accessibility_details, Quellen und
 // Aktionen (Route in AR starten, Ort speichern, Route auf der Karte anzeigen).
 
 import SwiftUI
@@ -12,6 +12,9 @@ import Supabase
 
 struct POIDetailSheet: View {
     let poi: POI
+    /// Profil des Users – bestimmt, welche ginto-Bewertung angezeigt wird
+    /// (nur der eigene Rollstuhltyp, nicht alle Profile).
+    let profile: UserProfile
     /// Startet die AR-Navigation zu diesem POI. Ohne Callback bleibt der
     /// Button deaktiviert (Kontext ohne AR-Zugang).
     var onStartARRoute: ((POI) -> Void)? = nil
@@ -115,49 +118,44 @@ struct POIDetailSheet: View {
         }
     }
 
-    /// ginto-Bewertungen je Rollstuhl-Profil (Manuell / Elektro / Scewo BRO)
-    /// mit Einstufung und erfüllten Kriterien in Prozent.
+    /// ginto-Bewertung für den eigenen Rollstuhltyp mit Einstufung und
+    /// erfüllten Kriterien in Prozent. Bewertungen anderer Profile werden
+    /// bewusst nicht angezeigt.
     @ViewBuilder
     private var ratingsCard: some View {
-        let ratings = poi.gintoRatings
-        if !ratings.isEmpty {
+        if let rating = poi.gintoRating(for: profile.wheelchairType) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Zugänglichkeit im Detail")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
 
-                VStack(spacing: 0) {
-                    ForEach(ratings) { rating in
-                        HStack(spacing: 10) {
-                            Image(systemName: rating.status.symbolName)
-                                .foregroundStyle(rating.status.tint)
-                            Text(rating.profileLabel)
-                            Spacer()
-                            VStack(alignment: .trailing, spacing: 2) {
-                                Text(rating.gradeLabel)
-                                    .foregroundStyle(.secondary)
-                                if let percent = rating.conformancePercent {
-                                    Text("\(Int(percent)) % der Kriterien erfüllt")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
+                HStack(spacing: 10) {
+                    Image(systemName: rating.status.symbolName)
+                        .foregroundStyle(rating.status.tint)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(rating.profileLabel)
+                        Text("Dein Rollstuhltyp")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(rating.gradeLabel)
+                            .foregroundStyle(.secondary)
+                        if let percent = rating.conformancePercent {
+                            Text("\(Int(percent)) % der Kriterien erfüllt")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .overlay(
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.15))
-                                .frame(height: 0.5),
-                            alignment: .bottom
-                        )
-                        .accessibilityElement(children: .combine)
                     }
                 }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color(.secondarySystemBackground))
                 )
+                .accessibilityElement(children: .combine)
             }
         }
     }
