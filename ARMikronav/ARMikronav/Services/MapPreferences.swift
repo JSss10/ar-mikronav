@@ -97,7 +97,7 @@ extension View {
     /// Karten-Stil (Karte/Satellit) und Hell-/Dunkel-Modus aus den
     /// geteilten MapPreferences anwenden.
     @MainActor
-    func mapDisplayPreferences(_ preferences: MapPreferences? = nil) -> some View {
-        modifier(MapDisplayPreferencesModifier(preferences: preferences ?? .shared))
+    func mapDisplayPreferences(_ preferences: MapPreferences = .shared) -> some View {
+        modifier(MapDisplayPreferencesModifier(preferences: preferences))
     }
 }
