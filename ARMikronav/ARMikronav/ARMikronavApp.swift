@@ -16,7 +16,7 @@ struct ARMikronavApp: App {
         // Warnungen als System-Mitteilungen zugestellt und Taps darauf
         // verarbeitet werden können.
         BarrierNotificationService.activate()
-    }
+    }3
 
     var body: some Scene {
         WindowGroup {

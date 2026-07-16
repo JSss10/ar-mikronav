@@ -14,6 +14,7 @@ Voraussetzungen:
 import os
 import sys
 import json
+import time
 import requests
 from datetime import datetime
 from typing import Optional, List, Dict
@@ -25,11 +26,28 @@ from supabase import create_client, Client
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
 
-# Testgebiet Altstadt Zuerich (Bounding Box)
-BBOX = "47.369,8.539,47.375,8.547"
+# Anzeigegebiet Kreis 1 Stadt Zuerich (Bounding Box: Altstadt mit den
+# Quartieren Rathaus, Hochschulen, Lindenhof, City)
+BBOX = "47.363,8.529,47.379,8.551"
 
-# Overpass API Endpoint
-OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+# Overpass API Endpoints (Haupt-Instanz + Mirror als Fallback).
+# Wichtig: overpass-api.de blockiert den Default-User-Agent von
+# python-requests mit "406 Not Acceptable" – darum unten der eigene
+# User-Agent-Header.
+OVERPASS_URLS = [
+    os.getenv("OVERPASS_URL", "https://overpass-api.de/api/interpreter"),
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.openstreetmap.fr/api/interpreter",
+]
+
+REQUEST_HEADERS = {
+    "User-Agent": "ar-mikronav-osm-import/1.0 (Bachelor-Projekt AR-Mikronavigation)"
+}
+
+# Overpass antwortet unter Last oft mit 504 Gateway Timeout – dann hilft
+# meist einfach erneut versuchen.
+MAX_ATTEMPTS_PER_URL = 3
+RETRY_WAIT_SECONDS = 20
 
 
 # ============================================================
@@ -50,7 +68,7 @@ INCLINE_DEFAULT_PERCENT = 8.0
 # ============================================================
 def build_overpass_query(bbox):
     return """
-    [out:json][timeout:60];
+    [out:json][timeout:180];
     (
       way["highway"="steps"](""" + bbox + """);
       node["kerb"](""" + bbox + """);
@@ -66,12 +84,31 @@ def build_overpass_query(bbox):
 
 
 def fetch_osm_data(query):
-    print("Lade Daten aus Overpass API...")
-    response = requests.post(OVERPASS_URL, data={"data": query}, timeout=120)
-    response.raise_for_status()
-    data = response.json()
-    print("OK " + str(len(data.get('elements', []))) + " Elemente geladen")
-    return data
+    last_error = None
+    for url in OVERPASS_URLS:
+        for attempt in range(1, MAX_ATTEMPTS_PER_URL + 1):
+            print("Lade Daten aus Overpass API (" + url + ", Versuch "
+                  + str(attempt) + "/" + str(MAX_ATTEMPTS_PER_URL) + ")...")
+            try:
+                response = requests.post(
+                    url,
+                    data={"data": query},
+                    headers=REQUEST_HEADERS,
+                    timeout=300,
+                )
+                response.raise_for_status()
+                data = response.json()
+                print("OK " + str(len(data.get('elements', []))) + " Elemente geladen")
+                return data
+            except requests.RequestException as e:
+                last_error = e
+                print("WARNUNG: fehlgeschlagen (" + str(e) + ")")
+                if attempt < MAX_ATTEMPTS_PER_URL:
+                    print("Warte " + str(RETRY_WAIT_SECONDS) + " s vor erneutem Versuch...")
+                    time.sleep(RETRY_WAIT_SECONDS)
+        print("Wechsle auf naechsten Mirror...")
+    print("FEHLER: Keine Overpass-Instanz erreichbar. Spaeter erneut versuchen.")
+    raise last_error
 
 
 # ============================================================
@@ -269,7 +306,7 @@ def import_to_supabase(barriers):
 def main():
     print("=" * 60)
     print("OSM Import - AR-Mikronavigation")
-    print("Testgebiet: Altstadt Zuerich (" + BBOX + ")")
+    print("Gebiet: Kreis 1 Stadt Zuerich (" + BBOX + ")")
     print("=" * 60)
     
     query = build_overpass_query(BBOX)

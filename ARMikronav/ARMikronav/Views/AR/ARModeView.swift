@@ -272,8 +272,8 @@ struct ARModeView: View {
 
 /// Kreis-Badge mit Kategorie-Icon, das über einem gepunkteten Strich am
 /// projizierten POI-Punkt "schwebt" (Ankerpunkt unten). Der innere Kreis
-/// trägt Violett 700 (wie der Karten-Marker), der kleine Punkt oben rechts
-/// die Zugänglichkeits-Statusfarbe.
+/// trägt Violett 700 (wie der Karten-Marker), das kleine Status-Icon oben
+/// rechts zeigt die Zugänglichkeit als Symbol (Häkchen/Warndreieck/Kreuz).
 struct POIARMarker: View {
     let poi: POI
 
@@ -319,11 +319,8 @@ struct POIARMarker: View {
                     .foregroundStyle(.white)
             }
 
-            Circle()
-                .fill(poi.accessStatus.tint)
-                .frame(width: 15, height: 15)
-                .overlay(Circle().strokeBorder(.white, lineWidth: 2))
-                .offset(x: 1, y: -1)
+            POIStatusIcon(status: poi.accessStatus, diameter: 19)
+                .offset(x: 2, y: -2)
         }
     }
 }

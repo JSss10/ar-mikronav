@@ -49,7 +49,7 @@ struct FilterSheet: View {
                 } header: {
                     Text("Suchradius")
                 } footer: {
-                    Text("Bestimmt, wie weit um deine Position Barrieren geladen werden.")
+                    Text("Bestimmt, wie weit um deine Position nach Orten (POIs) gesucht wird. Barrieren werden immer für den ganzen Kreis 1 angezeigt.")
                 }
             }
             .navigationTitle("Filter")

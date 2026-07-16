@@ -57,7 +57,7 @@ struct NotificationSettingsView: View {
         Section {
             Toggle("Warnungen anzeigen", isOn: $store.settings.warningsEnabled)
         } footer: {
-            Text("Bei Annäherung an eine für dein Profil kritische Barriere erhältst du eine iOS-Mitteilung.")
+            Text("Bei Annäherung an eine für dein Profil kritische Barriere erhältst du eine iOS-Mitteilung. Ist der Umkreis frei, meldet dir die App \u{201E}Keine Barrieren in der Nähe\u{201C}.")
         }
     }
 

@@ -108,9 +108,9 @@ struct SearchSheet: View {
                         .foregroundStyle(.secondary)
                 }
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(poi.accessStatus.tint)
-                        .frame(width: 10, height: 10)
+                    Image(systemName: poi.accessStatus.symbolName)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(poi.accessStatus.tint)
                     Text(poi.accessStatus.shortLabel)
                         .font(.footnote)
                         .foregroundStyle(.secondary)

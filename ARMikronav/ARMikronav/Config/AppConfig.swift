@@ -6,6 +6,7 @@
 // das per .gitignore ausgeschlossen ist.
 
 import Foundation
+import CoreLocation
 
 enum AppConfig {
     // MARK: - Testgebiet Altstadt Zürich
@@ -13,6 +14,13 @@ enum AppConfig {
     static let testAreaMaxLat = 47.375
     static let testAreaMinLng = 8.539
     static let testAreaMaxLng = 8.547
+
+    // MARK: - Anzeigegebiet Kreis 1 Stadt Zürich
+    // Barrieren werden immer für den ganzen Kreis 1 (Altstadt: Rathaus,
+    // Hochschulen, Lindenhof, City) geladen, nicht nur um den Standort.
+    // Der Radius um das Zentrum deckt die Quartiergrenzen inkl. Rand ab.
+    static let kreis1Center = CLLocationCoordinate2D(latitude: 47.3710, longitude: 8.5400)
+    static let kreis1RadiusM: Double = 1400
 
     // MARK: - Defaults
     static let defaultBarrierRadius: Double = 500

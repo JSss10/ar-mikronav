@@ -151,7 +151,7 @@ struct SettingsView: View {
         return base + suffix
     }
 
-    // MARK: - Edit-Link
+    // MARK: - Edit-Link + Gespeicherte Orte
 
     private var editSection: some View {
         Section {
@@ -159,6 +159,12 @@ struct SettingsView: View {
                 ProfileEditView(profile: $profile)
             } label: {
                 Label("Profil bearbeiten", systemImage: "pencil")
+            }
+
+            NavigationLink {
+                SavedPlacesListView()
+            } label: {
+                Label("Gespeicherte Orte", systemImage: "bookmark")
             }
         }
     }

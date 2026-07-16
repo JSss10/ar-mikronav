@@ -22,6 +22,8 @@ final class BarrierNotificationService: NSObject, ObservableObject {
 
     private let center = UNUserNotificationCenter.current()
     private static let threadIdentifier = "barrier-warnings"
+    /// Fester Request-Identifier der "Keine Barrieren in der Nähe"-Mitteilung.
+    private static let allClearIdentifier = "barrier-all-clear"
 
     private override init() {
         super.init()
@@ -82,6 +84,33 @@ final class BarrierNotificationService: NSObject, ObservableObject {
     /// Reichweite ist oder die Warnung dismissed wurde.
     func withdraw(barrierId: UUID) {
         center.removeDeliveredNotifications(withIdentifiers: [barrierId.uuidString])
+    }
+
+    /// Meldet "Keine Barrieren in der Nähe", wenn im Warn-Radius keine für
+    /// das Profil relevante Barriere liegt. Fester Identifier, damit
+    /// wiederholte Aufrufe die Mitteilung ersetzen statt zu stapeln.
+    func postAllClear(radius: Double) {
+        guard isAuthorized else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = "Keine Barrieren in der Nähe"
+        content.body = "Im Umkreis von \(Int(radius)) m gibt es keine für dein Profil relevanten Barrieren."
+        content.sound = nil
+        content.interruptionLevel = .passive
+        content.threadIdentifier = Self.threadIdentifier
+
+        let request = UNNotificationRequest(
+            identifier: Self.allClearIdentifier,
+            content: content,
+            trigger: nil
+        )
+        center.add(request)
+    }
+
+    /// Zieht die "Keine Barrieren"-Mitteilung zurück, sobald wieder eine
+    /// relevante Barriere in Reichweite ist.
+    func withdrawAllClear() {
+        center.removeDeliveredNotifications(withIdentifiers: [Self.allClearIdentifier])
     }
 }
 
