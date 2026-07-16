@@ -29,6 +29,9 @@ struct MapView: View {
     @State private var selectedPOI: POI?
     @State private var showingFilter = false
     @State private var showingSearch = false
+    @State private var showingSavedPlaces = false
+    /// Auf der Karte markierter gespeicherter Ort (aus dem Bookmark-Sheet).
+    @State private var selectedSavedPlace: SavedPlace?
 
     private static let categoryChips = ["Café", "WC", "Restaurant", "Apotheke", "Haltestelle"]
 
@@ -90,6 +93,20 @@ struct MapView: View {
                 ) {
                     POIMarker(poi: poi)
                         .onTapGesture { selectedPOI = poi }
+                }
+            }
+
+            // Aus dem Bookmark-Sheet gewählter gespeicherter Ort.
+            if let place = selectedSavedPlace {
+                Annotation(
+                    place.displayName,
+                    coordinate: CLLocationCoordinate2D(
+                        latitude: place.latitude,
+                        longitude: place.longitude
+                    )
+                ) {
+                    SavedPlaceMarker()
+                        .onTapGesture { selectedSavedPlace = nil }
                 }
             }
         }
@@ -168,6 +185,7 @@ struct MapView: View {
             if viewModel.activeRoute == nil {
                 VStack(alignment: .leading, spacing: 10) {
                     mapStyleButton
+                    savedPlacesButton
                     filterButton
                     categoryChipRow
                 }
@@ -225,6 +243,16 @@ struct MapView: View {
                 focus(on: poi)
             }
         }
+        .sheet(isPresented: $showingSavedPlaces) {
+            NavigationStack {
+                SavedPlacesListView { place in
+                    showingSavedPlaces = false
+                    focus(on: place)
+                }
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: - Components
@@ -265,6 +293,19 @@ struct MapView: View {
                 .background(.thinMaterial, in: Circle())
         }
         .accessibilityLabel("Kartenstil wählen")
+    }
+
+    /// Öffnet die gespeicherten Orte als Sheet; Auswahl zentriert die Karte.
+    private var savedPlacesButton: some View {
+        Button {
+            showingSavedPlaces = true
+        } label: {
+            Image(systemName: "bookmark.circle.fill")
+                .font(.title)
+                .padding(10)
+                .background(.thinMaterial, in: Circle())
+        }
+        .accessibilityLabel("Gespeicherte Orte")
     }
 
     private var filterButton: some View {
@@ -376,6 +417,19 @@ struct MapView: View {
         }
     }
 
+    /// Gespeicherten Ort auf der Karte markieren und ansteuern.
+    private func focus(on place: SavedPlace) {
+        selectedSavedPlace = place
+        withAnimation(.easeInOut) {
+            cameraPosition = .region(
+                MKCoordinateRegion(
+                    center: CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude),
+                    span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
+                )
+            )
+        }
+    }
+
     private func focus(on poi: POI) {
         withAnimation(.easeInOut) {
             cameraPosition = .region(
@@ -405,10 +459,31 @@ struct MapView: View {
     }
 }
 
+/// Marker für einen gespeicherten Ort: Bookmark-Icon im Akzentkreis.
+/// Tippen entfernt die Markierung wieder.
+struct SavedPlaceMarker: View {
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(.white)
+                .frame(width: 34, height: 34)
+                .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
+            Circle()
+                .fill(Color.accentColor)
+                .frame(width: 26, height: 26)
+            Image(systemName: "bookmark.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+        .accessibilityLabel("Gespeicherter Ort, Markierung entfernen")
+        .accessibilityAddTraits(.isButton)
+    }
+}
+
 /// Kreisförmiger POI-Marker: weisser Ring, innerer Kreis in Violett 700
 /// (eine Stufe heller als das Akzent-Violett) mit dem Kategorie-Icon
-/// (Restaurant, Café, WC …). Der Zugänglichkeits-Status sitzt als kleiner
-/// farbiger Punkt oben rechts am Ring.
+/// (Restaurant, Café, WC …). Der Zugänglichkeits-Status sitzt als kleines
+/// Symbol-Icon (Häkchen/Warndreieck/Kreuz) oben rechts am Ring.
 struct POIMarker: View {
     let poi: POI
 
@@ -427,11 +502,8 @@ struct POIMarker: View {
                     .foregroundStyle(.white)
             }
 
-            Circle()
-                .fill(poi.accessStatus.tint)
-                .frame(width: 11, height: 11)
-                .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
-                .offset(x: 2, y: -2)
+            POIStatusIcon(status: poi.accessStatus, diameter: 15)
+                .offset(x: 3, y: -3)
         }
         .accessibilityLabel("\(poi.name), \(poi.accessStatus.shortLabel)")
     }

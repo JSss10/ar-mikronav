@@ -2,8 +2,9 @@
 // ARMikronav
 //
 // Verbindet LocationService und BarrierRepository für die Kartenansicht.
-// Lädt Barrieren neu, sobald sich der Nutzerstandort um mehr als `reloadThreshold` Meter
-// gegenüber dem letzten Lade-Punkt verschoben hat.
+// Barrieren werden immer für das ganze Anzeigegebiet Kreis 1 Stadt Zürich
+// geladen (AppConfig.kreis1Center/-RadiusM) und bei Bewegung des Users um
+// mehr als `reloadThreshold` Meter aufgefrischt.
 
 import Foundation
 import Combine
@@ -98,16 +99,16 @@ final class MapViewModel: ObservableObject {
     }
 
     func applyFilter(_ newFilter: BarrierFilterState) {
-        let radiusChanged = newFilter.radius != filterState.radius
+        // Der Radius wirkt nur noch auf die POI-Suche; Barrieren kommen
+        // immer für den ganzen Kreis 1.
         filterState = newFilter
-
-        guard radiusChanged, let center = lastLoadCenter else { return }
-        Task { await loadBarriers(around: center.coordinate) }
     }
 
     func start() {
         guard !hasStarted else { return }
         hasStarted = true
+
+        Task { await loadBarriers() }
 
         locationService.startUpdating()
 
@@ -131,16 +132,21 @@ final class MapViewModel: ObservableObject {
             return
         }
         lastLoadCenter = location
-        Task { await loadBarriers(around: location.coordinate) }
+        Task { await loadBarriers() }
     }
 
-    func loadBarriers(around coordinate: CLLocationCoordinate2D) async {
+    /// Lädt alle Barrieren des Kreis 1 (fixes Gebiet, unabhängig vom
+    /// Standort). Der Aufruf bei Bewegung dient nur der Datenauffrischung.
+    func loadBarriers() async {
         isLoading = true
         loadError = nil
         defer { isLoading = false }
 
         do {
-            barriers = try await repository.fetchBarriers(near: coordinate, radius: filterState.radius)
+            barriers = try await repository.fetchBarriers(
+                near: AppConfig.kreis1Center,
+                radius: AppConfig.kreis1RadiusM
+            )
         } catch {
             loadError = error.localizedDescription
         }

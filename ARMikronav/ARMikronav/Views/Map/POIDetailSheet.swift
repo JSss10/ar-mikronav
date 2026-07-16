@@ -110,12 +110,13 @@ struct POIDetailSheet: View {
 
     private var statusBadge: some View {
         HStack(spacing: 8) {
-            Circle()
-                .fill(poi.accessStatus.tint)
-                .frame(width: 12, height: 12)
+            Image(systemName: poi.accessStatus.symbolName)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(poi.accessStatus.tint)
             Text(poi.accessStatus.label)
                 .font(.body.weight(.medium))
         }
+        .accessibilityElement(children: .combine)
     }
 
     /// ginto-Bewertung für den eigenen Rollstuhltyp mit Einstufung und

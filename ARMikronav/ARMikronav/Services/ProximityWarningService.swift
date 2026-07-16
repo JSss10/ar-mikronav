@@ -20,6 +20,9 @@ final class ProximityWarningService: ObservableObject {
     private var suppressedBarrierId: UUID?
     /// Barriere, für die aktuell eine System-Mitteilung zugestellt ist.
     private var notifiedBarrierId: UUID?
+    /// True, solange die "Keine Barrieren in der Nähe"-Mitteilung zugestellt
+    /// ist – verhindert wiederholte Zustellung im selben Zustand.
+    private var allClearNotified = false
 
     /// Liest den Warn-Radius live aus den User-Settings, damit Änderungen im
     /// SettingsView ohne Re-Init wirksam werden.
@@ -54,6 +57,10 @@ final class ProximityWarningService: ObservableObject {
         if let id = suppressedBarrierId, !inRangeIds.contains(id) {
             suppressedBarrierId = nil
         }
+
+        // "Keine Barrieren in der Nähe" nur melden, wenn schon Daten geladen
+        // sind (sonst würde beim App-Start vor dem ersten Load gemeldet).
+        syncAllClearNotification(clear: candidates.isEmpty, dataLoaded: !barriers.isEmpty)
 
         guard let nearest = candidates.min(by: { $0.distance < $1.distance }) else {
             setActiveWarning(nil)
@@ -95,6 +102,22 @@ final class ProximityWarningService: ObservableObject {
         } else if let id = notifiedBarrierId {
             notifiedBarrierId = nil
             BarrierNotificationService.shared.withdraw(barrierId: id)
+        }
+    }
+
+    /// Stellt beim Wechsel in den Zustand "keine relevante Barriere im
+    /// Warn-Radius" einmalig eine Mitteilung zu und zieht sie zurück, sobald
+    /// wieder eine Barriere in Reichweite ist.
+    private func syncAllClearNotification(clear: Bool, dataLoaded: Bool) {
+        guard NotificationSettingsStore.shared.settings.warningsEnabled else { return }
+
+        if clear, dataLoaded {
+            guard !allClearNotified else { return }
+            allClearNotified = true
+            BarrierNotificationService.shared.postAllClear(radius: warningDistance)
+        } else if !clear, allClearNotified {
+            allClearNotified = false
+            BarrierNotificationService.shared.withdrawAllClear()
         }
     }
 }

@@ -25,8 +25,9 @@ from supabase import create_client, Client
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
 
-# Testgebiet Altstadt Zuerich (Bounding Box)
-BBOX = "47.369,8.539,47.375,8.547"
+# Anzeigegebiet Kreis 1 Stadt Zuerich (Bounding Box: Altstadt mit den
+# Quartieren Rathaus, Hochschulen, Lindenhof, City)
+BBOX = "47.363,8.529,47.379,8.551"
 
 # Overpass API Endpoint
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
@@ -269,7 +270,7 @@ def import_to_supabase(barriers):
 def main():
     print("=" * 60)
     print("OSM Import - AR-Mikronavigation")
-    print("Testgebiet: Altstadt Zuerich (" + BBOX + ")")
+    print("Gebiet: Kreis 1 Stadt Zuerich (" + BBOX + ")")
     print("=" * 60)
     
     query = build_overpass_query(BBOX)
