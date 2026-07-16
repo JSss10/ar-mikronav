@@ -14,6 +14,7 @@ Voraussetzungen:
 import os
 import sys
 import json
+import time
 import requests
 from datetime import datetime
 from typing import Optional, List, Dict
@@ -36,11 +37,17 @@ BBOX = "47.363,8.529,47.379,8.551"
 OVERPASS_URLS = [
     os.getenv("OVERPASS_URL", "https://overpass-api.de/api/interpreter"),
     "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.openstreetmap.fr/api/interpreter",
 ]
 
 REQUEST_HEADERS = {
     "User-Agent": "ar-mikronav-osm-import/1.0 (Bachelor-Projekt AR-Mikronavigation)"
 }
+
+# Overpass antwortet unter Last oft mit 504 Gateway Timeout – dann hilft
+# meist einfach erneut versuchen.
+MAX_ATTEMPTS_PER_URL = 3
+RETRY_WAIT_SECONDS = 20
 
 
 # ============================================================
@@ -61,7 +68,7 @@ INCLINE_DEFAULT_PERCENT = 8.0
 # ============================================================
 def build_overpass_query(bbox):
     return """
-    [out:json][timeout:60];
+    [out:json][timeout:180];
     (
       way["highway"="steps"](""" + bbox + """);
       node["kerb"](""" + bbox + """);
@@ -79,22 +86,28 @@ def build_overpass_query(bbox):
 def fetch_osm_data(query):
     last_error = None
     for url in OVERPASS_URLS:
-        print("Lade Daten aus Overpass API (" + url + ")...")
-        try:
-            response = requests.post(
-                url,
-                data={"data": query},
-                headers=REQUEST_HEADERS,
-                timeout=120,
-            )
-            response.raise_for_status()
-            data = response.json()
-            print("OK " + str(len(data.get('elements', []))) + " Elemente geladen")
-            return data
-        except requests.RequestException as e:
-            last_error = e
-            print("WARNUNG: " + url + " fehlgeschlagen (" + str(e) + ") - versuche Mirror...")
-    print("FEHLER: Keine Overpass-Instanz erreichbar.")
+        for attempt in range(1, MAX_ATTEMPTS_PER_URL + 1):
+            print("Lade Daten aus Overpass API (" + url + ", Versuch "
+                  + str(attempt) + "/" + str(MAX_ATTEMPTS_PER_URL) + ")...")
+            try:
+                response = requests.post(
+                    url,
+                    data={"data": query},
+                    headers=REQUEST_HEADERS,
+                    timeout=300,
+                )
+                response.raise_for_status()
+                data = response.json()
+                print("OK " + str(len(data.get('elements', []))) + " Elemente geladen")
+                return data
+            except requests.RequestException as e:
+                last_error = e
+                print("WARNUNG: fehlgeschlagen (" + str(e) + ")")
+                if attempt < MAX_ATTEMPTS_PER_URL:
+                    print("Warte " + str(RETRY_WAIT_SECONDS) + " s vor erneutem Versuch...")
+                    time.sleep(RETRY_WAIT_SECONDS)
+        print("Wechsle auf naechsten Mirror...")
+    print("FEHLER: Keine Overpass-Instanz erreichbar. Spaeter erneut versuchen.")
     raise last_error
 
 
