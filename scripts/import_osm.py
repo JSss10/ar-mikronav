@@ -29,8 +29,18 @@ SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
 # Quartieren Rathaus, Hochschulen, Lindenhof, City)
 BBOX = "47.363,8.529,47.379,8.551"
 
-# Overpass API Endpoint
-OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+# Overpass API Endpoints (Haupt-Instanz + Mirror als Fallback).
+# Wichtig: overpass-api.de blockiert den Default-User-Agent von
+# python-requests mit "406 Not Acceptable" – darum unten der eigene
+# User-Agent-Header.
+OVERPASS_URLS = [
+    os.getenv("OVERPASS_URL", "https://overpass-api.de/api/interpreter"),
+    "https://overpass.kumi.systems/api/interpreter",
+]
+
+REQUEST_HEADERS = {
+    "User-Agent": "ar-mikronav-osm-import/1.0 (Bachelor-Projekt AR-Mikronavigation)"
+}
 
 
 # ============================================================
@@ -67,12 +77,25 @@ def build_overpass_query(bbox):
 
 
 def fetch_osm_data(query):
-    print("Lade Daten aus Overpass API...")
-    response = requests.post(OVERPASS_URL, data={"data": query}, timeout=120)
-    response.raise_for_status()
-    data = response.json()
-    print("OK " + str(len(data.get('elements', []))) + " Elemente geladen")
-    return data
+    last_error = None
+    for url in OVERPASS_URLS:
+        print("Lade Daten aus Overpass API (" + url + ")...")
+        try:
+            response = requests.post(
+                url,
+                data={"data": query},
+                headers=REQUEST_HEADERS,
+                timeout=120,
+            )
+            response.raise_for_status()
+            data = response.json()
+            print("OK " + str(len(data.get('elements', []))) + " Elemente geladen")
+            return data
+        except requests.RequestException as e:
+            last_error = e
+            print("WARNUNG: " + url + " fehlgeschlagen (" + str(e) + ") - versuche Mirror...")
+    print("FEHLER: Keine Overpass-Instanz erreichbar.")
+    raise last_error
 
 
 # ============================================================
