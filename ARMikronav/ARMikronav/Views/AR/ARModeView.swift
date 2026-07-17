@@ -118,15 +118,6 @@ struct ARModeView: View {
             VStack(spacing: 10) {
                 poiChipRow
 
-                // Grosser Richtungspfeil während der Navigation:
-                // geradeaus / links / rechts, direkt im Kamerabild.
-                if viewModel.activeRoute != nil,
-                   !(viewModel.routeProgress?.hasArrived ?? false),
-                   let maneuver = viewModel.nextManeuver {
-                    maneuverBanner(maneuver)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
-
                 // Fallback-Banner nur ohne Mitteilungs-Berechtigung; sonst
                 // kommt die Warnung als System-Mitteilung (UserNotifications).
                 if notificationStore.settings.warningsEnabled,
@@ -149,7 +140,6 @@ struct ARModeView: View {
         }
         .animation(.spring(duration: 0.35), value: warningService.activeWarning?.barrier.id)
         .animation(.spring(duration: 0.35), value: viewModel.activeRoute?.id)
-        .animation(.spring(duration: 0.35), value: viewModel.nextManeuver?.direction)
         .onReceive(locationService.$currentLocation) { _ in
             evaluateProximity()
         }
@@ -171,23 +161,6 @@ struct ARModeView: View {
                 Task { await viewModel.startNavigation(to: poi, profile: profile) }
             })
         }
-    }
-
-    /// Grosser Manöver-Pfeil mit Anweisung ("In 40 m links abbiegen").
-    private func maneuverBanner(_ maneuver: RouteManeuver) -> some View {
-        VStack(spacing: 6) {
-            Image(systemName: maneuver.direction.symbolName)
-                .font(.system(size: 40, weight: .bold))
-            Text(maneuver.instruction)
-                .font(.headline)
-                .monospacedDigit()
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 14)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
-        .shadow(radius: 4)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(maneuver.instruction)
     }
 
     // MARK: - POI-Modus

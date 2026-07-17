@@ -61,12 +61,12 @@ struct AROverlayView: View {
         .accessibilityAddTraits(.isButton)
     }
 
-    // Enger Ausschnitt (~200 m), damit die unmittelbare Umgebung und eine
+    // Enger Ausschnitt (~100 m), damit die unmittelbare Umgebung und eine
     // startende Route direkt erkennbar sind.
     private func region(around coordinate: CLLocationCoordinate2D) -> MKCoordinateRegion {
         MKCoordinateRegion(
             center: coordinate,
-            span: MKCoordinateSpan(latitudeDelta: 0.002, longitudeDelta: 0.002)
+            span: MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
         )
     }
 }
