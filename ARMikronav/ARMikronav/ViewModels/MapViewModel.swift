@@ -32,6 +32,9 @@ final class MapViewModel: ObservableObject {
     @Published private(set) var isCalculatingRoute = false
     /// Ziel-POI der aktiven Navigation (nil, wenn keine Route läuft).
     @Published private(set) var navigationTarget: POI?
+    /// Barrieren, die der User für heute als "nicht machbar" markiert hat
+    /// (Tagesform, z. B. Hitze) – die Route wird um sie herum berechnet.
+    @Published private(set) var avoidedBarrierIds: Set<UUID> = []
 
     private let locationService: LocationService
     private let repository: BarrierRepository
@@ -71,6 +74,44 @@ final class MapViewModel: ObservableObject {
             return []
         }
         return filteredBarriers
+    }
+
+    /// Eine Barriere entlang der aktiven Route für die Listenansicht:
+    /// Position auf der Route (ab Start) und Restweg ab aktuellem Standort.
+    struct RouteBarrierEntry: Identifiable {
+        let barrier: Barrier
+        /// Weglänge vom Routen-Start bis zur Barriere.
+        let distanceFromStartM: CLLocationDistance
+        /// Weglänge vom aktuellen Standort bis zur Barriere
+        /// (negativ = bereits passiert, nil = Standort unbekannt).
+        let distanceAheadM: CLLocationDistance?
+
+        var id: UUID { barrier.id }
+    }
+
+    /// Barrieren im Korridor der aktiven Route, sortiert in Laufrichtung –
+    /// die Datenbasis der "Barrieren auf der Route"-Liste.
+    var routeBarrierEntries: [RouteBarrierEntry] {
+        guard let route = activeRoute else { return [] }
+        let alongUser = locationService.currentLocation.map {
+            RouteService.distanceAlongRoute(to: $0.coordinate, on: route)
+        }
+        return displayedBarriers
+            .map { barrier in
+                let along = RouteService.distanceAlongRoute(
+                    to: CLLocationCoordinate2D(
+                        latitude: barrier.latitude,
+                        longitude: barrier.longitude
+                    ),
+                    on: route
+                )
+                return RouteBarrierEntry(
+                    barrier: barrier,
+                    distanceFromStartM: along,
+                    distanceAheadM: alongUser.map { along - $0 }
+                )
+            }
+            .sorted { $0.distanceFromStartM < $1.distanceFromStartM }
     }
 
     /// POIs, die auf der Karte/AR angezeigt werden: während einer aktiven
@@ -195,6 +236,52 @@ final class MapViewModel: ObservableObject {
         navigationTarget = nil
         routeProgress = nil
         nextManeuver = nil
+        avoidedBarrierIds = []
+    }
+
+    /// Markiert die Barriere für heute als "nicht machbar" (Tagesform,
+    /// z. B. Hitze) und berechnet die Route zum aktuellen Ziel neu, so dass
+    /// sie diese – und alle zuvor markierten – Barrieren umgeht. Bewusst
+    /// ohne Fussgänger-Fallback: der würde die Barriere nicht umgehen.
+    /// - Returns: `true`, wenn eine Alternativroute gefunden wurde.
+    @discardableResult
+    func findAlternativeRoute(avoiding barrier: Barrier, profile: UserProfile) async -> Bool {
+        guard let route = activeRoute else { return false }
+        guard let start = locationService.currentLocation?.coordinate else {
+            loadError = "Standort unbekannt – Alternativroute nicht möglich."
+            return false
+        }
+
+        let previouslyAvoided = avoidedBarrierIds
+        avoidedBarrierIds.insert(barrier.id)
+        let avoidCoordinates = barriers
+            .filter { avoidedBarrierIds.contains($0.id) }
+            .map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+
+        isCalculatingRoute = true
+        defer { isCalculatingRoute = false }
+
+        do {
+            let newRoute = try await RouteService.wheelchairRoute(
+                from: start,
+                to: route.destinationCoordinate,
+                destinationName: route.destinationName,
+                profile: profile,
+                avoiding: avoidCoordinates
+            )
+            activeRoute = newRoute
+            routeProgress = RouteProgress(
+                remainingDistanceM: newRoute.totalDistanceM,
+                remainingTimeS: newRoute.expectedTravelTimeS
+            )
+            if let location = locationService.currentLocation {
+                nextManeuver = RouteService.nextManeuver(of: newRoute, at: location)
+            }
+            return true
+        } catch {
+            avoidedBarrierIds = previouslyAvoided
+            return false
+        }
     }
 
     /// Kategorie-Chip getippt: lädt POIs zur Kategorie, nochmaliges Tippen
