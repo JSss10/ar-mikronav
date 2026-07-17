@@ -201,13 +201,12 @@ struct MapView: View {
         }
         .overlay(alignment: .bottom) {
             if let route = viewModel.activeRoute {
-                let entries = viewModel.routeBarrierEntries
                 MapRoutePanel(
                     route: route,
                     progress: viewModel.routeProgress,
                     maneuver: viewModel.nextManeuver,
-                    barrierCount: entries.count,
-                    criticalCount: entries.filter { shouldWarn(barrier: $0.barrier, profile: profile) }.count,
+                    barrierCount: routeBarrierCount,
+                    criticalCount: criticalRouteBarrierCount,
                     onShowBarriers: { showingRouteBarriers = true },
                     onStop: { viewModel.stopNavigation() }
                 )
@@ -236,9 +235,7 @@ struct MapView: View {
             BarrierDetailSheet(
                 barrier: barrier,
                 profile: profile,
-                onFindAlternative: viewModel.activeRoute == nil ? nil : {
-                    await findAlternativeRoute(avoiding: barrier)
-                }
+                onFindAlternative: alternativeAction(for: barrier)
             )
         }
         // Barrieren-Liste zur aktiven Route; Zeilen-Tap merkt die Barriere
@@ -450,6 +447,26 @@ struct MapView: View {
         withAnimation(.easeInOut) {
             cameraPosition = .rect(rect.insetBy(dx: -padding, dy: -padding))
         }
+    }
+
+    /// Barrieren im Korridor der aktiven Route (für die Zähler-Zeile im
+    /// Routen-Panel).
+    private var routeBarrierCount: Int {
+        viewModel.routeBarrierEntries.count
+    }
+
+    /// Davon fürs eigene Profil kritisch (shouldWarn).
+    private var criticalRouteBarrierCount: Int {
+        viewModel.routeBarrierEntries
+            .filter { shouldWarn(barrier: $0.barrier, profile: profile) }
+            .count
+    }
+
+    /// Alternativroute-Aktion fürs Barrieren-Detail – nur während einer
+    /// aktiven Navigation, sonst nil (Sektion bleibt ausgeblendet).
+    private func alternativeAction(for barrier: Barrier) -> (@MainActor () async -> Bool)? {
+        guard viewModel.activeRoute != nil else { return nil }
+        return { await findAlternativeRoute(avoiding: barrier) }
     }
 
     /// "Alternativroute anzeigen" aus dem Barrieren-Detail: Route neu
