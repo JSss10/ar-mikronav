@@ -89,7 +89,8 @@ struct HomeView: View {
         } label: {
             Image(systemName: "gearshape.fill")
                 .font(.title3)
-                .padding(10)
+                // Gleiche Höhe wie die Suchleiste (MapView).
+                .frame(width: 44, height: 44)
                 .background(.thinMaterial, in: Circle())
         }
         .accessibilityLabel("Einstellungen")
@@ -102,7 +103,8 @@ struct HomeView: View {
         } label: {
             Image(systemName: "rectangle.portrait.and.arrow.right")
                 .font(.title3)
-                .padding(10)
+                // Gleiche Höhe wie die Suchleiste (MapView).
+                .frame(width: 44, height: 44)
                 .background(.thinMaterial, in: Circle())
         }
         .accessibilityLabel("Abmelden")

@@ -145,7 +145,7 @@ struct MapView: View {
             VStack(spacing: 8) {
                 searchBar
                     .padding(.leading)
-                    .padding(.trailing, 116) // Platz für Settings/Abmelden (HomeView)
+                    .padding(.trailing, 120) // Platz für Settings/Abmelden (HomeView)
 
                 // Fallback-Banner nur ohne Mitteilungs-Berechtigung; sonst
                 // kommt die Warnung als System-Mitteilung (UserNotifications).
@@ -176,7 +176,8 @@ struct MapView: View {
                     .background(.thinMaterial, in: Capsule())
                 }
             }
-            .padding(.top, 8)
+            // Bündig mit Settings-/Abmelde-Button (HomeView, .padding() = 16).
+            .padding(.top, 16)
             .animation(.easeInOut(duration: 0.25), value: connectivity.isOnline)
             .animation(.spring(duration: 0.35), value: proximityService.activeWarning?.barrier.id)
         }
@@ -267,7 +268,9 @@ struct MapView: View {
                 Spacer()
             }
             .foregroundStyle(.secondary)
-            .padding(12)
+            .padding(.horizontal, 12)
+            // Gleiche Höhe wie Settings-/Abmelde-Button (HomeView).
+            .frame(height: 44)
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
         .accessibilityLabel("Orte suchen")

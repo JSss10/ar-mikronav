@@ -2,11 +2,11 @@
 // ARMikronav
 //
 // Bottom-Panel während der AR-Navigation: Kartenstreifen mit Routenverlauf
-// (von Anfang an auf die komplette Route gezoomt, gleiches Styling wie die
-// Navigations-Karte), darunter die geteilte RouteInfoBar mit Richtungspfeil,
-// Zielname, Restzeit/-distanz und Stop-Button. Ein Tipp auf den Karten-
-// streifen wechselt zurück zur Kartenansicht (ersetzt den früheren
-// "Zur Karte"-Button).
+// (eng an den aktuellen Standort gezoomt und diesem folgend, gleiches
+// Styling wie die Navigations-Karte), darunter die geteilte RouteInfoBar
+// mit Richtungspfeil, Zielname, Restzeit/-distanz und Stop-Button. Ein Tipp
+// auf den Kartenstreifen wechselt zurück zur Kartenansicht (ersetzt den
+// früheren "Zur Karte"-Button).
 
 import SwiftUI
 import MapKit
@@ -20,7 +20,12 @@ struct ARRoutePanel: View {
     /// Tipp auf den Kartenstreifen → zurück zur Kartenansicht.
     var onMapTap: (() -> Void)? = nil
 
+    @StateObject private var locationService = LocationService.shared
     @State private var cameraPosition: MapCameraPosition
+
+    // Enger Ausschnitt (~100 m), damit die unmittelbare Umgebung entlang
+    // der Route gut erkennbar ist; die Kamera folgt dem Standort.
+    private static let closeUpSpan = MKCoordinateSpan(latitudeDelta: 0.001, longitudeDelta: 0.001)
 
     init(
         route: ActiveRoute,
@@ -34,7 +39,7 @@ struct ARRoutePanel: View {
         self.maneuver = maneuver
         self.onStop = onStop
         self.onMapTap = onMapTap
-        _cameraPosition = State(initialValue: Self.fittedCamera(for: route))
+        _cameraPosition = State(initialValue: Self.closeUpCamera(for: route))
     }
 
     var body: some View {
@@ -71,6 +76,14 @@ struct ARRoutePanel: View {
         }
         .mapDisplayPreferences()
         .allowsHitTesting(false)
+        // Kamera folgt dem aktuellen Standort im engen Ausschnitt.
+        .onReceive(locationService.$currentLocation.compactMap { $0 }) { location in
+            withAnimation(.easeInOut) {
+                cameraPosition = .region(
+                    MKCoordinateRegion(center: location.coordinate, span: Self.closeUpSpan)
+                )
+            }
+        }
         // Tap-Fläche über der (nicht interaktiven) Karte: wechselt zur Karte.
         .overlay {
             Color.clear
@@ -82,17 +95,12 @@ struct ARRoutePanel: View {
         .accessibilityAddTraits(.isButton)
     }
 
-    /// Kamera so, dass die komplette Route mit Rand sichtbar ist –
-    /// gleicher Zoom wie die Kartenansicht nach "Route anzeigen".
-    private static func fittedCamera(for route: ActiveRoute) -> MapCameraPosition {
-        var rect = MKMapRect.null
-        for coordinate in route.coordinates {
-            let point = MKMapPoint(coordinate)
-            rect = rect.union(MKMapRect(x: point.x, y: point.y, width: 0, height: 0))
+    /// Start-Kamera eng am Routenanfang (= Standort bei Routenberechnung);
+    /// danach folgt die Kamera dem Live-Standort.
+    private static func closeUpCamera(for route: ActiveRoute) -> MapCameraPosition {
+        guard let start = route.coordinates.first else {
+            return .userLocation(fallback: .automatic)
         }
-        guard !rect.isNull else { return .userLocation(fallback: .automatic) }
-
-        let padding = max(rect.width, rect.height) * 0.3
-        return .rect(rect.insetBy(dx: -padding, dy: -padding))
+        return .region(MKCoordinateRegion(center: start, span: closeUpSpan))
     }
 }
