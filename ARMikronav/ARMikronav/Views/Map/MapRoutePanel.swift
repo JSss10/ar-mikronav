@@ -2,11 +2,13 @@
 // ARMikronav
 //
 // Bottom-Panel während der Navigation in der Kartenansicht: Zielname,
-// Restzeit/-distanz und Stop-Button. Die Route selbst liegt als Polyline
-// direkt auf der Hauptkarte (MapView). Bei Ankunft (< 10 m Restweg)
-// wechselt die Zeile in den "Ziel erreicht"-Zustand mit Fertig-Button.
-// Die RouteInfoBar wird auch vom ARRoutePanel verwendet, damit Karte und
-// AR-Modus dieselbe Fortschrittsdarstellung zeigen.
+// Restzeit/-distanz und Stop-Button. Darunter eine Zeile mit der Anzahl
+// Barrieren auf der Route – Tippen öffnet die Listenansicht
+// (RouteBarrierListSheet), damit man vorab weiss, was auf einen zukommt.
+// Die Route selbst liegt als Polyline direkt auf der Hauptkarte (MapView).
+// Bei Ankunft (< 10 m Restweg) wechselt die Zeile in den "Ziel erreicht"-
+// Zustand mit Fertig-Button. Die RouteInfoBar wird auch vom ARRoutePanel
+// verwendet, damit Karte und AR-Modus dieselbe Fortschrittsdarstellung zeigen.
 
 import SwiftUI
 
@@ -14,14 +16,67 @@ struct MapRoutePanel: View {
     let route: ActiveRoute
     let progress: RouteProgress?
     var maneuver: RouteManeuver? = nil
+    /// Barrieren im Korridor der aktiven Route (für die Zähler-Zeile).
+    var barrierCount: Int = 0
+    /// Davon fürs eigene Profil kritisch (shouldWarn).
+    var criticalCount: Int = 0
+    /// Öffnet die Barrieren-Liste; nil blendet die Zeile aus.
+    var onShowBarriers: (() -> Void)? = nil
     let onStop: () -> Void
 
     var body: some View {
-        RouteInfoBar(route: route, progress: progress, maneuver: maneuver, onStop: onStop)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
-            .shadow(radius: 6)
+        VStack(spacing: 0) {
+            RouteInfoBar(route: route, progress: progress, maneuver: maneuver, onStop: onStop)
+
+            if let onShowBarriers {
+                Divider()
+                    .padding(.vertical, 10)
+                barrierRow(action: onShowBarriers)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .shadow(radius: 6)
+    }
+
+    /// Zeile "X Barrieren auf der Route" mit Warnfarbe, sobald mindestens
+    /// eine Barriere fürs Profil kritisch ist.
+    private func barrierRow(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: barrierCount == 0 ? "checkmark.circle" : "exclamationmark.triangle")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(
+                        barrierCount == 0
+                            ? AppColor.Status.openIcon
+                            : (criticalCount > 0 ? AppColor.Status.blockedIcon : AppColor.Status.limitedIcon)
+                    )
+
+                Text(barrierRowText)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                Spacer(minLength: 8)
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityLabel("\(barrierRowText), Liste öffnen")
+    }
+
+    private var barrierRowText: String {
+        if barrierCount == 0 {
+            return "Keine bekannten Barrieren auf der Route"
+        }
+        let base = barrierCount == 1
+            ? "1 Barriere auf der Route"
+            : "\(barrierCount) Barrieren auf der Route"
+        guard criticalCount > 0 else { return base }
+        return "\(base) · \(criticalCount) kritisch"
     }
 }
 

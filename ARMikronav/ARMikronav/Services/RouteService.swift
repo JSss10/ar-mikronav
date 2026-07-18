@@ -169,11 +169,15 @@ enum RouteService {
     /// Fragt das ORS-Profil "wheelchair" an. Die Restriktionen kommen aus
     /// dem UserProfile: max. Steigung, max. Bordsteinhöhe, benötigte Breite
     /// (inkl. Begleitungs-Bonus via effective*-Werte) und Oberflächentoleranz.
+    /// `avoiding` sind Barrieren-Koordinaten, die die Route umgehen soll
+    /// (Tagesform: z. B. Steigung, die bei Hitze nicht machbar ist) – sie
+    /// werden als avoid_polygons an ORS übergeben.
     static func wheelchairRoute(
         from start: CLLocationCoordinate2D,
         to destination: CLLocationCoordinate2D,
         destinationName: String,
-        profile: UserProfile
+        profile: UserProfile,
+        avoiding: [CLLocationCoordinate2D] = []
     ) async throws -> ActiveRoute {
         let apiKey = Secrets.openRouteServiceAPIKey
         guard !apiKey.isEmpty else { throw RouteError.orsNotConfigured }
@@ -189,7 +193,10 @@ enum RouteService {
                 [start.longitude, start.latitude],
                 [destination.longitude, destination.latitude],
             ],
-            options: .init(profileParams: .init(restrictions: .init(profile: profile)))
+            options: .init(
+                profileParams: .init(restrictions: .init(profile: profile)),
+                avoidPolygons: ORSDirectionsRequest.AvoidPolygons(around: avoiding)
+            )
         )
         request.httpBody = try JSONEncoder().encode(body)
 
@@ -388,6 +395,45 @@ enum RouteService {
         return best
     }
 
+    /// Weglänge (Meter) vom Routen-Start bis zur Projektion der Koordinate
+    /// auf das nächstgelegene Routensegment. Für die Reihenfolge und die
+    /// "nach X m"-Angabe der Barrieren in der Routen-Liste.
+    static func distanceAlongRoute(
+        to coordinate: CLLocationCoordinate2D,
+        on route: ActiveRoute
+    ) -> CLLocationDistance {
+        let coords = route.coordinates
+        guard coords.count >= 2 else { return 0 }
+
+        // Lokales Ost/Nord-Meter-Koordinatensystem um die Koordinate:
+        // sie selbst liegt im Ursprung (0,0).
+        let points = coords.map { metersEastNorth(of: $0, relativeTo: coordinate) }
+
+        // prefix[i] = Weglänge vom Start bis Punkt i.
+        var prefix = [Double](repeating: 0, count: points.count)
+        for i in 1..<points.count {
+            prefix[i] = prefix[i - 1] + simd_distance(points[i - 1], points[i])
+        }
+
+        var bestDistanceToPath = Double.greatestFiniteMagnitude
+        var bestAlong = 0.0
+
+        for i in 0..<(points.count - 1) {
+            let a = points[i]
+            let b = points[i + 1]
+            let ab = b - a
+            let lengthSquared = simd_length_squared(ab)
+            let t = lengthSquared > 0 ? min(1, max(0, simd_dot(-a, ab) / lengthSquared)) : 0
+            let projected = a + t * ab
+            let distanceToPath = simd_length(projected)
+            if distanceToPath < bestDistanceToPath {
+                bestDistanceToPath = distanceToPath
+                bestAlong = prefix[i] + simd_distance(a, projected)
+            }
+        }
+        return bestAlong
+    }
+
     // MARK: - Helpers
 
     private static func remainingTime(for remainingDistance: Double, on route: ActiveRoute) -> TimeInterval {
@@ -440,9 +486,51 @@ private struct ORSDirectionsRequest: Encodable {
 
     struct Options: Encodable {
         let profileParams: ProfileParams
+        /// GeoJSON-Sperrflächen um zu umgehende Barrieren (nil = keine).
+        let avoidPolygons: AvoidPolygons?
 
         enum CodingKeys: String, CodingKey {
             case profileParams = "profile_params"
+            case avoidPolygons = "avoid_polygons"
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(profileParams, forKey: .profileParams)
+            try container.encodeIfPresent(avoidPolygons, forKey: .avoidPolygons)
+        }
+    }
+
+    /// GeoJSON-MultiPolygon: ein kleines Achteck (~15 m Radius) um jede zu
+    /// umgehende Barriere, damit ORS die Stelle nicht auf der Route hat.
+    struct AvoidPolygons: Encodable {
+        let type = "MultiPolygon"
+        /// [[Ring: [[lng, lat], …, erster Punkt wiederholt]]] je Barriere.
+        let coordinates: [[[[Double]]]]
+
+        /// Radius der Sperrfläche um eine Barriere in Metern.
+        static let clearanceRadiusM = 15.0
+
+        init?(around centers: [CLLocationCoordinate2D]) {
+            guard !centers.isEmpty else { return nil }
+            coordinates = centers.map { [Self.octagonRing(around: $0)] }
+        }
+
+        /// Geschlossener Achteck-Ring um die Koordinate (GeoJSON-Reihenfolge
+        /// [Längengrad, Breitengrad], erster Punkt am Ende wiederholt).
+        private static func octagonRing(around center: CLLocationCoordinate2D) -> [[Double]] {
+            let metersPerDegreeLatitude = 111_320.0
+            let metersPerDegreeLongitude = metersPerDegreeLatitude * cos(center.latitude * .pi / 180)
+
+            var ring: [[Double]] = (0..<8).map { i in
+                let angle = Double(i) / 8 * 2 * .pi
+                return [
+                    center.longitude + clearanceRadiusM * cos(angle) / metersPerDegreeLongitude,
+                    center.latitude + clearanceRadiusM * sin(angle) / metersPerDegreeLatitude,
+                ]
+            }
+            ring.append(ring[0])
+            return ring
         }
     }
 

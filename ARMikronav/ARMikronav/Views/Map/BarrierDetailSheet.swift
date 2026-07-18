@@ -3,16 +3,26 @@
 //
 // Detail-Bottom-Sheet für eine Barriere.
 // Zeigt Typ + Icon, formatierten Wert gegen persönliches Limit
-// und eine Warum-Erklärung. AR-Button ist bis Task A2 deaktiviert.
+// und eine Warum-Erklärung. Während einer aktiven Navigation (Liste
+// "Barrieren auf der Route") zusätzlich: "Heute nicht machbar?" mit
+// Alternativroute – für Barrieren, die je nach Tagesform (z. B. Hitze,
+// Erschöpfung) gerade nicht bewältigbar sind, obwohl sie es sonst wären.
+// AR-Button ist bis Task A2 deaktiviert.
 
 import SwiftUI
 
 struct BarrierDetailSheet: View {
     let barrier: Barrier
     let profile: UserProfile
+    /// Berechnet eine Route, die diese Barriere umgeht (nur während einer
+    /// aktiven Navigation gesetzt). Rückgabe `true` = Route gefunden.
+    var onFindAlternative: (@MainActor () async -> Bool)? = nil
 
+    @Environment(\.dismiss) private var dismiss
     @State private var showingFeedback = false
     @State private var feedbackSubmitted = false
+    @State private var isFindingAlternative = false
+    @State private var alternativeFailed = false
 
     var body: some View {
         ScrollView {
@@ -20,6 +30,7 @@ struct BarrierDetailSheet: View {
                 header
                 comparison
                 explanation
+                alternativeSection
                 sourceFooter
                 arButton
                 feedbackButton
@@ -86,6 +97,65 @@ struct BarrierDetailSheet: View {
                 .foregroundStyle(.secondary)
             Text(explanationText)
                 .font(.body)
+        }
+    }
+
+    /// Tagesform-Sektion während einer aktiven Navigation: auch eine sonst
+    /// passierbare Barriere kann heute zu viel sein (Hitze, wenig Kraft).
+    /// Der Button berechnet die Route neu, so dass sie die Stelle umgeht.
+    @ViewBuilder
+    private var alternativeSection: some View {
+        if let onFindAlternative {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Heute nicht machbar?")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text("Nicht jeder Tag ist gleich: Bei Hitze oder wenig Kraft kann eine Barriere zu viel sein, die sonst kein Problem ist. Lass dir eine Route berechnen, die diese Stelle umgeht.")
+                    .font(.body)
+
+                Button {
+                    findAlternative(onFindAlternative)
+                } label: {
+                    HStack(spacing: 8) {
+                        if isFindingAlternative {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "arrow.triangle.branch")
+                        }
+                        Text(isFindingAlternative ? "Alternativroute wird berechnet…" : "Alternativroute anzeigen")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(isFindingAlternative)
+
+                if alternativeFailed {
+                    Label(
+                        "Keine Alternativroute gefunden – diese Stelle lässt sich aktuell nicht umgehen.",
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .font(.footnote)
+                    .foregroundStyle(AppColor.Status.limitedText)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    private func findAlternative(_ action: @escaping @MainActor () async -> Bool) {
+        alternativeFailed = false
+        isFindingAlternative = true
+        Task { @MainActor in
+            let success = await action()
+            isFindingAlternative = false
+            if success {
+                dismiss()
+            } else {
+                alternativeFailed = true
+            }
         }
     }
 
