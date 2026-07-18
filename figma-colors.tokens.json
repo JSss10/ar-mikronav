@@ -1,0 +1,114 @@
+{
+  "violet": {
+    "$description": "Violett-Palette (Styleguide §2.1) — Referenzstufen, mode-unabhängig",
+    "50": { "$type": "color", "$value": "#F5F3FF" },
+    "100": { "$type": "color", "$value": "#EDE9FE" },
+    "300": { "$type": "color", "$value": "#C4B5FD" },
+    "500": { "$type": "color", "$value": "#8B5CF6" },
+    "600": { "$type": "color", "$value": "#7C3AED" },
+    "700": { "$type": "color", "$value": "#6D28D9" },
+    "800": { "$type": "color", "$value": "#5B21B6" },
+    "900": { "$type": "color", "$value": "#4C1D95" },
+    "950": { "$type": "color", "$value": "#2E1065" }
+  },
+  "light": {
+    "$description": "Semantische Tokens (Styleguide §2.2/§2.3) — Mode: Light",
+    "background": {
+      "primary": { "$type": "color", "$value": "#FFFFFF", "$description": "App-Hintergrund" }
+    },
+    "surface": {
+      "raised": { "$type": "color", "$value": "#FAF9FC", "$description": "Karten, Sheets, angehobene Flächen" }
+    },
+    "text": {
+      "primary": { "$type": "color", "$value": "#1A1523", "$description": "Fliesstext, Titel (17,9:1)" },
+      "secondary": { "$type": "color", "$value": "#524A5E", "$description": "Metadaten, Hinweise (8,4:1)" }
+    },
+    "accent": {
+      "primary": { "$type": "color", "$value": "{violet.800}", "$description": "Buttons, Links, aktive Zustände (9,0:1)" },
+      "pressed": { "$type": "color", "$value": "{violet.900}", "$description": "Gedrückte Zustände (10,9:1)" },
+      "on-accent": { "$type": "color", "$value": "#FFFFFF", "$description": "Text/Icon auf accent.primary" }
+    },
+    "focus": {
+      "ring": { "$type": "color", "$value": "{violet.700}", "$description": "Fokusindikator, 3-pt-Ring (7,1:1)" }
+    },
+    "scrim": {
+      "ar": { "$type": "color", "$value": "{violet.950}", "$description": "AR-Label-Hintergrund, Deckkraft ≥ 93 % (draussen 100 %)" }
+    },
+    "border": {
+      "functional": { "$type": "color", "$value": "#8E8699", "$description": "Eingabefelder, funktionale Ränder (≥ 3:1)" },
+      "decorative": { "$type": "color", "$value": "#DDD8E4", "$description": "Dekorative Trennlinien ohne Funktionsinformation" }
+    },
+    "status": {
+      "open": {
+        "text": { "$type": "color", "$value": "#14532D", "$description": "«Zugänglich» — Form: Kreis, Symbol: Häkchen" },
+        "fill": { "$type": "color", "$value": "#DCFCE7" },
+        "icon": { "$type": "color", "$value": "#15803D" }
+      },
+      "limited": {
+        "text": { "$type": "color", "$value": "#78350F", "$description": "«Eingeschränkt» — Form: Dreieck, Symbol: Ausrufezeichen" },
+        "fill": { "$type": "color", "$value": "#FEF3C7" },
+        "icon": { "$type": "color", "$value": "#B45309" }
+      },
+      "blocked": {
+        "text": { "$type": "color", "$value": "#7F1D1D", "$description": "«Barriere» — Form: Achteck, Symbol: Kreuz" },
+        "fill": { "$type": "color", "$value": "#FEE2E2" },
+        "icon": { "$type": "color", "$value": "#DC2626" }
+      },
+      "unknown": {
+        "text": { "$type": "color", "$value": "{light.text.secondary}", "$description": "«Unbekannt» — Form: Kreis, Symbol: Fragezeichen" },
+        "fill": { "$type": "color", "$value": "{light.surface.raised}" },
+        "icon": { "$type": "color", "$value": "{light.text.secondary}" }
+      }
+    }
+  },
+  "dark": {
+    "$description": "Semantische Tokens (Styleguide §2.2/§2.3) — Mode: Dark (nie reines Schwarz)",
+    "background": {
+      "primary": { "$type": "color", "$value": "#141019", "$description": "App-Hintergrund" }
+    },
+    "surface": {
+      "raised": { "$type": "color", "$value": "#1E1830", "$description": "Karten, Sheets, angehobene Flächen" }
+    },
+    "text": {
+      "primary": { "$type": "color", "$value": "#F4F1FA", "$description": "Fliesstext, Titel" },
+      "secondary": { "$type": "color", "$value": "#B3ACC4", "$description": "Metadaten, Hinweise" }
+    },
+    "accent": {
+      "primary": { "$type": "color", "$value": "{violet.300}", "$description": "Buttons, Links, aktive Zustände" },
+      "pressed": { "$type": "color", "$value": "#DDD6FE", "$description": "Gedrückte Zustände" },
+      "on-accent": { "$type": "color", "$value": "{violet.950}", "$description": "Text/Icon auf accent.primary" }
+    },
+    "focus": {
+      "ring": { "$type": "color", "$value": "{violet.300}", "$description": "Fokusindikator, 3-pt-Ring" }
+    },
+    "scrim": {
+      "ar": { "$type": "color", "$value": "{violet.950}", "$description": "AR-Label-Hintergrund, Deckkraft ≥ 93 % (draussen 100 %)" }
+    },
+    "border": {
+      "functional": { "$type": "color", "$value": "#8A80A3", "$description": "Eingabefelder, funktionale Ränder (≥ 3:1)" },
+      "decorative": { "$type": "color", "$value": "#3D3552", "$description": "Dekorative Trennlinien ohne Funktionsinformation" }
+    },
+    "status": {
+      "open": {
+        "text": { "$type": "color", "$value": "#BBF7D0", "$description": "«Zugänglich» — Form: Kreis, Symbol: Häkchen" },
+        "fill": { "$type": "color", "$value": "#14532D" },
+        "icon": { "$type": "color", "$value": "#15803D" }
+      },
+      "limited": {
+        "text": { "$type": "color", "$value": "#FDE68A", "$description": "«Eingeschränkt» — Form: Dreieck, Symbol: Ausrufezeichen" },
+        "fill": { "$type": "color", "$value": "#78350F" },
+        "icon": { "$type": "color", "$value": "#B45309" }
+      },
+      "blocked": {
+        "text": { "$type": "color", "$value": "#FEE2E2", "$description": "«Barriere» — Form: Achteck, Symbol: Kreuz" },
+        "fill": { "$type": "color", "$value": "#7F1D1D" },
+        "icon": { "$type": "color", "$value": "#DC2626" }
+      },
+      "unknown": {
+        "text": { "$type": "color", "$value": "{dark.text.secondary}", "$description": "«Unbekannt» — Form: Kreis, Symbol: Fragezeichen" },
+        "fill": { "$type": "color", "$value": "{dark.surface.raised}" },
+        "icon": { "$type": "color", "$value": "{dark.text.secondary}" }
+      }
+    }
+  }
+}
