@@ -30,6 +30,11 @@ struct MapView: View {
     @State private var showingFilter = false
     @State private var showingSearch = false
     @State private var showingSavedPlaces = false
+    /// Listenansicht der Barrieren entlang der aktiven Route.
+    @State private var showingRouteBarriers = false
+    /// In der Barrieren-Liste angetippte Barriere: wird nach dem Schliessen
+    /// der Liste als Detail-Sheet geöffnet (zwei Sheets nicht gleichzeitig).
+    @State private var pendingListBarrier: Barrier?
     /// Auf der Karte markierter gespeicherter Ort (aus dem Bookmark-Sheet).
     @State private var selectedSavedPlace: SavedPlace?
 
@@ -200,6 +205,9 @@ struct MapView: View {
                     route: route,
                     progress: viewModel.routeProgress,
                     maneuver: viewModel.nextManeuver,
+                    barrierCount: routeBarrierCount,
+                    criticalCount: criticalRouteBarrierCount,
+                    onShowBarriers: { showingRouteBarriers = true },
                     onStop: { viewModel.stopNavigation() }
                 )
                 .padding(.leading)
@@ -224,7 +232,28 @@ struct MapView: View {
             }
         }
         .sheet(item: $selectedBarrier) { barrier in
-            BarrierDetailSheet(barrier: barrier, profile: profile)
+            BarrierDetailSheet(
+                barrier: barrier,
+                profile: profile,
+                onFindAlternative: alternativeAction(for: barrier)
+            )
+        }
+        // Barrieren-Liste zur aktiven Route; Zeilen-Tap merkt die Barriere
+        // vor und öffnet ihr Detail-Sheet, sobald die Liste geschlossen ist.
+        .sheet(isPresented: $showingRouteBarriers, onDismiss: {
+            if let barrier = pendingListBarrier {
+                pendingListBarrier = nil
+                selectedBarrier = barrier
+            }
+        }) {
+            RouteBarrierListSheet(
+                entries: viewModel.routeBarrierEntries,
+                profile: profile,
+                avoidedBarrierIds: viewModel.avoidedBarrierIds
+            ) { barrier in
+                pendingListBarrier = barrier
+                showingRouteBarriers = false
+            }
         }
         .sheet(item: $selectedPOI) { poi in
             POIDetailSheet(
@@ -418,6 +447,38 @@ struct MapView: View {
         withAnimation(.easeInOut) {
             cameraPosition = .rect(rect.insetBy(dx: -padding, dy: -padding))
         }
+    }
+
+    /// Barrieren im Korridor der aktiven Route (für die Zähler-Zeile im
+    /// Routen-Panel).
+    private var routeBarrierCount: Int {
+        viewModel.routeBarrierEntries.count
+    }
+
+    /// Davon fürs eigene Profil kritisch (shouldWarn).
+    private var criticalRouteBarrierCount: Int {
+        viewModel.routeBarrierEntries
+            .filter { shouldWarn(barrier: $0.barrier, profile: profile) }
+            .count
+    }
+
+    /// Alternativroute-Aktion fürs Barrieren-Detail – nur während einer
+    /// aktiven Navigation, sonst nil (Sektion bleibt ausgeblendet).
+    private func alternativeAction(for barrier: Barrier) -> (@MainActor () async -> Bool)? {
+        guard viewModel.activeRoute != nil else { return nil }
+        return { await findAlternativeRoute(avoiding: barrier) }
+    }
+
+    /// "Alternativroute anzeigen" aus dem Barrieren-Detail: Route neu
+    /// berechnen, so dass sie die Barriere umgeht (Tagesform, z. B. Hitze),
+    /// und bei Erfolg auf den neuen Routenverlauf zoomen.
+    @MainActor
+    private func findAlternativeRoute(avoiding barrier: Barrier) async -> Bool {
+        let success = await viewModel.findAlternativeRoute(avoiding: barrier, profile: profile)
+        if success, let route = viewModel.activeRoute {
+            fitCamera(to: route)
+        }
+        return success
     }
 
     /// Gespeicherten Ort auf der Karte markieren und ansteuern.

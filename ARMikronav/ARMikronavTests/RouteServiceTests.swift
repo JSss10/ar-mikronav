@@ -172,6 +172,56 @@ struct RouteServiceTests {
         #expect(maneuver?.direction == .left)
     }
 
+    // MARK: - Distanz entlang der Route (Barrieren-Liste)
+
+    /// Punkt auf halber Strecke: ~100 m ab Start entlang der Route.
+    @Test func distanceAlongRouteAtMidpoint() {
+        let route = straightRoute
+        let midpoint = CLLocationCoordinate2D(latitude: 47.370899, longitude: 8.5400)
+
+        let along = RouteService.distanceAlongRoute(to: midpoint, on: route)
+
+        #expect(abs(along - 100) < 5)
+    }
+
+    /// Punkt neben der Route: zählt die Weglänge bis zur Projektion auf
+    /// das nächstgelegene Segment, nicht die Luftlinie.
+    @Test func distanceAlongRouteSnapsOffPathPoint() {
+        let route = straightRoute
+        // ~20 m östlich des Streckenmittelpunkts.
+        let offPath = CLLocationCoordinate2D(latitude: 47.370899, longitude: 8.540265)
+
+        let along = RouteService.distanceAlongRoute(to: offPath, on: route)
+
+        #expect(abs(along - 100) < 5)
+    }
+
+    /// Knick-Route: Punkt auf dem zweiten Segment liegt hinter dem ganzen
+    /// ersten Segment (~100 m) plus Anteil des zweiten (~50 m).
+    @Test func distanceAlongRouteFollowsMultiSegmentRoute() {
+        let route = cornerRoute
+        // ~50 m östlich des Knicks, auf dem zweiten Segment.
+        let onSecondSegment = CLLocationCoordinate2D(latitude: 47.370899, longitude: 8.540663)
+
+        let along = RouteService.distanceAlongRoute(to: onSecondSegment, on: route)
+
+        #expect(abs(along - 150) < 8)
+    }
+
+    /// Start- und Zielpunkt liefern 0 bzw. die volle Routenlänge.
+    @Test func distanceAlongRouteAtEndpoints() {
+        let route = straightRoute
+
+        let atStart = RouteService.distanceAlongRoute(
+            to: CLLocationCoordinate2D(latitude: 47.3700, longitude: 8.5400),
+            on: route
+        )
+        let atEnd = RouteService.distanceAlongRoute(to: route.destinationCoordinate, on: route)
+
+        #expect(atStart < 2)
+        #expect(abs(atEnd - 200) < 5)
+    }
+
     /// Route ~100 m Norden, dann 90° nach Osten (~100 m).
     private var cornerRoute: ActiveRoute {
         let corner = CLLocationCoordinate2D(latitude: 47.370899, longitude: 8.5400)
