@@ -11,12 +11,19 @@
 
 import SwiftUI
 
+/// Kapselt die Alternativroute-Aktion als nominalen Sendable-Typ statt als
+/// nackten Funktionswert: Beim Übergeben eines optionalen Funktionswerts
+/// meldet der Compiler sonst fälschlich ein Sendable-Datenrennen.
+struct AlternativeRouteAction: Sendable {
+    let run: @MainActor @Sendable () async -> Bool
+}
+
 struct BarrierDetailSheet: View {
     let barrier: Barrier
     let profile: UserProfile
     /// Berechnet eine Route, die diese Barriere umgeht (nur während einer
     /// aktiven Navigation gesetzt). Rückgabe `true` = Route gefunden.
-    var onFindAlternative: (@MainActor @Sendable () async -> Bool)? = nil
+    var onFindAlternative: AlternativeRouteAction? = nil
 
     @Environment(\.dismiss) private var dismiss
     @State private var showingFeedback = false
@@ -145,11 +152,11 @@ struct BarrierDetailSheet: View {
         }
     }
 
-    private func findAlternative(_ action: @escaping @MainActor @Sendable () async -> Bool) {
+    private func findAlternative(_ action: AlternativeRouteAction) {
         alternativeFailed = false
         isFindingAlternative = true
         Task { @MainActor in
-            let success = await action()
+            let success = await action.run()
             isFindingAlternative = false
             if success {
                 dismiss()
