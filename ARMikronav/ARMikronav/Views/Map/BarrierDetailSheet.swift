@@ -16,7 +16,7 @@ struct BarrierDetailSheet: View {
     let profile: UserProfile
     /// Berechnet eine Route, die diese Barriere umgeht (nur während einer
     /// aktiven Navigation gesetzt). Rückgabe `true` = Route gefunden.
-    var onFindAlternative: (@MainActor () async -> Bool)? = nil
+    var onFindAlternative: (@MainActor @Sendable () async -> Bool)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @State private var showingFeedback = false
@@ -145,7 +145,7 @@ struct BarrierDetailSheet: View {
         }
     }
 
-    private func findAlternative(_ action: @escaping @MainActor () async -> Bool) {
+    private func findAlternative(_ action: @escaping @MainActor @Sendable () async -> Bool) {
         alternativeFailed = false
         isFindingAlternative = true
         Task { @MainActor in
