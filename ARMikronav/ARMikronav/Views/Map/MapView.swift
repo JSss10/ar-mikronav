@@ -466,7 +466,7 @@ struct MapView: View {
     /// aktiven Navigation, sonst nil (Sektion bleibt ausgeblendet).
     private func alternativeAction(for barrier: Barrier) -> (@MainActor @Sendable () async -> Bool)? {
         guard viewModel.activeRoute != nil else { return nil }
-        return { await findAlternativeRoute(avoiding: barrier) }
+        return { @MainActor @Sendable in await findAlternativeRoute(avoiding: barrier) }
     }
 
     /// "Alternativroute anzeigen" aus dem Barrieren-Detail: Route neu
