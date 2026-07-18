@@ -1,0 +1,192 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="1534" viewBox="0 0 1240 1534">
+<rect width="1240" height="1534" fill="#FFFFFF"/>
+<text x="60" y="78" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="28" font-weight="bold" fill="#1A1523" text-anchor="start">Farbsystem — AR-Mikronavigation</text>
+<text x="60" y="104" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="14" font-weight="normal" fill="#524A5E" text-anchor="start">Styleguide v1.0  ·  WCAG 2.2, Konformitätsziel AAA  ·  Tokens: AppColor (iOS) / figma-colors.tokens.json</text>
+<text x="60" y="162" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="18" font-weight="bold" fill="#1A1523" text-anchor="start">§2.1  Violett-Palette</text>
+<rect x="60.0" y="184" width="113.77777777777777" height="84" fill="#F5F3FF" rx="10" stroke="#DDD8E4" stroke-width="1"/>
+<text x="70.0" y="208" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13" font-weight="bold" fill="#1A1523" text-anchor="start">50</text>
+<text x="116.88888888888889" y="290" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12" font-weight="normal" fill="#524A5E" text-anchor="middle">#F5F3FF</text>
+<rect x="185.77777777777777" y="184" width="113.77777777777777" height="84" fill="#EDE9FE" rx="10" stroke="#DDD8E4" stroke-width="1"/>
+<text x="195.77777777777777" y="208" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13" font-weight="bold" fill="#1A1523" text-anchor="start">100</text>
+<text x="242.66666666666666" y="290" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12" font-weight="normal" fill="#524A5E" text-anchor="middle">#EDE9FE</text>
+<rect x="311.55555555555554" y="184" width="113.77777777777777" height="84" fill="#C4B5FD" rx="10"/>
+<text x="321.55555555555554" y="208" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13" font-weight="bold" fill="#1A1523" text-anchor="start">300</text>
+<text x="368.44444444444446" y="290" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12" font-weight="normal" fill="#524A5E" text-anchor="middle">#C4B5FD</text>
+<rect x="437.3333333333333" y="184" width="113.77777777777777" height="84" fill="#8B5CF6" rx="10"/>
+<text x="447.3333333333333" y="208" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="start">500</text>
+<text x="494.2222222222222" y="290" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12" font-weight="normal" fill="#524A5E" text-anchor="middle">#8B5CF6</text>
+<rect x="563.1111111111111" y="184" width="113.77777777777777" height="84" fill="#7C3AED" rx="10"/>
+<text x="573.1111111111111" y="208" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="start">600</text>
+<text x="620.0" y="290" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12" font-weight="normal" fill="#524A5E" text-anchor="middle">#7C3AED</text>
+<rect x="688.8888888888889" y="184" width="113.77777777777777" height="84" fill="#6D28D9" rx="10"/>
+<text x="698.8888888888889" y="208" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="start">700</text>
+<text x="745.7777777777778" y="290" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12" font-weight="normal" fill="#524A5E" text-anchor="middle">#6D28D9</text>
+<rect x="814.6666666666666" y="184" width="113.77777777777777" height="84" fill="#5B21B6" rx="10"/>
+<text x="824.6666666666666" y="208" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="start">800</text>
+<text x="871.5555555555555" y="290" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12" font-weight="normal" fill="#524A5E" text-anchor="middle">#5B21B6</text>
+<rect x="940.4444444444443" y="184" width="113.77777777777777" height="84" fill="#4C1D95" rx="10"/>
+<text x="950.4444444444443" y="208" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="start">900</text>
+<text x="997.3333333333333" y="290" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12" font-weight="normal" fill="#524A5E" text-anchor="middle">#4C1D95</text>
+<rect x="1066.2222222222222" y="184" width="113.77777777777777" height="84" fill="#2E1065" rx="10"/>
+<text x="1076.2222222222222" y="208" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="start">950</text>
+<text x="1123.111111111111" y="290" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12" font-weight="normal" fill="#524A5E" text-anchor="middle">#2E1065</text>
+<text x="60" y="342" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="18" font-weight="bold" fill="#1A1523" text-anchor="start">§2.2  Semantische Tokens</text>
+<rect x="60.0" y="366" width="548.0" height="634" fill="#FFFFFF" rx="16" stroke="#DDD8E4" stroke-width="1.5"/>
+<text x="80.0" y="400" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="15" font-weight="bold" fill="#1A1523" text-anchor="start">Light</text>
+<rect x="80.0" y="416" width="40" height="40" fill="#FFFFFF" rx="8" stroke="#DDD8E4" stroke-width="1"/>
+<text x="134.0" y="433" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#1A1523" text-anchor="start">background/primary</text>
+<text x="134.0" y="450" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="start">App-Hintergrund</text>
+<text x="588.0" y="442" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#524A5E" text-anchor="end">#FFFFFF</text>
+<rect x="80.0" y="468" width="40" height="40" fill="#FAF9FC" rx="8" stroke="#DDD8E4" stroke-width="1"/>
+<text x="134.0" y="485" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#1A1523" text-anchor="start">surface/raised</text>
+<text x="134.0" y="502" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="start">Karten, Sheets</text>
+<text x="588.0" y="494" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#524A5E" text-anchor="end">#FAF9FC</text>
+<rect x="80.0" y="520" width="40" height="40" fill="#1A1523" rx="8"/>
+<text x="134.0" y="537" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#1A1523" text-anchor="start">text/primary</text>
+<text x="134.0" y="554" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="start">Fliesstext, Titel</text>
+<text x="588.0" y="546" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#524A5E" text-anchor="end">#1A1523</text>
+<rect x="80.0" y="572" width="40" height="40" fill="#524A5E" rx="8"/>
+<text x="134.0" y="589" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#1A1523" text-anchor="start">text/secondary</text>
+<text x="134.0" y="606" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="start">Metadaten, Hinweise</text>
+<text x="588.0" y="598" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#524A5E" text-anchor="end">#524A5E</text>
+<rect x="80.0" y="624" width="40" height="40" fill="#5B21B6" rx="8"/>
+<text x="134.0" y="641" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#1A1523" text-anchor="start">accent/primary</text>
+<text x="134.0" y="658" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="start">Buttons, Links, aktiv</text>
+<text x="588.0" y="650" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#524A5E" text-anchor="end">#5B21B6</text>
+<rect x="80.0" y="676" width="40" height="40" fill="#4C1D95" rx="8"/>
+<text x="134.0" y="693" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#1A1523" text-anchor="start">accent/pressed</text>
+<text x="134.0" y="710" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="start">Gedrückte Zustände</text>
+<text x="588.0" y="702" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#524A5E" text-anchor="end">#4C1D95</text>
+<rect x="80.0" y="728" width="40" height="40" fill="#FFFFFF" rx="8" stroke="#DDD8E4" stroke-width="1"/>
+<text x="134.0" y="745" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#1A1523" text-anchor="start">accent/on-accent</text>
+<text x="134.0" y="762" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="start">Text auf Akzent</text>
+<text x="588.0" y="754" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#524A5E" text-anchor="end">#FFFFFF</text>
+<rect x="80.0" y="780" width="40" height="40" fill="#6D28D9" rx="8"/>
+<text x="134.0" y="797" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#1A1523" text-anchor="start">focus/ring</text>
+<text x="134.0" y="814" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="start">Fokusindikator (3 pt)</text>
+<text x="588.0" y="806" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#524A5E" text-anchor="end">#6D28D9</text>
+<rect x="80.0" y="832" width="40" height="40" fill="#2E1065" rx="8"/>
+<text x="134.0" y="849" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#1A1523" text-anchor="start">scrim/ar</text>
+<text x="134.0" y="866" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="start">AR-Scrim (>= 93 %)</text>
+<text x="588.0" y="858" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#524A5E" text-anchor="end">#2E1065</text>
+<rect x="80.0" y="884" width="40" height="40" fill="#8E8699" rx="8"/>
+<text x="134.0" y="901" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#1A1523" text-anchor="start">border/functional</text>
+<text x="134.0" y="918" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="start">Eingabefelder, Ränder</text>
+<text x="588.0" y="910" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#524A5E" text-anchor="end">#8E8699</text>
+<rect x="80.0" y="936" width="40" height="40" fill="#DDD8E4" rx="8"/>
+<text x="134.0" y="953" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#1A1523" text-anchor="start">border/decorative</text>
+<text x="134.0" y="970" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="start">Trennlinien</text>
+<text x="588.0" y="962" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#524A5E" text-anchor="end">#DDD8E4</text>
+<rect x="632.0" y="366" width="548.0" height="634" fill="#141019" rx="16" stroke="#3D3552" stroke-width="1.5"/>
+<text x="652.0" y="400" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="15" font-weight="bold" fill="#F4F1FA" text-anchor="start">Dark</text>
+<rect x="652.0" y="416" width="40" height="40" fill="#141019" rx="8" stroke="#3D3552" stroke-width="1"/>
+<text x="706.0" y="433" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#F4F1FA" text-anchor="start">background/primary</text>
+<text x="706.0" y="450" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="start">App-Hintergrund</text>
+<text x="1160.0" y="442" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">#141019</text>
+<rect x="652.0" y="468" width="40" height="40" fill="#1E1830" rx="8" stroke="#3D3552" stroke-width="1"/>
+<text x="706.0" y="485" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#F4F1FA" text-anchor="start">surface/raised</text>
+<text x="706.0" y="502" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="start">Karten, Sheets</text>
+<text x="1160.0" y="494" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">#1E1830</text>
+<rect x="652.0" y="520" width="40" height="40" fill="#F4F1FA" rx="8"/>
+<text x="706.0" y="537" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#F4F1FA" text-anchor="start">text/primary</text>
+<text x="706.0" y="554" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="start">Fliesstext, Titel</text>
+<text x="1160.0" y="546" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">#F4F1FA</text>
+<rect x="652.0" y="572" width="40" height="40" fill="#B3ACC4" rx="8"/>
+<text x="706.0" y="589" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#F4F1FA" text-anchor="start">text/secondary</text>
+<text x="706.0" y="606" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="start">Metadaten, Hinweise</text>
+<text x="1160.0" y="598" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">#B3ACC4</text>
+<rect x="652.0" y="624" width="40" height="40" fill="#C4B5FD" rx="8"/>
+<text x="706.0" y="641" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#F4F1FA" text-anchor="start">accent/primary</text>
+<text x="706.0" y="658" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="start">Buttons, Links, aktiv</text>
+<text x="1160.0" y="650" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">#C4B5FD</text>
+<rect x="652.0" y="676" width="40" height="40" fill="#DDD6FE" rx="8"/>
+<text x="706.0" y="693" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#F4F1FA" text-anchor="start">accent/pressed</text>
+<text x="706.0" y="710" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="start">Gedrückte Zustände</text>
+<text x="1160.0" y="702" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">#DDD6FE</text>
+<rect x="652.0" y="728" width="40" height="40" fill="#2E1065" rx="8"/>
+<text x="706.0" y="745" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#F4F1FA" text-anchor="start">accent/on-accent</text>
+<text x="706.0" y="762" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="start">Text auf Akzent</text>
+<text x="1160.0" y="754" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">#2E1065</text>
+<rect x="652.0" y="780" width="40" height="40" fill="#C4B5FD" rx="8"/>
+<text x="706.0" y="797" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#F4F1FA" text-anchor="start">focus/ring</text>
+<text x="706.0" y="814" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="start">Fokusindikator (3 pt)</text>
+<text x="1160.0" y="806" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">#C4B5FD</text>
+<rect x="652.0" y="832" width="40" height="40" fill="#2E1065" rx="8"/>
+<text x="706.0" y="849" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#F4F1FA" text-anchor="start">scrim/ar</text>
+<text x="706.0" y="866" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="start">AR-Scrim (>= 93 %)</text>
+<text x="1160.0" y="858" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">#2E1065</text>
+<rect x="652.0" y="884" width="40" height="40" fill="#8A80A3" rx="8"/>
+<text x="706.0" y="901" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#F4F1FA" text-anchor="start">border/functional</text>
+<text x="706.0" y="918" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="start">Eingabefelder, Ränder</text>
+<text x="1160.0" y="910" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">#8A80A3</text>
+<rect x="652.0" y="936" width="40" height="40" fill="#3D3552" rx="8"/>
+<text x="706.0" y="953" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="13.5" font-weight="600" fill="#F4F1FA" text-anchor="start">border/decorative</text>
+<text x="706.0" y="970" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="start">Trennlinien</text>
+<text x="1160.0" y="962" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="12.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">#3D3552</text>
+<text x="60" y="1070" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="18" font-weight="bold" fill="#1A1523" text-anchor="start">§2.3  Status-Semantik  —  vierfach codiert: Farbe + Form + Symbol + Text</text>
+<rect x="60.0" y="1094" width="548.0" height="350" fill="#FFFFFF" rx="16" stroke="#DDD8E4" stroke-width="1.5"/>
+<text x="80.0" y="1128" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="15" font-weight="bold" fill="#1A1523" text-anchor="start">Light</text>
+<circle cx="100.0" cy="1170" r="17" fill="#15803D"/>
+<path d="M 92.35 1170.85 L 98.3 1176.8 L 108.5 1164.05" stroke="#FFFFFF" stroke-width="3.74" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="132.0" y="1150" width="176" height="40" fill="#DCFCE7" rx="20"/>
+<text x="220.0" y="1175" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="14" font-weight="600" fill="#14532D" text-anchor="middle">Zugänglich</text>
+<text x="588.0" y="1156" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="end">Text  #14532D</text>
+<text x="588.0" y="1172" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="end">Fill  #DCFCE7</text>
+<text x="588.0" y="1188" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="end">Icon  #15803D</text>
+<polygon points="100.0,1227 116.15,1256.75 83.85,1256.75" fill="#B45309" stroke-linejoin="round"/>
+<line x1="100.0" y1="1238.05" x2="100.0" y2="1248.25" stroke="#FFFFFF" stroke-width="3.4000000000000004" stroke-linecap="round"/>
+<circle cx="100.0" cy="1253.35" r="1.87" fill="#FFFFFF"/>
+<rect x="132.0" y="1224" width="176" height="40" fill="#FEF3C7" rx="20"/>
+<text x="220.0" y="1249" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="14" font-weight="600" fill="#78350F" text-anchor="middle">Eingeschränkt</text>
+<text x="588.0" y="1230" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="end">Text  #78350F</text>
+<text x="588.0" y="1246" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="end">Fill  #FEF3C7</text>
+<text x="588.0" y="1262" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="end">Icon  #B45309</text>
+<polygon points="115.7,1324.5 106.5,1333.7 93.5,1333.7 84.3,1324.5 84.3,1311.5 93.5,1302.3 106.5,1302.3 115.7,1311.5" fill="#DC2626"/>
+<line x1="93.54" y1="1311.54" x2="106.46" y2="1324.46" stroke="#FFFFFF" stroke-width="3.74" stroke-linecap="round"/>
+<line x1="93.54" y1="1324.46" x2="106.46" y2="1311.54" stroke="#FFFFFF" stroke-width="3.74" stroke-linecap="round"/>
+<rect x="132.0" y="1298" width="176" height="40" fill="#FEE2E2" rx="20"/>
+<text x="220.0" y="1323" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="14" font-weight="600" fill="#7F1D1D" text-anchor="middle">Barriere</text>
+<text x="588.0" y="1304" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="end">Text  #7F1D1D</text>
+<text x="588.0" y="1320" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="end">Fill  #FEE2E2</text>
+<text x="588.0" y="1336" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="end">Icon  #DC2626</text>
+<circle cx="100.0" cy="1392" r="17" fill="#524A5E"/>
+<text x="100.0" y="1399.14" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="21.25" font-weight="bold" fill="#FFFFFF" text-anchor="middle">?</text>
+<rect x="132.0" y="1372" width="176" height="40" fill="#FAF9FC" rx="20" stroke="#DDD8E4" stroke-width="1"/>
+<text x="220.0" y="1397" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="14" font-weight="600" fill="#524A5E" text-anchor="middle">Unbekannt</text>
+<text x="588.0" y="1378" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="end">Text  #524A5E</text>
+<text x="588.0" y="1394" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="end">Fill  #FAF9FC</text>
+<text x="588.0" y="1410" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#524A5E" text-anchor="end">Icon  #524A5E</text>
+<rect x="632.0" y="1094" width="548.0" height="350" fill="#141019" rx="16" stroke="#3D3552" stroke-width="1.5"/>
+<text x="652.0" y="1128" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="15" font-weight="bold" fill="#F4F1FA" text-anchor="start">Dark</text>
+<circle cx="672.0" cy="1170" r="17" fill="#15803D"/>
+<path d="M 664.35 1170.85 L 670.3 1176.8 L 680.5 1164.05" stroke="#FFFFFF" stroke-width="3.74" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="704.0" y="1150" width="176" height="40" fill="#14532D" rx="20"/>
+<text x="792.0" y="1175" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="14" font-weight="600" fill="#BBF7D0" text-anchor="middle">Zugänglich</text>
+<text x="1160.0" y="1156" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">Text  #BBF7D0</text>
+<text x="1160.0" y="1172" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">Fill  #14532D</text>
+<text x="1160.0" y="1188" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">Icon  #15803D</text>
+<polygon points="672.0,1227 688.15,1256.75 655.85,1256.75" fill="#B45309" stroke-linejoin="round"/>
+<line x1="672.0" y1="1238.05" x2="672.0" y2="1248.25" stroke="#FFFFFF" stroke-width="3.4000000000000004" stroke-linecap="round"/>
+<circle cx="672.0" cy="1253.35" r="1.87" fill="#FFFFFF"/>
+<rect x="704.0" y="1224" width="176" height="40" fill="#78350F" rx="20"/>
+<text x="792.0" y="1249" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="14" font-weight="600" fill="#FDE68A" text-anchor="middle">Eingeschränkt</text>
+<text x="1160.0" y="1230" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">Text  #FDE68A</text>
+<text x="1160.0" y="1246" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">Fill  #78350F</text>
+<text x="1160.0" y="1262" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">Icon  #B45309</text>
+<polygon points="687.7,1324.5 678.5,1333.7 665.5,1333.7 656.3,1324.5 656.3,1311.5 665.5,1302.3 678.5,1302.3 687.7,1311.5" fill="#DC2626"/>
+<line x1="665.54" y1="1311.54" x2="678.46" y2="1324.46" stroke="#FFFFFF" stroke-width="3.74" stroke-linecap="round"/>
+<line x1="665.54" y1="1324.46" x2="678.46" y2="1311.54" stroke="#FFFFFF" stroke-width="3.74" stroke-linecap="round"/>
+<rect x="704.0" y="1298" width="176" height="40" fill="#7F1D1D" rx="20"/>
+<text x="792.0" y="1323" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="14" font-weight="600" fill="#FEE2E2" text-anchor="middle">Barriere</text>
+<text x="1160.0" y="1304" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">Text  #FEE2E2</text>
+<text x="1160.0" y="1320" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">Fill  #7F1D1D</text>
+<text x="1160.0" y="1336" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">Icon  #DC2626</text>
+<circle cx="672.0" cy="1392" r="17" fill="#B3ACC4"/>
+<text x="672.0" y="1399.14" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="21.25" font-weight="bold" fill="#FFFFFF" text-anchor="middle">?</text>
+<rect x="704.0" y="1372" width="176" height="40" fill="#1E1830" rx="20" stroke="#3D3552" stroke-width="1"/>
+<text x="792.0" y="1397" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="14" font-weight="600" fill="#B3ACC4" text-anchor="middle">Unbekannt</text>
+<text x="1160.0" y="1378" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">Text  #B3ACC4</text>
+<text x="1160.0" y="1394" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">Fill  #1E1830</text>
+<text x="1160.0" y="1410" font-family="'SF Mono', 'JetBrains Mono', Menlo, monospace" font-size="11.5" font-weight="normal" fill="#B3ACC4" text-anchor="end">Icon  #B3ACC4</text>
+<text x="60" y="1494" font-family="Inter, -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif" font-size="12" font-weight="normal" fill="#524A5E" text-anchor="start">Statuszuordnung: POIAccessStatus (tint · textColor · fillColor · symbolName)  —  Icon-Farben identisch in Light/Dark (>= 3:1 Grafikkontrast)</text>
+</svg>
