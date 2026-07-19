@@ -85,9 +85,10 @@ cp Config.example.swift Config.swift
 ## Feldtest-Modus (Altstadt Zürich, 3 Testtage)
 
 Für die Feldtests wählen Testpersonen auf dem Welcome-Screen unter
-**„Feldtest starten"** eines von 12 vorgefertigten Testprofilen (Bild + Name,
-`Models/TestProfile.swift`) – keine Registrierung nötig. Danach durchlaufen sie
-das normale Onboarding mit ihren eigenen Angaben.
+**„Feldtest starten"** ihr vorgefertigtes Testprofil (Bild + Vorname,
+alphabetisch sortiert, `Models/TestProfile.swift`) – keine Registrierung
+nötig. Danach durchlaufen sie das normale Onboarding mit ihren eigenen
+Angaben (inkl. Nachname).
 
 **Datenerfassung (separat von den regulären App-Tabellen):**
 

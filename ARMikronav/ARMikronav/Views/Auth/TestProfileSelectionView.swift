@@ -27,7 +27,10 @@ struct TestProfileSelectionView: View {
                     .padding(.top, AppMetrics.Space.m)
 
                 LazyVGrid(columns: columns, spacing: AppMetrics.Space.m) {
-                    ForEach(TestProfile.all) { profile in
+                    // Alphabetisch nach Name sortiert.
+                    ForEach(TestProfile.all.sorted {
+                        $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+                    }) { profile in
                         profileCard(profile)
                     }
                 }

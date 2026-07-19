@@ -30,7 +30,11 @@ struct FieldTestSession: Codable {
     let sessionId: UUID
     let startedAt: Date
 
-    var displayName: String { "\(firstName) \(lastName)" }
+    var displayName: String {
+        [firstName, lastName]
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
 }
 
 enum FieldTestError: LocalizedError {

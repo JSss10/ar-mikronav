@@ -3,8 +3,7 @@
 //
 // Testpersonen registrieren sich nicht, sondern wählen eines dieser Profile
 // (Bild + Name) aus und durchlaufen danach nur noch das Onboarding mit ihren
-// eigenen Angaben. Die Namen sind fiktiv; die Zuordnung Testperson → Profil
-// notierst du dir am Testtag auf Papier.
+// eigenen Angaben. Den Nachnamen tragen sie dort selbst ein.
 
 import SwiftUI
 
@@ -20,7 +19,11 @@ struct TestProfile: Identifiable, Hashable {
 
     var id: String { key }
 
-    var displayName: String { "\(firstName) \(lastName)" }
+    var displayName: String {
+        [firstName, lastName]
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+    }
 
     var initials: String {
         let first = firstName.prefix(1)
@@ -36,20 +39,14 @@ struct TestProfile: Identifiable, Hashable {
         Color(hue: hue, saturation: 0.65, brightness: 0.55)
     }
 
-    /// Die 12 vorbereiteten Profile für die 3 Testtage.
+    /// Die 6 Testpersonen der 3 Testtage, alphabetisch sortiert.
     static let all: [TestProfile] = [
-        TestProfile(key: "tp01", firstName: "Luca",    lastName: "Brunner",  hue: 0.00),
-        TestProfile(key: "tp02", firstName: "Mia",     lastName: "Keller",   hue: 0.08),
-        TestProfile(key: "tp03", firstName: "Noah",    lastName: "Weber",    hue: 0.16),
-        TestProfile(key: "tp04", firstName: "Emma",    lastName: "Huber",    hue: 0.30),
-        TestProfile(key: "tp05", firstName: "Levin",   lastName: "Meier",    hue: 0.42),
-        TestProfile(key: "tp06", firstName: "Sofia",   lastName: "Baumann",  hue: 0.50),
-        TestProfile(key: "tp07", firstName: "Elias",   lastName: "Frei",     hue: 0.58),
-        TestProfile(key: "tp08", firstName: "Lina",    lastName: "Steiner",  hue: 0.66),
-        TestProfile(key: "tp09", firstName: "Jonas",   lastName: "Graf",     hue: 0.74),
-        TestProfile(key: "tp10", firstName: "Alessia", lastName: "Moser",    hue: 0.82),
-        TestProfile(key: "tp11", firstName: "David",   lastName: "Wyss",     hue: 0.90),
-        TestProfile(key: "tp12", firstName: "Nora",    lastName: "Bachmann", hue: 0.96)
+        TestProfile(key: "tp01", firstName: "Alessio", lastName: "", hue: 0.00),
+        TestProfile(key: "tp02", firstName: "Annette", lastName: "", hue: 0.13),
+        TestProfile(key: "tp03", firstName: "Edith",   lastName: "", hue: 0.30),
+        TestProfile(key: "tp04", firstName: "Livia",   lastName: "", hue: 0.47),
+        TestProfile(key: "tp05", firstName: "Taz",     lastName: "", hue: 0.62),
+        TestProfile(key: "tp06", firstName: "Ursula",  lastName: "", hue: 0.80)
     ]
 
     static func byKey(_ key: String) -> TestProfile? {
