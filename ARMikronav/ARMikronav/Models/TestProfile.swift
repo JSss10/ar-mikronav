@@ -40,13 +40,14 @@ struct TestProfile: Identifiable, Hashable {
     }
 
     /// Die 6 Testpersonen der 3 Testtage, alphabetisch sortiert.
+    /// Fehlt der Nachname, trägt ihn die Testperson im Onboarding selbst ein.
     static let all: [TestProfile] = [
-        TestProfile(key: "tp01", firstName: "Alessio", lastName: "", hue: 0.00),
-        TestProfile(key: "tp02", firstName: "Annette", lastName: "", hue: 0.13),
-        TestProfile(key: "tp03", firstName: "Edith",   lastName: "", hue: 0.30),
-        TestProfile(key: "tp04", firstName: "Livia",   lastName: "", hue: 0.47),
-        TestProfile(key: "tp05", firstName: "Taz",     lastName: "", hue: 0.62),
-        TestProfile(key: "tp06", firstName: "Ursula",  lastName: "", hue: 0.80)
+        TestProfile(key: "tp01", firstName: "Alessio", lastName: "",         hue: 0.00),
+        TestProfile(key: "tp02", firstName: "Annette", lastName: "Suter",    hue: 0.13),
+        TestProfile(key: "tp03", firstName: "Edith",   lastName: "Schwitter", hue: 0.30),
+        TestProfile(key: "tp04", firstName: "Livia",   lastName: "Künzler",  hue: 0.47),
+        TestProfile(key: "tp05", firstName: "Taz",     lastName: "",         hue: 0.62),
+        TestProfile(key: "tp06", firstName: "Ursula",  lastName: "Meier",    hue: 0.80)
     ]
 
     static func byKey(_ key: String) -> TestProfile? {
