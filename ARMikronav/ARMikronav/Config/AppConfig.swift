@@ -17,6 +17,23 @@ enum AppConfig {
     // Nach den 3 Testtagen auf `false` stellen.
     static let fieldTestModeEnabled = true
 
+    // MARK: - Feldtest Umfrage (Google Forms)
+    // Nach "Test beenden" öffnet die App automatisch diese Umfrage in Safari,
+    // mit dem Testprofil als vorausgefülltem Feld. Bleibt die URL leer, wird
+    // der Schritt übersprungen.
+    //
+    // So kommst du an beide Werte:
+    //   1. In Google Forms als erstes Feld eine Kurzantwort "Testprofil"
+    //      anlegen.
+    //   2. Drei-Punkte-Menü → "Link vorab ausfüllen" → im Feld Testprofil
+    //      einen Platzhalter (z. B. MUSTER) eintragen → "Link abrufen".
+    //   3. Der kopierte Link sieht so aus:
+    //      https://docs.google.com/forms/d/e/<FORM_ID>/viewform?usp=pp_url&entry.1234567890=MUSTER
+    //      → Teil bis "viewform" in `fieldTestSurveyURL`,
+    //      → "entry.1234567890" in `fieldTestSurveyProfileEntryID`.
+    static let fieldTestSurveyURL = ""
+    static let fieldTestSurveyProfileEntryID = ""
+
     // MARK: - Testgebiet Altstadt Zürich
     static let testAreaMinLat = 47.369
     static let testAreaMaxLat = 47.375

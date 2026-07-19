@@ -133,12 +133,44 @@ final class FieldTestService: ObservableObject {
             .execute()
     }
 
+    // MARK: - Umfrage nach dem Test
+
+    /// Baut den Google-Forms-Link mit dem Testprofil als vorausgefülltem
+    /// Feld (siehe AppConfig.fieldTestSurveyURL). nil, wenn keine Umfrage
+    /// konfiguriert oder kein Testlauf aktiv ist.
+    func surveyURL() -> URL? {
+        guard let session = activeSession,
+              !AppConfig.fieldTestSurveyURL.isEmpty,
+              var components = URLComponents(string: AppConfig.fieldTestSurveyURL) else {
+            return nil
+        }
+
+        var items = components.queryItems ?? []
+        items.append(URLQueryItem(name: "usp", value: "pp_url"))
+        if !AppConfig.fieldTestSurveyProfileEntryID.isEmpty {
+            items.append(URLQueryItem(
+                name: AppConfig.fieldTestSurveyProfileEntryID,
+                value: session.displayName
+            ))
+        }
+        components.queryItems = items
+        return components.url
+    }
+
     // MARK: - Testlauf beenden (Gerät für nächste Testperson zurücksetzen)
 
     /// Lädt offene Events hoch, meldet den anonymen User ab und löscht alle
     /// lokalen Zustände (Consent, Profil-Cache, Notification-Flag), damit die
-    /// nächste Testperson wieder ganz vorne startet.
+    /// nächste Testperson wieder ganz vorne startet. Ist eine Umfrage
+    /// konfiguriert, öffnet sich danach automatisch der Google-Forms-Link
+    /// mit dem Testprofil als vorausgefülltem Feld.
     func endTest() async {
+        // URL vor dem Zurücksetzen bauen – danach ist die Session weg.
+        let survey = surveyURL()
+
+        if survey != nil {
+            TestAnalyticsService.shared.track("survey_opened")
+        }
         TestAnalyticsService.shared.track("test_ended")
         await TestAnalyticsService.shared.flushNow()
 
@@ -150,6 +182,10 @@ final class FieldTestService: ObservableObject {
         NotificationPermissionStore.reset()
 
         try? await AuthService.shared.signOut()
+
+        if let survey {
+            await UIApplication.shared.open(survey)
+        }
     }
 
     // MARK: - Persistenz
