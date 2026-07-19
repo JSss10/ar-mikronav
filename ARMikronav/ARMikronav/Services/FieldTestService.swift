@@ -17,6 +17,7 @@
 // "Allow anonymous sign-ins" aktivieren (Authentication → Sign In / Providers).
 
 import Foundation
+import Combine
 import UIKit
 import Supabase
 
