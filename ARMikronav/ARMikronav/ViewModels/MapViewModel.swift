@@ -217,6 +217,11 @@ final class MapViewModel: ObservableObject {
             )
             activeRoute = route
             navigationTarget = poi
+            TestAnalyticsService.shared.track(
+                "route_started",
+                screen: "map",
+                properties: ["poi": poi.name, "distance_m": String(Int(route.totalDistanceM))]
+            )
             routeProgress = RouteProgress(
                 remainingDistanceM: route.totalDistanceM,
                 remainingTimeS: route.expectedTravelTimeS

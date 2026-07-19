@@ -9,6 +9,14 @@ import Foundation
 import CoreLocation
 
 enum AppConfig {
+    // MARK: - Feldtest Altstadt Zürich
+    // Schaltet den Feldtest-Modus frei: Testpersonen wählen auf dem
+    // Welcome-Screen ein vorgefertigtes Testprofil (statt Registrierung),
+    // ihre Onboarding-Daten landen in `test_participants` und alle
+    // Interaktionen in `test_events` (siehe migrations/field_test_tables.sql).
+    // Nach den 3 Testtagen auf `false` stellen.
+    static let fieldTestModeEnabled = true
+
     // MARK: - Testgebiet Altstadt Zürich
     static let testAreaMinLat = 47.369
     static let testAreaMaxLat = 47.375

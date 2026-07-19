@@ -56,6 +56,7 @@ struct ARModeView: View {
                 arContent
             }
         }
+        .trackScreen("ar_mode")
         .task {
             try? await Task.sleep(for: .seconds(20))
             if case .starting = arService.sessionState {

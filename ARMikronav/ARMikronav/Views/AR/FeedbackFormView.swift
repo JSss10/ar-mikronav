@@ -43,6 +43,7 @@ struct FeedbackFormView: View {
             }
             .navigationTitle("Feedback")
             .navigationBarTitleDisplayMode(.inline)
+            .trackScreen("feedback_form", properties: ["barrier_id": barrier.id.uuidString])
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Abbrechen") { dismiss() }
