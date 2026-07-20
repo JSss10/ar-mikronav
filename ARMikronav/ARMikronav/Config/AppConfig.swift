@@ -30,9 +30,18 @@ enum AppConfig {
     //   3. Der kopierte Link sieht so aus:
     //      https://docs.google.com/forms/d/e/<FORM_ID>/viewform?usp=pp_url&entry.1234567890=MUSTER
     //      → Teil bis "viewform" in `fieldTestSurveyURL`,
-    //      → "entry.1234567890" in `fieldTestSurveyProfileEntryID`.
+    //      → "entry.1234567890" in `fieldTestSurveyNameEntryID`.
+    //
+    // Optional: ein zweites, verstecktes Feld für den Profil-Schlüssel
+    // (tp01–tp06), damit sich Umfrage, Klickdaten (test_events) und
+    // Onboarding-Profil (test_participants) auch bei ähnlichen Namen
+    // eindeutig zusammenführen lassen. Dafür in Forms ein zweites
+    // Kurzantwort-Feld "Profil-Schlüssel" anlegen, ebenfalls per
+    // "Link vorab ausfüllen" die entry-ID abgreifen und hier eintragen.
+    // Leer lassen, wenn nicht gewünscht.
     static let fieldTestSurveyURL = ""
-    static let fieldTestSurveyProfileEntryID = ""
+    static let fieldTestSurveyNameEntryID = ""
+    static let fieldTestSurveyKeyEntryID = ""
 
     // MARK: - Testgebiet Altstadt Zürich
     static let testAreaMinLat = 47.369
