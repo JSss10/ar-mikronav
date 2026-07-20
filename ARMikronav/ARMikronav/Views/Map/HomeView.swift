@@ -115,7 +115,9 @@ struct HomeView: View {
         .accessibilityLabel(isFieldTest ? "Test beenden" : "Abmelden")
         .confirmationDialog(
             isFieldTest
-                ? "Beendet den Testlauf und macht das Gerät für die nächste Testperson bereit."
+                ? (FieldTestService.shared.surveyURL() != nil
+                    ? "Beendet den Testlauf, öffnet die Abschluss-Umfrage und macht das Gerät für die nächste Testperson bereit."
+                    : "Beendet den Testlauf und macht das Gerät für die nächste Testperson bereit.")
                 : "Du kannst dich jederzeit wieder anmelden. Dein Profil bleibt gespeichert.",
             isPresented: $showingSignOutConfirm,
             titleVisibility: .visible

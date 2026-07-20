@@ -17,6 +17,13 @@ enum AppConfig {
     // Nach den 3 Testtagen auf `false` stellen.
     static let fieldTestModeEnabled = true
 
+    // MARK: - Feldtest Umfrage (Google Forms)
+    // Nach "Test beenden" öffnet die App automatisch diese Umfrage in Safari,
+    // mit dem Testprofil als vorausgefülltem Feld. Bleibt die URL leer, wird
+    // der Schritt übersprungen.
+    static let fieldTestSurveyURL = ""
+    static let fieldTestSurveyProfileEntryID = ""
+
     // MARK: - Testgebiet Altstadt Zürich
     static let testAreaMinLat = 47.369
     static let testAreaMaxLat = 47.375
