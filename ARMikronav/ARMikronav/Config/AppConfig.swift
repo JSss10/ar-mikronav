@@ -42,6 +42,11 @@ enum AppConfig {
     static let gintoScewoBroID = "Z2lkOi8vcmFpbHMtYXBwL1JhdGluZ1Byb2ZpbGVzOjpSYXRpbmdQcm9maWxlLzM5NTE"
     static let gintoPushchairID = "Z2lkOi8vcmFpbHMtYXBwL1JhdGluZ1Byb2ZpbGVzOjpSYXRpbmdQcm9maWxlLzgw"
 
+    // MARK: - Rechtliches
+    // Die App verwendet Apples Standard-Lizenzvertrag für lizenzierte
+    // Apps (Standard-EULA) statt eigener Nutzungsbedingungen.
+    static let appleStandardEULAURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+
     // MARK: - Feldtest
     static let fieldTestModeEnabled = false
     static let fieldTestSurveyURL = "https://docs.google.com/forms/d/e/1FAIpQLSfqUaSbVZUignM6xjY4NhPtxaKBANLNqPMaOnp23Rj7nHWL0A/viewform"

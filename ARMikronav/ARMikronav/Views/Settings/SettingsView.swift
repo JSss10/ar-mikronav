@@ -20,6 +20,9 @@ struct SettingsView: View {
     // Karte änderbar).
     @StateObject private var mapPreferences = MapPreferences.shared
 
+    // Face ID-Anmeldung (Aktivierung passiert beim Login-Screen).
+    @StateObject private var biometricService = BiometricAuthService.shared
+
     var body: some View {
         NavigationStack {
             Form {
@@ -29,6 +32,7 @@ struct SettingsView: View {
                 notificationsSection
                 mapSection
                 generalSection
+                securitySection
                 privacyAndAboutSection
             }
             .navigationTitle("Einstellungen")
@@ -167,6 +171,31 @@ struct SettingsView: View {
             } label: {
                 Label("Gespeicherte Orte", systemImage: "bookmark")
             }
+        }
+    }
+
+    // MARK: - Sicherheit (Face ID)
+
+    private var securitySection: some View {
+        Section {
+            if biometricService.isEnabled {
+                Button(role: .destructive) {
+                    biometricService.disable()
+                } label: {
+                    Label("\(biometricService.biometryName)-Anmeldung deaktivieren",
+                          systemImage: "faceid")
+                }
+            } else {
+                Label("\(biometricService.biometryName)-Anmeldung",
+                      systemImage: "faceid")
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Sicherheit")
+        } footer: {
+            Text(biometricService.isEnabled
+                 ? "Beim Deaktivieren werden die hinterlegten Zugangsdaten vom Gerät entfernt."
+                 : "Aktiviere die \(biometricService.biometryName)-Anmeldung beim nächsten Anmelden mit deinem Passwort.")
         }
     }
 

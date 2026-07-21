@@ -1,8 +1,9 @@
 // EmailVerificationView.swift
 // ARMikronav
 //
-// Nach der Registrierung: Hinweis auf die Bestätigungs-E-Mail
-// mit der Möglichkeit, sie erneut zu senden.
+// Nach der Registrierung: Das Konto wird mit dem 6-stelligen Code aus der
+// Bestätigungs-E-Mail verifiziert (alternativ funktioniert weiterhin der
+// Link in der E-Mail). Der Code kann erneut angefordert werden.
 
 import SwiftUI
 
@@ -10,60 +11,96 @@ struct EmailVerificationView: View {
     @EnvironmentObject var authService: AuthService
     let email: String
 
+    @State private var code = ""
+    @State private var isVerifying = false
     @State private var isResending = false
     @State private var message: String?
     @State private var isError = false
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
+        ScrollView {
+            VStack(spacing: 24) {
+                Image(systemName: "envelope.circle.fill")
+                    .font(.system(size: 88))
+                    .foregroundStyle(.tint)
+                    .padding(.top, 40)
 
-            Image(systemName: "envelope.circle.fill")
-                .font(.system(size: 88))
-                .foregroundStyle(.tint)
+                Text("Bestätige deine E-Mail-Adresse")
+                    .font(.title2)
+                    .bold()
+                    .multilineTextAlignment(.center)
 
-            Text("Wir haben dir eine E-Mail geschickt.")
-                .font(.title2)
-                .bold()
-                .multilineTextAlignment(.center)
-
-            Text("Bitte bestätige dein Konto über den Link in der E-Mail.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
-
-            if let message {
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(isError ? .red : .green)
+                Text("Wir haben einen 6-stelligen Code an \(email) geschickt. Gib ihn hier ein – oder tippe auf den Link in der E-Mail.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
-            }
 
-            Spacer()
-
-            Button {
-                Task { await resend() }
-            } label: {
-                if isResending {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                } else {
-                    Text("E-Mail erneut senden")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
+                OTPCodeField(code: $code) {
+                    Task { await verify() }
                 }
+                .padding(.horizontal, 24)
+
+                if let message {
+                    Text(message)
+                        .font(.footnote)
+                        .foregroundStyle(isError ? .red : .green)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
+
+                Button {
+                    Task { await verify() }
+                } label: {
+                    if isVerifying {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                    } else {
+                        Text("Bestätigen")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                    }
+                }
+                .background(code.count == 6 ? Color.accentColor : Color.gray)
+                .cornerRadius(12)
+                .disabled(code.count != 6 || isVerifying)
+                .padding(.horizontal, 24)
+
+                Button {
+                    Task { await resend() }
+                } label: {
+                    if isResending {
+                        ProgressView()
+                    } else {
+                        Text("Code erneut senden")
+                            .font(.subheadline)
+                    }
+                }
+                .disabled(isResending)
+                .padding(.bottom, 40)
             }
-            .background(Color(.systemGray6))
-            .cornerRadius(12)
-            .disabled(isResending)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 40)
         }
         .navigationBarBackButtonHidden(false)
+    }
+
+    private func verify() async {
+        guard code.count == 6, !isVerifying else { return }
+        isVerifying = true
+        message = nil
+        defer { isVerifying = false }
+
+        do {
+            try await authService.verifySignUpCode(email: email, code: code)
+            // Bei Erfolg setzt AuthService isAuthenticated und die App
+            // wechselt automatisch in den angemeldeten Zustand.
+        } catch {
+            code = ""
+            message = "Der Code ist ungültig oder abgelaufen. Bitte versuche es erneut."
+            isError = true
+        }
     }
 
     private func resend() async {
@@ -73,7 +110,7 @@ struct EmailVerificationView: View {
 
         do {
             try await authService.resendConfirmation(email: email)
-            message = "E-Mail wurde erneut gesendet."
+            message = "E-Mail wurde erneut gesendet. Prüfe dein Postfach."
             isError = false
         } catch {
             message = "Senden fehlgeschlagen: \(error.localizedDescription)"

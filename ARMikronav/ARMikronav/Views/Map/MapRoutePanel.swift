@@ -139,7 +139,7 @@ struct RouteInfoBar: View {
             Spacer(minLength: 8)
 
             Button(action: onStop) {
-                Text(hasArrived ? "Fertig" : "Stop")
+                Text(hasArrived ? "Fertig" : "Stopp")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppColor.onAccent)
                     .padding(.horizontal, 22)
