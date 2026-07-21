@@ -9,22 +9,6 @@ import Foundation
 import CoreLocation
 
 enum AppConfig {
-    // MARK: - Feldtest Altstadt Zürich
-    // Schaltet den Feldtest-Modus frei: Testpersonen wählen auf dem
-    // Welcome-Screen ein vorgefertigtes Testprofil (statt Registrierung),
-    // ihre Onboarding-Daten landen in `test_participants` und alle
-    // Interaktionen in `test_events` (siehe migrations/field_test_tables.sql).
-    // Nach den 3 Testtagen auf `false` stellen.
-    static let fieldTestModeEnabled = true
-
-    // MARK: - Feldtest Umfrage (Google Forms)
-    // Nach "Test beenden" öffnet die App automatisch diese Umfrage in Safari,
-    // mit dem Testprofil als vorausgefülltem Feld. Bleibt die URL leer, wird
-    // der Schritt übersprungen.
-    static let fieldTestSurveyURL = "https://docs.google.com/forms/d/e/1FAIpQLSfqUaSbVZUignM6xjY4NhPtxaKBANLNqPMaOnp23Rj7nHWL0A/viewform"
-    static let fieldTestSurveyNameEntryID = "entry.274175680"
-    static let fieldTestSurveyKeyEntryID = "entry.2040937465"
-
     // MARK: - Testgebiet Altstadt Zürich
     static let testAreaMinLat = 47.369
     static let testAreaMaxLat = 47.375
@@ -38,6 +22,13 @@ enum AppConfig {
     static let kreis1Center = CLLocationCoordinate2D(latitude: 47.3710, longitude: 8.5400)
     static let kreis1RadiusM: Double = 1400
 
+    // MARK: - Abdeckung ganze Schweiz (Homescreen)
+    // Der Homescreen zeigt die neuesten Barrieren-Meldungen schweizweit;
+    // der Radius um den geografischen Mittelpunkt (Älggi-Alp) deckt das
+    // ganze Land ab. Die Kartenansicht bleibt beim Kreis-1-Testgebiet.
+    static let schweizCenter = CLLocationCoordinate2D(latitude: 46.8011, longitude: 8.2266)
+    static let schweizRadiusM: Double = 250_000
+
     // MARK: - Defaults
     static let defaultBarrierRadius: Double = 500
     static let approachWarningDistance: Double = 30
@@ -50,4 +41,10 @@ enum AppConfig {
     static let gintoPowerWheelchairID = "Z2lkOi8vcmFpbHMtYXBwL1JhdGluZ1Byb2ZpbGVzOjpSYXRpbmdQcm9maWxlLzc5"
     static let gintoScewoBroID = "Z2lkOi8vcmFpbHMtYXBwL1JhdGluZ1Byb2ZpbGVzOjpSYXRpbmdQcm9maWxlLzM5NTE"
     static let gintoPushchairID = "Z2lkOi8vcmFpbHMtYXBwL1JhdGluZ1Byb2ZpbGVzOjpSYXRpbmdQcm9maWxlLzgw"
+
+    // MARK: - Feldtest
+    static let fieldTestModeEnabled = false
+    static let fieldTestSurveyURL = "https://docs.google.com/forms/d/e/1FAIpQLSfqUaSbVZUignM6xjY4NhPtxaKBANLNqPMaOnp23Rj7nHWL0A/viewform"
+    static let fieldTestSurveyNameEntryID = "entry.274175680"
+    static let fieldTestSurveyKeyEntryID = "entry.2040937465"
 }

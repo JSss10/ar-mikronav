@@ -217,11 +217,6 @@ final class MapViewModel: ObservableObject {
             )
             activeRoute = route
             navigationTarget = poi
-            TestAnalyticsService.shared.track(
-                "route_started",
-                screen: "map",
-                properties: ["poi": poi.name, "distance_m": String(Int(route.totalDistanceM))]
-            )
             routeProgress = RouteProgress(
                 remainingDistanceM: route.totalDistanceM,
                 remainingTimeS: route.expectedTravelTimeS
@@ -229,6 +224,12 @@ final class MapViewModel: ObservableObject {
             if let location = locationService.currentLocation {
                 nextManeuver = RouteService.nextManeuver(of: route, at: location)
             }
+            // Ziel für die "Letzte Ziele"-Liste auf dem Homescreen merken.
+            RecentDestinationsStore.shared.record(
+                name: poi.name,
+                latitude: poi.latitude,
+                longitude: poi.longitude
+            )
             return true
         } catch {
             loadError = error.localizedDescription

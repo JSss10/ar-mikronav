@@ -29,6 +29,9 @@ enum Secrets {
     // Leer lassen ist möglich: dann fällt die Navigation auf die
     // MapKit-Fussgängerroute zurück (ohne Barrieren-Berücksichtigung).
     static let openRouteServiceAPIKey = "YOUR_ORS_API_KEY"
+
+    // Hinweis: Das Wetter auf dem Homescreen nutzt Open-Meteo und braucht
+    // keinen API-Key.
 }
 
 #endif
