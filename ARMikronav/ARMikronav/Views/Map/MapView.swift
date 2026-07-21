@@ -237,6 +237,10 @@ struct MapView: View {
                 profile: profile,
                 onFindAlternative: alternativeAction(for: barrier)
             )
+            .trackScreen("barrier_detail", properties: [
+                "barrier_id": barrier.id.uuidString,
+                "type": barrier.type.rawValue
+            ])
         }
         // Barrieren-Liste zur aktiven Route; Zeilen-Tap merkt die Barriere
         // vor und öffnet ihr Detail-Sheet, sobald die Liste geschlossen ist.
@@ -254,6 +258,7 @@ struct MapView: View {
                 pendingListBarrier = barrier
                 showingRouteBarriers = false
             }
+            .trackScreen("route_barrier_list")
         }
         .sheet(item: $selectedPOI) { poi in
             POIDetailSheet(
@@ -262,16 +267,22 @@ struct MapView: View {
                 onStartARRoute: onStartARRoute,
                 onShowRoute: { poi in showRoute(to: poi) }
             )
+            .trackScreen("poi_detail", properties: [
+                "poi_id": poi.id.uuidString,
+                "name": poi.name
+            ])
         }
         .sheet(isPresented: $showingFilter) {
             FilterSheet(initial: viewModel.filterState) { newFilter in
                 viewModel.applyFilter(newFilter)
             }
+            .trackScreen("filter")
         }
         .sheet(isPresented: $showingSearch) {
             SearchSheet(viewModel: viewModel) { poi in
                 focus(on: poi)
             }
+            .trackScreen("search")
         }
         .sheet(isPresented: $showingSavedPlaces) {
             NavigationStack {
@@ -282,6 +293,7 @@ struct MapView: View {
             }
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
+            .trackScreen("saved_places")
         }
     }
 

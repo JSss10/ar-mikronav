@@ -22,8 +22,14 @@ final class OnboardingViewModel: ObservableObject {
         prefillNamesFromAuth()
     }
 
-    /// Screen 1.0: Vor-/Nachname aus der Registrierung vorbelegen (user_metadata).
+    /// Screen 1.0: Vor-/Nachname vorbelegen. Im Feldtest kommt der Name aus
+    /// dem gewählten Testprofil, sonst aus der Registrierung (user_metadata).
     private func prefillNamesFromAuth() {
+        if let session = FieldTestService.shared.activeSession {
+            draft.firstName = session.firstName
+            draft.lastName = session.lastName
+            return
+        }
         guard let metadata = AuthService.shared.currentUser?.userMetadata else { return }
         if case .string(let first) = metadata["first_name"] {
             draft.firstName = first
@@ -37,6 +43,11 @@ final class OnboardingViewModel: ObservableObject {
 
     func next() {
         guard let nextStep = OnboardingStep(rawValue: currentStep.rawValue + 1) else { return }
+        TestAnalyticsService.shared.track(
+            "onboarding_next",
+            screen: "onboarding",
+            properties: ["from": String(describing: currentStep), "to": String(describing: nextStep)]
+        )
         withAnimation(.easeInOut(duration: 0.25)) {
             currentStep = nextStep
         }
@@ -44,6 +55,11 @@ final class OnboardingViewModel: ObservableObject {
 
     func back() {
         guard let prevStep = OnboardingStep(rawValue: currentStep.rawValue - 1) else { return }
+        TestAnalyticsService.shared.track(
+            "onboarding_back",
+            screen: "onboarding",
+            properties: ["from": String(describing: currentStep), "to": String(describing: prevStep)]
+        )
         withAnimation(.easeInOut(duration: 0.25)) {
             currentStep = prevStep
         }
@@ -91,8 +107,17 @@ final class OnboardingViewModel: ObservableObject {
         defer { isSaving = false }
 
         do {
+            // Feldtest: Onboarding-Daten zusätzlich separat in die
+            // Test-Datenbank schreiben (test_participants.profile). Bewusst
+            // nicht best effort – schlägt das fehl, soll es am Testtag
+            // auffallen und erneut versucht werden können.
+            if FieldTestService.shared.isActive {
+                try await FieldTestService.shared.saveOnboardingProfile(profile)
+            }
+
             try await profileService.saveProfile(profile)
             await syncNamesToAuth()
+            TestAnalyticsService.shared.track("onboarding_completed", screen: "onboarding")
             didComplete = true
         } catch {
             errorMessage = "Speichern fehlgeschlagen: \(error.localizedDescription)"

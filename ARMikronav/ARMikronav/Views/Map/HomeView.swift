@@ -85,6 +85,7 @@ struct HomeView: View {
 
     private var settingsButton: some View {
         Button {
+            TestAnalyticsService.shared.track("settings_opened", screen: "home")
             showingSettings = true
         } label: {
             Image(systemName: "gearshape.fill")
@@ -96,7 +97,11 @@ struct HomeView: View {
         .accessibilityLabel("Einstellungen")
     }
 
-    // Destruktive Aktion mit Bestätigungs-Action-Sheet.
+    // Destruktive Aktion mit Bestätigungs-Action-Sheet. Im Feldtest wird
+    // daraus "Test beenden": lädt offene Tracking-Events hoch und setzt das
+    // Gerät (Consent, Profil, Testprofil) für die nächste Testperson zurück.
+    private var isFieldTest: Bool { FieldTestService.shared.isActive }
+
     private var signOutButton: some View {
         Button {
             showingSignOutConfirm = true
@@ -107,14 +112,24 @@ struct HomeView: View {
                 .frame(width: 44, height: 44)
                 .background(.thinMaterial, in: Circle())
         }
-        .accessibilityLabel("Abmelden")
+        .accessibilityLabel(isFieldTest ? "Test beenden" : "Abmelden")
         .confirmationDialog(
-            "Du kannst dich jederzeit wieder anmelden. Dein Profil bleibt gespeichert.",
+            isFieldTest
+                ? (FieldTestService.shared.surveyURL() != nil
+                    ? "Beendet den Testlauf, öffnet die Abschluss-Umfrage und macht das Gerät für die nächste Testperson bereit."
+                    : "Beendet den Testlauf und macht das Gerät für die nächste Testperson bereit.")
+                : "Du kannst dich jederzeit wieder anmelden. Dein Profil bleibt gespeichert.",
             isPresented: $showingSignOutConfirm,
             titleVisibility: .visible
         ) {
-            Button("Abmelden", role: .destructive) {
-                Task { try? await authService.signOut() }
+            if isFieldTest {
+                Button("Test beenden", role: .destructive) {
+                    Task { await FieldTestService.shared.endTest() }
+                }
+            } else {
+                Button("Abmelden", role: .destructive) {
+                    Task { try? await authService.signOut() }
+                }
             }
             Button("Abbrechen", role: .cancel) {}
         }
@@ -122,6 +137,7 @@ struct HomeView: View {
 
     private var arFAB: some View {
         Button {
+            TestAnalyticsService.shared.track("ar_mode_opened", screen: "home")
             mode = .ar
         } label: {
             Image(systemName: "arkit")

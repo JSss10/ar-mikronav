@@ -82,6 +82,47 @@ cp Config.example.swift Config.swift
 # → Supabase URL und Anon Key eintragen
 ```
 
+## Feldtest-Modus (Altstadt Zürich, 3 Testtage)
+
+Für die Feldtests wählen Testpersonen auf dem Welcome-Screen unter
+**„Feldtest starten"** ihr vorgefertigtes Testprofil (Bild + Vorname,
+alphabetisch sortiert, `Models/TestProfile.swift`) – keine Registrierung
+nötig. Danach durchlaufen sie das normale Onboarding mit ihren eigenen
+Angaben (inkl. Nachname).
+
+**Datenerfassung (separat von den regulären App-Tabellen):**
+
+| Tabelle             | Inhalt                                                          |
+| ------------------- | --------------------------------------------------------------- |
+| `test_participants` | 1 Zeile pro Testperson: Testprofil, Onboarding-Antworten (JSON) |
+| `test_events`       | Alle Interaktionen: Screen-Aufrufe, Klicks, Routen, Feedback    |
+
+**Setup vor dem ersten Testtag:**
+
+1. `migrations/field_test_tables.sql` im Supabase SQL-Editor ausführen.
+2. Supabase Dashboard → Authentication → Sign In / Providers →
+   **„Allow anonymous sign-ins"** aktivieren (Testpersonen bekommen beim
+   Profil-Auswählen automatisch einen anonymen User).
+3. In `Config/AppConfig.swift` muss `fieldTestModeEnabled = true` stehen
+   (nach den Testtagen wieder auf `false`).
+
+**Ablauf pro Testperson:** Profil antippen → Consent → Onboarding ausfüllen →
+App testen. Danach oben rechts **„Test beenden"**: lädt offene Tracking-Events
+hoch, setzt das Gerät für die nächste Testperson zurück und öffnet automatisch
+die Abschluss-Umfrage (Google Forms) mit dem Namen (und optional dem stabilen
+Profil-Schlüssel `tp01`–`tp06`) als vorausgefülltem Feld — Formular-URL und
+Feld-IDs in `AppConfig.fieldTestSurveyURL` / `fieldTestSurveyNameEntryID` /
+`fieldTestSurveyKeyEntryID` eintragen (Anleitung im Code-Kommentar dort).
+Bleibt die URL leer, wird der Umfrage-Schritt übersprungen. So lassen sich
+Umfrage-Antworten, Klickdaten (`test_events`) und Onboarding-Profil
+(`test_participants`) pro Testperson zusammenführen.
+
+**Auswertung:** im Supabase SQL-Editor, z. B.
+
+```sql
+SELECT * FROM test_event_overview WHERE test_day = '2026-07-21';
+```
+
 ## Datenquellen
 
 | Quelle        | Typ                                              | Lizenz                    |

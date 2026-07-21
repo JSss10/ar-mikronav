@@ -9,6 +9,22 @@ import Foundation
 import CoreLocation
 
 enum AppConfig {
+    // MARK: - Feldtest Altstadt Zürich
+    // Schaltet den Feldtest-Modus frei: Testpersonen wählen auf dem
+    // Welcome-Screen ein vorgefertigtes Testprofil (statt Registrierung),
+    // ihre Onboarding-Daten landen in `test_participants` und alle
+    // Interaktionen in `test_events` (siehe migrations/field_test_tables.sql).
+    // Nach den 3 Testtagen auf `false` stellen.
+    static let fieldTestModeEnabled = true
+
+    // MARK: - Feldtest Umfrage (Google Forms)
+    // Nach "Test beenden" öffnet die App automatisch diese Umfrage in Safari,
+    // mit dem Testprofil als vorausgefülltem Feld. Bleibt die URL leer, wird
+    // der Schritt übersprungen.
+    static let fieldTestSurveyURL = "https://docs.google.com/forms/d/e/1FAIpQLSfqUaSbVZUignM6xjY4NhPtxaKBANLNqPMaOnp23Rj7nHWL0A/viewform"
+    static let fieldTestSurveyNameEntryID = "entry.274175680"
+    static let fieldTestSurveyKeyEntryID = "entry.2040937465"
+
     // MARK: - Testgebiet Altstadt Zürich
     static let testAreaMinLat = 47.369
     static let testAreaMaxLat = 47.375

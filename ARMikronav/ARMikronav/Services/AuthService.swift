@@ -68,6 +68,17 @@ final class AuthService: ObservableObject {
         self.isAuthenticated = true
     }
     
+    // MARK: - Anonymes Sign-in (Feldtest)
+
+    /// Erstellt einen anonymen Supabase-User – für den Feldtest, damit
+    /// Testpersonen ohne Registrierung starten können. Erfordert
+    /// "Allow anonymous sign-ins" im Supabase-Dashboard.
+    func signInAnonymously() async throws {
+        let session = try await client.auth.signInAnonymously()
+        self.currentUser = session.user
+        self.isAuthenticated = true
+    }
+
     // MARK: - Sign Out
     
     func signOut() async throws {

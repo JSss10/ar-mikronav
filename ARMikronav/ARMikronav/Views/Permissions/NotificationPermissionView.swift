@@ -18,6 +18,12 @@ enum NotificationPermissionStore {
     static func markAsked() {
         UserDefaults.standard.set(true, forKey: key)
     }
+
+    /// Feldtest: Flag zurücksetzen, damit die nächste Testperson auf dem
+    /// gleichen Gerät den Erklärungs-Screen wieder sieht.
+    static func reset() {
+        UserDefaults.standard.removeObject(forKey: key)
+    }
 }
 
 struct NotificationPermissionView: View {

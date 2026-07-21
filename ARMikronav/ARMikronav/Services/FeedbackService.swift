@@ -54,6 +54,16 @@ final class FeedbackService: @unchecked Sendable {
             .from("user_feedback")
             .insert(feedback)
             .execute()
+
+        TestAnalyticsService.log(
+            "feedback_submitted",
+            screen: "feedback_form",
+            properties: [
+                "barrier_id": barrierId.uuidString,
+                "type": type.rawValue,
+                "has_photo": photoUrl != nil ? "true" : "false"
+            ]
+        )
     }
 
     private func uploadPhoto(_ data: Data, userId: UUID) async -> String? {

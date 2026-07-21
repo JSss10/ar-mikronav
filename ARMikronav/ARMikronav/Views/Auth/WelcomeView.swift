@@ -32,12 +32,32 @@ struct WelcomeView: View {
 
                 // Buttons
                 VStack(spacing: AppMetrics.Touch.spacing + 4) {
-                    NavigationLink {
-                        IntroCarouselView()
-                    } label: {
-                        Text("Registrieren")
+                    // Feldtest Altstadt Zürich: Testpersonen wählen ein
+                    // vorgefertigtes Profil statt sich zu registrieren.
+                    if AppConfig.fieldTestModeEnabled {
+                        NavigationLink {
+                            TestProfileSelectionView()
+                        } label: {
+                            Label("Feldtest starten", systemImage: "person.crop.circle.badge.checkmark")
+                        }
+                        .buttonStyle(.appPrimary)
                     }
-                    .buttonStyle(.appPrimary)
+
+                    if AppConfig.fieldTestModeEnabled {
+                        NavigationLink {
+                            IntroCarouselView()
+                        } label: {
+                            Text("Registrieren")
+                        }
+                        .buttonStyle(.appSecondary)
+                    } else {
+                        NavigationLink {
+                            IntroCarouselView()
+                        } label: {
+                            Text("Registrieren")
+                        }
+                        .buttonStyle(.appPrimary)
+                    }
 
                     NavigationLink {
                         SignInView()

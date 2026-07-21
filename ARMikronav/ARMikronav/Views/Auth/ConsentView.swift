@@ -18,6 +18,12 @@ enum ConsentStore {
     static func recordConsent() {
         UserDefaults.standard.set(Date(), forKey: key)
     }
+
+    /// Feldtest: Consent zurücksetzen, damit die nächste Testperson auf dem
+    /// gleichen Gerät wieder gefragt wird.
+    static func reset() {
+        UserDefaults.standard.removeObject(forKey: key)
+    }
 }
 
 struct ConsentView: View {
@@ -70,6 +76,7 @@ struct ConsentView: View {
 
             Button {
                 ConsentStore.recordConsent()
+                TestAnalyticsService.shared.track("consent_given", screen: "consent")
                 onContinue()
             } label: {
                 Text("Weiter")
