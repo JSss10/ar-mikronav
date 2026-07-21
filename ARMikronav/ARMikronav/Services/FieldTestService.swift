@@ -147,10 +147,18 @@ final class FieldTestService: ObservableObject {
 
         var items = components.queryItems ?? []
         items.append(URLQueryItem(name: "usp", value: "pp_url"))
-        if !AppConfig.fieldTestSurveyProfileEntryID.isEmpty {
+        if !AppConfig.fieldTestSurveyNameEntryID.isEmpty {
             items.append(URLQueryItem(
-                name: AppConfig.fieldTestSurveyProfileEntryID,
+                name: AppConfig.fieldTestSurveyNameEntryID,
                 value: session.displayName
+            ))
+        }
+        // Optionaler stabiler Profil-Schlüssel (tp01–tp06) für die eindeutige
+        // Verknüpfung mit test_events / test_participants.
+        if !AppConfig.fieldTestSurveyKeyEntryID.isEmpty {
+            items.append(URLQueryItem(
+                name: AppConfig.fieldTestSurveyKeyEntryID,
+                value: session.profileKey
             ))
         }
         components.queryItems = items

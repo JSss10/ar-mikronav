@@ -21,8 +21,9 @@ enum AppConfig {
     // Nach "Test beenden" öffnet die App automatisch diese Umfrage in Safari,
     // mit dem Testprofil als vorausgefülltem Feld. Bleibt die URL leer, wird
     // der Schritt übersprungen.
-    static let fieldTestSurveyURL = ""
-    static let fieldTestSurveyProfileEntryID = ""
+    static let fieldTestSurveyURL = "https://docs.google.com/forms/d/e/1FAIpQLSfqUaSbVZUignM6xjY4NhPtxaKBANLNqPMaOnp23Rj7nHWL0A/viewform"
+    static let fieldTestSurveyNameEntryID = "entry.274175680"
+    static let fieldTestSurveyKeyEntryID = "entry.2040937465"
 
     // MARK: - Testgebiet Altstadt Zürich
     static let testAreaMinLat = 47.369
