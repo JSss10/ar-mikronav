@@ -56,8 +56,34 @@ struct CurrentWeather: Equatable {
 enum WeatherServiceError: Error {
     case missingAPIKey
     case invalidURL
-    case badResponse
+    /// HTTP-Fehlerstatus von OpenWeather (z. B. 401 = Key/Subscription,
+    /// 429 = Rate-Limit) plus optionaler API-Meldungstext.
+    case badResponse(status: Int, message: String?)
     case emptyResponse
+
+    /// Nutzerfreundlicher Hinweis für die UI.
+    var userMessage: String {
+        switch self {
+        case .missingAPIKey:
+            return "OpenWeather-API-Key fehlt (Secrets.swift)."
+        case .invalidURL:
+            return "Wetter-Anfrage ungültig."
+        case .emptyResponse:
+            return "Keine Wetterdaten erhalten."
+        case .badResponse(let status, let message):
+            switch status {
+            case 401:
+                return "OpenWeather lehnt den Key ab (401). One Call 3.0 muss im "
+                    + "Account unter „One Call by Call“ aktiviert sein; neue Keys "
+                    + "brauchen bis zu 2 Stunden."
+            case 429:
+                return "OpenWeather-Limit erreicht (429). Bitte später erneut versuchen."
+            default:
+                let detail = message.map { " – \($0)" } ?? ""
+                return "Wetter konnte nicht geladen werden (Status \(status))\(detail)."
+            }
+        }
+    }
 }
 
 final class WeatherService: Sendable {
@@ -85,8 +111,13 @@ final class WeatherService: Sendable {
         }
 
         let (data, response) = try await URLSession.shared.data(from: url)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            throw WeatherServiceError.badResponse
+        guard let http = response as? HTTPURLResponse else {
+            throw WeatherServiceError.badResponse(status: -1, message: nil)
+        }
+        guard http.statusCode == 200 else {
+            // OpenWeather liefert bei Fehlern JSON mit {"message": "..."}.
+            let apiMessage = (try? JSONDecoder().decode(OpenWeatherError.self, from: data))?.message
+            throw WeatherServiceError.badResponse(status: http.statusCode, message: apiMessage)
         }
 
         let decoded = try JSONDecoder().decode(OneCallResponse.self, from: data)
@@ -142,4 +173,9 @@ private struct OneCallResponse: Decodable {
         let description: String
         let icon: String
     }
+}
+
+/// Fehler-Payload von OpenWeather ({"cod": 401, "message": "..."}).
+private struct OpenWeatherError: Decodable {
+    let message: String
 }

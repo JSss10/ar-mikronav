@@ -165,14 +165,15 @@ struct HomeDashboardView: View {
                         .foregroundStyle(AppColor.textSecondary)
                 }
             } else {
-                HStack(spacing: AppMetrics.Space.m) {
+                HStack(alignment: .top, spacing: AppMetrics.Space.m) {
                     Image(systemName: "cloud.slash")
                         .font(.title2)
                         .foregroundStyle(AppColor.textSecondary)
                     Text(viewModel.weatherError ?? "Wetter derzeit nicht verfügbar.")
                         .font(AppTypography.subheadline)
                         .foregroundStyle(AppColor.textSecondary)
-                    Spacer()
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Button("Erneut") {
                         Task { await viewModel.loadWeather() }
                     }

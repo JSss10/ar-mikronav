@@ -128,10 +128,11 @@ final class HomeDashboardViewModel: ObservableObject {
             async let placeTask = WeatherService.shared.placeName(for: coordinate)
             weather = try await weatherTask
             weatherPlaceName = await placeTask
-        } catch WeatherServiceError.missingAPIKey {
-            weatherError = "OpenWeather-API-Key fehlt (Secrets.swift)."
+        } catch let error as WeatherServiceError {
+            weatherError = error.userMessage
         } catch {
-            weatherError = "Wetter konnte nicht geladen werden."
+            // Netzwerk-/Transportfehler (kein HTTP-Status).
+            weatherError = "Wetter konnte nicht geladen werden: \(error.localizedDescription)"
         }
     }
 
