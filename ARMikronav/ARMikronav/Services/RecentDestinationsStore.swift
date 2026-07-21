@@ -59,7 +59,11 @@ final class RecentDestinationsStore: ObservableObject {
     }
 
     func remove(at offsets: IndexSet) {
-        destinations.remove(atOffsets: offsets)
+        // Ohne SwiftUI-Abhängigkeit (remove(atOffsets:) lebt in SwiftUI):
+        // absteigend entfernen, damit die Indizes gültig bleiben.
+        for index in offsets.sorted(by: >) where destinations.indices.contains(index) {
+            destinations.remove(at: index)
+        }
         save()
     }
 
