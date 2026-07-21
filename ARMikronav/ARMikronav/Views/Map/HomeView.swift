@@ -2,9 +2,10 @@
 // ARMikronav
 //
 // Haupt-Container für authentifizierte User. Hält das MapViewModel und schaltet
-// zwischen Karten- und AR-Modus (Task A5). Filter- und Barrieren-State bleiben
-// beim Wechsel erhalten, weil beide Modi auf dem gleichen ViewModel laufen.
-// Profil-Binding fließt von hier weiter ins SettingsSheet (S1).
+// zwischen Start- (Homescreen), Karten- und AR-Modus (Task A5). Filter- und
+// Barrieren-State bleiben beim Wechsel erhalten, weil Karte und AR auf dem
+// gleichen ViewModel laufen. Profil-Binding fließt von hier weiter ins
+// SettingsSheet (S1).
 
 import SwiftUI
 import CoreLocation
@@ -16,11 +17,16 @@ struct HomeView: View {
     @StateObject private var viewModel = MapViewModel()
     @StateObject private var locationService = LocationService.shared
     @State private var mode: DisplayMode = .map
+    @State private var selectedTab: Tab = .home
     @State private var showingSettings = false
     @State private var showingSignOutConfirm = false
 
     enum DisplayMode {
         case map, ar
+    }
+
+    enum Tab {
+        case home, map
     }
 
     var body: some View {
@@ -30,7 +36,7 @@ struct HomeView: View {
             } else {
                 switch mode {
                 case .map:
-                    mapContent
+                    tabContent
                 case .ar:
                     ARModeView(
                         profile: profile,
@@ -44,6 +50,27 @@ struct HomeView: View {
         .sheet(isPresented: $showingSettings) {
             SettingsView(profile: $profile)
                 .environmentObject(authService)
+        }
+    }
+
+    // Start-Tab (Homescreen) und Karten-Tab; der AR-Modus bleibt Vollbild
+    // ausserhalb der TabView.
+    private var tabContent: some View {
+        TabView(selection: $selectedTab) {
+            HomeDashboardView(
+                onOpenMap: { selectedTab = .map },
+                onShowSettings: { showingSettings = true }
+            )
+            .tabItem {
+                Label("Start", systemImage: "house.fill")
+            }
+            .tag(Tab.home)
+
+            mapContent
+                .tabItem {
+                    Label("Karte", systemImage: "map.fill")
+                }
+                .tag(Tab.map)
         }
     }
 
@@ -85,7 +112,6 @@ struct HomeView: View {
 
     private var settingsButton: some View {
         Button {
-            TestAnalyticsService.shared.track("settings_opened", screen: "home")
             showingSettings = true
         } label: {
             Image(systemName: "gearshape.fill")
@@ -97,11 +123,7 @@ struct HomeView: View {
         .accessibilityLabel("Einstellungen")
     }
 
-    // Destruktive Aktion mit Bestätigungs-Action-Sheet. Im Feldtest wird
-    // daraus "Test beenden": lädt offene Tracking-Events hoch und setzt das
-    // Gerät (Consent, Profil, Testprofil) für die nächste Testperson zurück.
-    private var isFieldTest: Bool { FieldTestService.shared.isActive }
-
+    // Destruktive Aktion mit Bestätigungs-Action-Sheet.
     private var signOutButton: some View {
         Button {
             showingSignOutConfirm = true
@@ -112,24 +134,14 @@ struct HomeView: View {
                 .frame(width: 44, height: 44)
                 .background(.thinMaterial, in: Circle())
         }
-        .accessibilityLabel(isFieldTest ? "Test beenden" : "Abmelden")
+        .accessibilityLabel("Abmelden")
         .confirmationDialog(
-            isFieldTest
-                ? (FieldTestService.shared.surveyURL() != nil
-                    ? "Beendet den Testlauf, öffnet die Abschluss-Umfrage und macht das Gerät für die nächste Testperson bereit."
-                    : "Beendet den Testlauf und macht das Gerät für die nächste Testperson bereit.")
-                : "Du kannst dich jederzeit wieder anmelden. Dein Profil bleibt gespeichert.",
+            "Du kannst dich jederzeit wieder anmelden. Dein Profil bleibt gespeichert.",
             isPresented: $showingSignOutConfirm,
             titleVisibility: .visible
         ) {
-            if isFieldTest {
-                Button("Test beenden", role: .destructive) {
-                    Task { await FieldTestService.shared.endTest() }
-                }
-            } else {
-                Button("Abmelden", role: .destructive) {
-                    Task { try? await authService.signOut() }
-                }
+            Button("Abmelden", role: .destructive) {
+                Task { try? await authService.signOut() }
             }
             Button("Abbrechen", role: .cancel) {}
         }
@@ -137,7 +149,6 @@ struct HomeView: View {
 
     private var arFAB: some View {
         Button {
-            TestAnalyticsService.shared.track("ar_mode_opened", screen: "home")
             mode = .ar
         } label: {
             Image(systemName: "arkit")

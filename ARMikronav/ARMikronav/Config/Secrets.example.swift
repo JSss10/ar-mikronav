@@ -29,6 +29,11 @@ enum Secrets {
     // Leer lassen ist möglich: dann fällt die Navigation auf die
     // MapKit-Fussgängerroute zurück (ohne Barrieren-Berücksichtigung).
     static let openRouteServiceAPIKey = "YOUR_ORS_API_KEY"
+
+    // OpenWeather – API-Key für das Wetter auf dem Homescreen (One Call 3.0,
+    // liefert auch den UV-Index): https://openweathermap.org/api
+    // Im Account "One Call by Call" aktivieren (1000 Calls/Tag kostenlos).
+    static let openWeatherAPIKey = "YOUR_OPENWEATHER_API_KEY"
 }
 
 #endif

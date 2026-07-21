@@ -3,15 +3,22 @@
 //
 // Edit-Formular für ein bestehendes UserProfile. Spiegelt die Felder aus dem
 // Onboarding 1.1–1.5 in einem einzelnen Form-Sheet wider, mit lokalem Draft,
-// damit Änderungen verworfen werden können.
+// damit Änderungen verworfen werden können. Das Profilfoto (AvatarStore)
+// wird direkt gespeichert – Foto aufnehmen (Kamera) oder aus der Galerie
+// wählen (PhotosPicker, braucht keine Foto-Berechtigung).
 
 import SwiftUI
+import PhotosUI
 
 struct ProfileEditView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var profile: UserProfile
 
     @State private var draft: UserProfile
+
+    @StateObject private var avatarStore = AvatarStore.shared
+    @State private var showingCamera = false
+    @State private var galleryItem: PhotosPickerItem?
 
     init(profile: Binding<UserProfile>) {
         self._profile = profile
@@ -20,6 +27,7 @@ struct ProfileEditView: View {
 
     var body: some View {
         Form {
+            photoSection
             mobilitySection
             wheelchairSection
             measurementsSection
@@ -42,6 +50,76 @@ struct ProfileEditView: View {
                 .bold()
             }
         }
+        .fullScreenCover(isPresented: $showingCamera) {
+            CameraPicker { image in
+                avatarStore.save(image)
+            }
+            .ignoresSafeArea()
+        }
+        .onChange(of: galleryItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    avatarStore.save(image)
+                }
+                galleryItem = nil
+            }
+        }
+    }
+
+    // MARK: - Profilfoto
+
+    private var photoSection: some View {
+        Section {
+            HStack(spacing: AppMetrics.Space.m) {
+                avatarPreview
+
+                VStack(alignment: .leading, spacing: AppMetrics.Space.s) {
+                    Button {
+                        showingCamera = true
+                    } label: {
+                        Label("Foto aufnehmen", systemImage: "camera")
+                    }
+
+                    PhotosPicker(selection: $galleryItem, matching: .images) {
+                        Label("Foto auswählen", systemImage: "photo.on.rectangle")
+                    }
+
+                    if avatarStore.image != nil {
+                        Button(role: .destructive) {
+                            avatarStore.delete()
+                        } label: {
+                            Label("Foto entfernen", systemImage: "trash")
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+        } header: {
+            Text("Profilfoto")
+        } footer: {
+            Text("Das Foto wird sofort übernommen und erscheint auf dem Homescreen.")
+        }
+    }
+
+    private var avatarPreview: some View {
+        ZStack {
+            if let photo = avatarStore.image {
+                Image(uiImage: photo)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Circle()
+                    .fill(AppColor.accentPrimary)
+                Image(systemName: "person.fill")
+                    .font(.title)
+                    .foregroundStyle(AppColor.onAccent)
+            }
+        }
+        .frame(width: 72, height: 72)
+        .clipShape(Circle())
+        .accessibilityHidden(true)
     }
 
     // MARK: - Sections
