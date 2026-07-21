@@ -11,6 +11,10 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var profile: UserProfile
 
+    /// Als Sheet präsentiert: "Fertig"-Button zum Schliessen. Eingebettet
+    /// als Profil-Tab (HomeView) wird der Button ausgeblendet.
+    var showsDoneButton = true
+
     // Daten-Präferenzen. Der WLAN-Toggle wird vom künftigen
     // Offline-Caching ausgewertet; der Cache-Key ist dort definiert.
     @AppStorage("armikronav.wifiOnlyUpdates") private var wifiOnlyUpdates = false
@@ -35,9 +39,11 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .trackScreen("settings")
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Fertig") { dismiss() }
-                        .bold()
+                if showsDoneButton {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Fertig") { dismiss() }
+                            .bold()
+                    }
                 }
             }
             .alert("Barrieren-Daten löschen?", isPresented: $showingCacheDeleteConfirm) {

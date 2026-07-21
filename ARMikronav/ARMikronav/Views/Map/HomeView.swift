@@ -1,10 +1,11 @@
 // HomeView.swift
 // ARMikronav
 //
-// Haupt-Container für authentifizierte User. Hält das MapViewModel und schaltet
-// zwischen Start- (Homescreen), Karten- und AR-Modus (Task A5). Filter- und
-// Barrieren-State bleiben beim Wechsel erhalten, weil Karte und AR auf dem
-// gleichen ViewModel laufen. Profil-Binding fließt von hier weiter ins
+// Haupt-Container für authentifizierte User. Hält das MapViewModel und die
+// schwebende Bottom-Navigation (AppTabBar) mit Home, Karte, Kamera (AR),
+// gespeicherten Orten und Profil. Filter- und Barrieren-State bleiben beim
+// Wechsel erhalten, weil Karte und AR auf dem gleichen ViewModel laufen.
+// Profil-Binding fliesst von hier weiter in den Profil-Tab und das
 // SettingsSheet (S1).
 
 import SwiftUI
@@ -17,16 +18,12 @@ struct HomeView: View {
     @StateObject private var viewModel = MapViewModel()
     @StateObject private var locationService = LocationService.shared
     @State private var mode: DisplayMode = .map
-    @State private var selectedTab: Tab = .home
+    @State private var selectedTab: AppTab = .home
     @State private var showingSettings = false
     @State private var showingSignOutConfirm = false
 
     enum DisplayMode {
         case map, ar
-    }
-
-    enum Tab {
-        case home, map
     }
 
     var body: some View {
@@ -53,25 +50,53 @@ struct HomeView: View {
         }
     }
 
-    // Start-Tab (Homescreen) und Karten-Tab; der AR-Modus bleibt Vollbild
-    // ausserhalb der TabView.
+    // Tabs mit eigener schwebender Bottom-Navigation (AppTabBar). Der
+    // Kamera-Tab schaltet direkt in den AR-Vollbildmodus; der zuletzt aktive
+    // Tab bleibt ausgewählt und ist nach dem Schliessen wieder sichtbar.
     private var tabContent: some View {
-        TabView(selection: $selectedTab) {
-            HomeDashboardView(
-                onOpenMap: { selectedTab = .map },
-                onShowSettings: { showingSettings = true }
-            )
-            .tabItem {
-                Label("Start", systemImage: "house.fill")
-            }
-            .tag(Tab.home)
-
-            mapContent
-                .tabItem {
-                    Label("Karte", systemImage: "map.fill")
+        ZStack(alignment: .bottom) {
+            Group {
+                switch selectedTab {
+                case .home:
+                    HomeDashboardView(
+                        onOpenMap: { selectedTab = .map },
+                        onShowSettings: { showingSettings = true }
+                    )
+                case .map:
+                    mapContent
+                case .camera:
+                    // Nie ausgewählt – Kamera öffnet den AR-Vollbildmodus.
+                    mapContent
+                case .saved:
+                    NavigationStack {
+                        SavedPlacesListView()
+                    }
+                case .profile:
+                    SettingsView(profile: $profile, showsDoneButton: false)
                 }
-                .tag(Tab.map)
+            }
+            // Inhalte halten unten Platz für die schwebende Leiste frei;
+            // Scroll-Inhalte laufen darunter durch.
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Color.clear.frame(height: AppTabBar.clearance)
+            }
+
+            AppTabBar(selection: tabSelection)
         }
+    }
+
+    /// Fängt den Kamera-Tab ab: statt Tab-Wechsel startet der AR-Modus.
+    private var tabSelection: Binding<AppTab> {
+        Binding(
+            get: { selectedTab },
+            set: { newTab in
+                if newTab == .camera {
+                    mode = .ar
+                } else {
+                    selectedTab = newTab
+                }
+            }
+        )
     }
 
     private var needsLocationPermission: Bool {
@@ -85,11 +110,12 @@ struct HomeView: View {
         }
     }
 
+    // Der frühere AR-FAB entfällt: Der AR-Modus ist über den Kamera-Tab
+    // der AppTabBar erreichbar.
     private var mapContent: some View {
         MapView(profile: profile, viewModel: viewModel, onStartARRoute: startARRoute)
             .ignoresSafeArea(edges: .bottom)
             .overlay(alignment: .topTrailing) { topRightStack }
-            .overlay(alignment: .bottomTrailing) { arFAB }
     }
 
     /// "Route in AR starten" aus dem POI-Detail: Route berechnen,
@@ -147,18 +173,4 @@ struct HomeView: View {
         }
     }
 
-    private var arFAB: some View {
-        Button {
-            mode = .ar
-        } label: {
-            Image(systemName: "arkit")
-                .font(.title)
-                .foregroundStyle(.white)
-                .padding(18)
-                .background(Color.accentColor, in: Circle())
-                .shadow(radius: 4)
-        }
-        .padding()
-        .accessibilityLabel("In AR ansehen")
-    }
 }
