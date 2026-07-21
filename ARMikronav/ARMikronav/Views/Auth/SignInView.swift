@@ -7,7 +7,6 @@ import SwiftUI
 
 struct SignInView: View {
     @EnvironmentObject var authService: AuthService
-    @StateObject private var biometricService = BiometricAuthService.shared
 
     @State private var email: String = ""
     @State private var password: String = ""
@@ -16,7 +15,6 @@ struct SignInView: View {
     @State private var errorMessage: String? = nil
 
     @State private var showResetPassword: Bool = false
-    @State private var enableBiometrics: Bool = false
 
     private var isFormValid: Bool {
         !email.isEmpty && !password.isEmpty
@@ -67,14 +65,6 @@ struct SignInView: View {
                 .font(.caption)
                 .frame(maxWidth: .infinity, alignment: .trailing)
 
-                // Face ID für künftige Anmeldungen aktivieren
-                if biometricService.isAvailable && !biometricService.isEnabled {
-                    Toggle(isOn: $enableBiometrics) {
-                        Text("Künftig mit \(biometricService.biometryName) anmelden")
-                            .font(.subheadline)
-                    }
-                }
-
                 // Error
                 if let errorMessage = errorMessage {
                     Text(errorMessage)
@@ -104,22 +94,6 @@ struct SignInView: View {
                 .disabled(!isFormValid || isLoading)
                 .padding(.top, 8)
 
-                // Face ID-Anmeldung (wenn zuvor aktiviert)
-                if biometricService.isEnabled && biometricService.isAvailable {
-                    Button {
-                        Task { await handleBiometricSignIn() }
-                    } label: {
-                        Label("Mit \(biometricService.biometryName) anmelden",
-                              systemImage: "faceid")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                    }
-                    .background(Color(.systemGray6))
-                    .cornerRadius(12)
-                    .disabled(isLoading)
-                }
-
                 // Alternative: Anmeldung per Einmalcode
                 NavigationLink {
                     OTPLoginView()
@@ -146,27 +120,8 @@ struct SignInView: View {
 
         do {
             try await authService.signIn(email: email, password: password)
-            // Erst nach erfolgreicher Anmeldung hinterlegen, damit nur
-            // gültige Zugangsdaten im Keychain landen.
-            if enableBiometrics {
-                try? biometricService.enable(email: email, password: password)
-            }
         } catch {
             errorMessage = "Anmeldung fehlgeschlagen: \(error.localizedDescription)"
-        }
-    }
-
-    private func handleBiometricSignIn() async {
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-
-        do {
-            try await biometricService.signIn(using: authService)
-        } catch BiometricError.cancelled {
-            // Abbruch durch die Person – kein Fehler anzeigen
-        } catch {
-            errorMessage = error.localizedDescription
         }
     }
 }

@@ -6,7 +6,5 @@
 	<string>Barrieren und POIs in deiner Nähe anzeigen</string>
 	<key>NSCameraUsageDescription</key>
 	<string>AR-Barrieren und zugängliche Orte im Kamerabild anzeigen</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>Schnell und sicher ohne Passwort anmelden</string>
 </dict>
 </plist>
