@@ -1,10 +1,10 @@
 // HomeDashboardViewModel.swift
 // ARMikronav
 //
-// Datenquelle des Homescreens: Wetter am aktuellen Standort (OpenWeather),
-// Name/Initialen aus den Auth-Metadaten und die neuesten Barrieren-Meldungen
-// aus der ganzen Schweiz. Die letzten Ziele kommen aus dem
-// RecentDestinationsStore.
+// Datenquelle des Homescreens: Wetter am aktuellen Standort (Open-Meteo,
+// inkl. UV-Index), Name/Initialen aus den Auth-Metadaten und die neuesten
+// Barrieren-Meldungen aus der ganzen Schweiz. Die letzten Ziele kommen aus
+// dem RecentDestinationsStore.
 
 import Foundation
 import Combine

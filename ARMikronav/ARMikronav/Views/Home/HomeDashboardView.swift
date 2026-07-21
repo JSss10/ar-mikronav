@@ -2,7 +2,7 @@
 // ARMikronav
 //
 // Homescreen (Start-Tab): begrüsst den User mit Name und Profilfoto, zeigt
-// das aktuelle Wetter am Standort (OpenWeather, inkl. UV-Index), die letzten
+// das aktuelle Wetter am Standort (Open-Meteo, inkl. UV-Index), die letzten
 // Navigationsziele und die neuesten Barrieren-Meldungen aus der ganzen
 // Schweiz. Karten-Interaktionen (Ziel ansteuern, Barriere ansehen) laufen
 // über den onOpenMap-Callback des HomeView.

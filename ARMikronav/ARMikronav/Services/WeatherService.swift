@@ -1,43 +1,62 @@
 // WeatherService.swift
 // ARMikronav
 //
-// Lädt das aktuelle Wetter für den Standort des Users über die OpenWeather
-// One Call API 3.0 (liefert neben Temperatur/Wind auch UV-Index, gefühlte
-// Temperatur und Luftfeuchtigkeit; deutsche Beschreibungen via lang=de).
-// Der API-Key liegt in Secrets.swift (openWeatherAPIKey).
-// Zusätzlich Reverse-Geocoding via CLGeocoder für den Ortsnamen im Homescreen.
+// Lädt das aktuelle Wetter für den Standort des Users über die Open-Meteo-API
+// (kostenlos, kein API-Key nötig). Neben Temperatur/Wind kommen gefühlte
+// Temperatur und Luftfeuchtigkeit aus `current`, der UV-Index aus `hourly`
+// (Open-Meteo führt UV nur stündlich – wir nehmen den Wert der aktuellen
+// Stunde). Zusätzlich Reverse-Geocoding via CLGeocoder für den Ortsnamen.
 
 import Foundation
 import CoreLocation
 
-/// Aktuelles Wetter an einer Koordinate (Ausschnitt der One-Call-Antwort).
+/// Aktuelles Wetter an einer Koordinate (Ausschnitt der Open-Meteo-Antwort).
 struct CurrentWeather: Equatable {
     let temperatureC: Double
     let feelsLikeC: Double
     let humidityPercent: Int
     let uvIndex: Double
     let windSpeedKmh: Double
-    /// OpenWeather Condition-ID (z. B. 800 = klar).
-    let conditionId: Int
-    /// Deutsche Kurzbeschreibung aus der API (z. B. "Mäßig bewölkt").
-    let conditionDescription: String
+    /// WMO-Wettercode (Open-Meteo).
+    let weatherCode: Int
     let isDay: Bool
 
-    /// SF-Symbol passend zur OpenWeather-Condition-ID.
+    /// SF-Symbol passend zum WMO-Wettercode.
     var symbolName: String {
-        switch conditionId {
-        case 200...232: return "cloud.bolt.rain.fill"
-        case 300...321: return "cloud.drizzle.fill"
-        case 511: return "cloud.sleet.fill"
-        case 520...531: return "cloud.heavyrain.fill"
-        case 500...504: return "cloud.rain.fill"
-        case 600...622: return "cloud.snow.fill"
-        case 701...771: return "cloud.fog.fill"
-        case 781: return "tornado"
-        case 800: return isDay ? "sun.max.fill" : "moon.stars.fill"
-        case 801, 802: return isDay ? "cloud.sun.fill" : "cloud.moon.fill"
-        case 803, 804: return "cloud.fill"
+        switch weatherCode {
+        case 0: return isDay ? "sun.max.fill" : "moon.stars.fill"
+        case 1, 2: return isDay ? "cloud.sun.fill" : "cloud.moon.fill"
+        case 3: return "cloud.fill"
+        case 45, 48: return "cloud.fog.fill"
+        case 51, 53, 55, 56, 57: return "cloud.drizzle.fill"
+        case 61, 63, 65, 66, 67: return "cloud.rain.fill"
+        case 71, 73, 75, 77: return "cloud.snow.fill"
+        case 80, 81, 82: return "cloud.heavyrain.fill"
+        case 85, 86: return "cloud.snow.fill"
+        case 95, 96, 99: return "cloud.bolt.rain.fill"
         default: return "cloud.fill"
+        }
+    }
+
+    /// Deutsche Kurzbeschreibung des WMO-Wettercodes.
+    var conditionDescription: String {
+        switch weatherCode {
+        case 0: return "Klar"
+        case 1: return "Überwiegend klar"
+        case 2: return "Teilweise bewölkt"
+        case 3: return "Bedeckt"
+        case 45, 48: return "Nebel"
+        case 51, 53, 55: return "Nieselregen"
+        case 56, 57: return "Gefrierender Nieselregen"
+        case 61, 63, 65: return "Regen"
+        case 66, 67: return "Gefrierender Regen"
+        case 71, 73, 75: return "Schneefall"
+        case 77: return "Schneegriesel"
+        case 80, 81, 82: return "Regenschauer"
+        case 85, 86: return "Schneeschauer"
+        case 95: return "Gewitter"
+        case 96, 99: return "Gewitter mit Hagel"
+        default: return "Wechselhaft"
         }
     }
 
@@ -54,34 +73,20 @@ struct CurrentWeather: Equatable {
 }
 
 enum WeatherServiceError: Error {
-    case missingAPIKey
     case invalidURL
-    /// HTTP-Fehlerstatus von OpenWeather (z. B. 401 = Key/Subscription,
-    /// 429 = Rate-Limit) plus optionaler API-Meldungstext.
-    case badResponse(status: Int, message: String?)
-    case emptyResponse
+    /// HTTP-Fehlerstatus von Open-Meteo (z. B. 429 = Rate-Limit).
+    case badResponse(status: Int)
 
     /// Nutzerfreundlicher Hinweis für die UI.
     var userMessage: String {
         switch self {
-        case .missingAPIKey:
-            return "OpenWeather-API-Key fehlt (Secrets.swift)."
         case .invalidURL:
             return "Wetter-Anfrage ungültig."
-        case .emptyResponse:
-            return "Keine Wetterdaten erhalten."
-        case .badResponse(let status, let message):
-            switch status {
-            case 401:
-                return "OpenWeather lehnt den Key ab (401). One Call 3.0 muss im "
-                    + "Account unter „One Call by Call“ aktiviert sein; neue Keys "
-                    + "brauchen bis zu 2 Stunden."
-            case 429:
-                return "OpenWeather-Limit erreicht (429). Bitte später erneut versuchen."
-            default:
-                let detail = message.map { " – \($0)" } ?? ""
-                return "Wetter konnte nicht geladen werden (Status \(status))\(detail)."
+        case .badResponse(let status):
+            if status == 429 {
+                return "Wetter-Limit erreicht (429). Bitte später erneut versuchen."
             }
+            return "Wetter konnte nicht geladen werden (Status \(status))."
         }
     }
 }
@@ -92,19 +97,18 @@ final class WeatherService: Sendable {
     private init() {}
 
     func fetchCurrentWeather(for coordinate: CLLocationCoordinate2D) async throws -> CurrentWeather {
-        let apiKey = Secrets.openWeatherAPIKey
-        guard !apiKey.isEmpty, apiKey != "YOUR_OPENWEATHER_API_KEY" else {
-            throw WeatherServiceError.missingAPIKey
-        }
-
-        var components = URLComponents(string: "https://api.openweathermap.org/data/3.0/onecall")
+        var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")
         components?.queryItems = [
-            URLQueryItem(name: "lat", value: String(format: "%.4f", coordinate.latitude)),
-            URLQueryItem(name: "lon", value: String(format: "%.4f", coordinate.longitude)),
-            URLQueryItem(name: "exclude", value: "minutely,hourly,daily,alerts"),
-            URLQueryItem(name: "units", value: "metric"),
-            URLQueryItem(name: "lang", value: "de"),
-            URLQueryItem(name: "appid", value: apiKey)
+            URLQueryItem(name: "latitude", value: String(format: "%.4f", coordinate.latitude)),
+            URLQueryItem(name: "longitude", value: String(format: "%.4f", coordinate.longitude)),
+            URLQueryItem(
+                name: "current",
+                value: "temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,is_day"
+            ),
+            // UV-Index gibt es bei Open-Meteo nur stündlich.
+            URLQueryItem(name: "hourly", value: "uv_index"),
+            URLQueryItem(name: "forecast_days", value: "1"),
+            URLQueryItem(name: "timezone", value: "auto")
         ]
         guard let url = components?.url else {
             throw WeatherServiceError.invalidURL
@@ -112,34 +116,37 @@ final class WeatherService: Sendable {
 
         let (data, response) = try await URLSession.shared.data(from: url)
         guard let http = response as? HTTPURLResponse else {
-            throw WeatherServiceError.badResponse(status: -1, message: nil)
+            throw WeatherServiceError.badResponse(status: -1)
         }
         guard http.statusCode == 200 else {
-            // OpenWeather liefert bei Fehlern JSON mit {"message": "..."}.
-            let apiMessage = (try? JSONDecoder().decode(OpenWeatherError.self, from: data))?.message
-            throw WeatherServiceError.badResponse(status: http.statusCode, message: apiMessage)
+            throw WeatherServiceError.badResponse(status: http.statusCode)
         }
 
-        let decoded = try JSONDecoder().decode(OneCallResponse.self, from: data)
-        guard let condition = decoded.current.weather.first else {
-            throw WeatherServiceError.emptyResponse
-        }
-
+        let decoded = try JSONDecoder().decode(OpenMeteoResponse.self, from: data)
         return CurrentWeather(
-            temperatureC: decoded.current.temp,
-            feelsLikeC: decoded.current.feelsLike,
-            humidityPercent: decoded.current.humidity,
-            uvIndex: decoded.current.uvi,
-            // units=metric liefert Wind in m/s → km/h für die Anzeige.
-            windSpeedKmh: decoded.current.windSpeed * 3.6,
-            conditionId: condition.id,
-            conditionDescription: condition.description.prefix(1).uppercased()
-                + String(condition.description.dropFirst()),
-            isDay: condition.icon.hasSuffix("d")
+            temperatureC: decoded.current.temperature2m,
+            feelsLikeC: decoded.current.apparentTemperature,
+            humidityPercent: decoded.current.relativeHumidity2m,
+            uvIndex: Self.currentUVIndex(from: decoded),
+            windSpeedKmh: decoded.current.windSpeed10m,
+            weatherCode: decoded.current.weatherCode,
+            isDay: decoded.current.isDay == 1
         )
     }
 
-    /// Ortsname (Quartier bzw. Stadt) zur Koordinate, nil wenn das
+    /// UV-Index der aktuellen Stunde: der Eintrag in `hourly`, dessen Zeit-
+    /// Stempel dieselbe Stunde wie `current.time` trägt (Fallback: erster Wert).
+    private static func currentUVIndex(from response: OpenMeteoResponse) -> Double {
+        guard let hourly = response.hourly else { return 0 }
+        let hourPrefix = response.current.time.prefix(13) // "YYYY-MM-DDTHH"
+        if let index = hourly.time.firstIndex(where: { $0.hasPrefix(hourPrefix) }),
+           index < hourly.uvIndex.count {
+            return hourly.uvIndex[index]
+        }
+        return hourly.uvIndex.first ?? 0
+    }
+
+    /// Ortsname (Stadt bzw. Quartier) zur Koordinate, nil wenn das
     /// Reverse-Geocoding fehlschlägt – die UI zeigt dann nur das Wetter.
     func placeName(for coordinate: CLLocationCoordinate2D) async -> String? {
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
@@ -148,34 +155,39 @@ final class WeatherService: Sendable {
     }
 }
 
-// MARK: - OpenWeather One Call 3.0 DTO
+// MARK: - Open-Meteo DTO
 
-private struct OneCallResponse: Decodable {
+private struct OpenMeteoResponse: Decodable {
     let current: Current
+    let hourly: Hourly?
 
     struct Current: Decodable {
-        let temp: Double
-        let feelsLike: Double
-        let humidity: Int
-        let uvi: Double
-        let windSpeed: Double
-        let weather: [Condition]
+        let time: String
+        let temperature2m: Double
+        let apparentTemperature: Double
+        let relativeHumidity2m: Int
+        let weatherCode: Int
+        let windSpeed10m: Double
+        let isDay: Int
 
         enum CodingKeys: String, CodingKey {
-            case temp, humidity, uvi, weather
-            case feelsLike = "feels_like"
-            case windSpeed = "wind_speed"
+            case time
+            case temperature2m = "temperature_2m"
+            case apparentTemperature = "apparent_temperature"
+            case relativeHumidity2m = "relative_humidity_2m"
+            case weatherCode = "weather_code"
+            case windSpeed10m = "wind_speed_10m"
+            case isDay = "is_day"
         }
     }
 
-    struct Condition: Decodable {
-        let id: Int
-        let description: String
-        let icon: String
-    }
-}
+    struct Hourly: Decodable {
+        let time: [String]
+        let uvIndex: [Double]
 
-/// Fehler-Payload von OpenWeather ({"cod": 401, "message": "..."}).
-private struct OpenWeatherError: Decodable {
-    let message: String
+        enum CodingKeys: String, CodingKey {
+            case time
+            case uvIndex = "uv_index"
+        }
+    }
 }
