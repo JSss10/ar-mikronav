@@ -224,6 +224,12 @@ final class MapViewModel: ObservableObject {
             if let location = locationService.currentLocation {
                 nextManeuver = RouteService.nextManeuver(of: route, at: location)
             }
+            // Ziel für die "Letzte Ziele"-Liste auf dem Homescreen merken.
+            RecentDestinationsStore.shared.record(
+                name: poi.name,
+                latitude: poi.latitude,
+                longitude: poi.longitude
+            )
             return true
         } catch {
             loadError = error.localizedDescription

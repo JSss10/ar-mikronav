@@ -2,9 +2,10 @@
 // ARMikronav
 //
 // Haupt-Container für authentifizierte User. Hält das MapViewModel und schaltet
-// zwischen Karten- und AR-Modus (Task A5). Filter- und Barrieren-State bleiben
-// beim Wechsel erhalten, weil beide Modi auf dem gleichen ViewModel laufen.
-// Profil-Binding fließt von hier weiter ins SettingsSheet (S1).
+// zwischen Start- (Homescreen), Karten- und AR-Modus (Task A5). Filter- und
+// Barrieren-State bleiben beim Wechsel erhalten, weil Karte und AR auf dem
+// gleichen ViewModel laufen. Profil-Binding fließt von hier weiter ins
+// SettingsSheet (S1).
 
 import SwiftUI
 import CoreLocation
@@ -16,11 +17,16 @@ struct HomeView: View {
     @StateObject private var viewModel = MapViewModel()
     @StateObject private var locationService = LocationService.shared
     @State private var mode: DisplayMode = .map
+    @State private var selectedTab: Tab = .home
     @State private var showingSettings = false
     @State private var showingSignOutConfirm = false
 
     enum DisplayMode {
         case map, ar
+    }
+
+    enum Tab {
+        case home, map
     }
 
     var body: some View {
@@ -30,7 +36,7 @@ struct HomeView: View {
             } else {
                 switch mode {
                 case .map:
-                    mapContent
+                    tabContent
                 case .ar:
                     ARModeView(
                         profile: profile,
@@ -44,6 +50,27 @@ struct HomeView: View {
         .sheet(isPresented: $showingSettings) {
             SettingsView(profile: $profile)
                 .environmentObject(authService)
+        }
+    }
+
+    // Start-Tab (Homescreen) und Karten-Tab; der AR-Modus bleibt Vollbild
+    // ausserhalb der TabView.
+    private var tabContent: some View {
+        TabView(selection: $selectedTab) {
+            HomeDashboardView(
+                onOpenMap: { selectedTab = .map },
+                onShowSettings: { showingSettings = true }
+            )
+            .tabItem {
+                Label("Start", systemImage: "house.fill")
+            }
+            .tag(Tab.home)
+
+            mapContent
+                .tabItem {
+                    Label("Karte", systemImage: "map.fill")
+                }
+                .tag(Tab.map)
         }
     }
 
