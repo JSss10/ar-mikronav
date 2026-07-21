@@ -1,9 +1,10 @@
 // HomeDashboardViewModel.swift
 // ARMikronav
 //
-// Datenquelle des Homescreens: Wetter am aktuellen Standort, Name/Initialen
-// aus den Auth-Metadaten und die neuesten Barrieren-Meldungen im Kreis 1.
-// Die letzten Ziele kommen direkt aus dem RecentDestinationsStore.
+// Datenquelle des Homescreens: Wetter am aktuellen Standort (OpenWeather),
+// Name/Initialen aus den Auth-Metadaten und die neuesten Barrieren-Meldungen
+// aus der ganzen Schweiz. Die letzten Ziele kommen aus dem
+// RecentDestinationsStore.
 
 import Foundation
 import Combine
@@ -106,8 +107,8 @@ final class HomeDashboardViewModel: ObservableObject {
         _ = await (weatherTask, barriersTask)
     }
 
-    /// Wetter am aktuellen Standort; ohne GPS-Fix Fallback auf das
-    /// Anzeigegebiet Kreis 1 (Zürich Altstadt).
+    /// Wetter am aktuellen Standort (egal wo in der Schweiz, z. B. Luzern);
+    /// ohne GPS-Fix Fallback auf das Testgebiet Kreis 1 (Zürich Altstadt).
     func loadWeather() async {
         isLoadingWeather = true
         weatherError = nil
@@ -126,12 +127,15 @@ final class HomeDashboardViewModel: ObservableObject {
             async let placeTask = WeatherService.shared.placeName(for: coordinate)
             weather = try await weatherTask
             weatherPlaceName = await placeTask
+        } catch WeatherServiceError.missingAPIKey {
+            weatherError = "OpenWeather-API-Key fehlt (Secrets.swift)."
         } catch {
             weatherError = "Wetter konnte nicht geladen werden."
         }
     }
 
-    /// Neueste aktive Barrieren-Meldungen im Kreis 1 (nach Meldedatum).
+    /// Neueste aktive Barrieren-Meldungen – schweizweit (der Radius um den
+    /// Landesmittelpunkt deckt die ganze Schweiz ab, sortiert nach Meldedatum).
     func loadBarriers() async {
         isLoadingBarriers = true
         barriersError = nil
@@ -139,8 +143,8 @@ final class HomeDashboardViewModel: ObservableObject {
 
         do {
             let barriers = try await BarrierRepository.shared.fetchBarriers(
-                near: AppConfig.kreis1Center,
-                radius: AppConfig.kreis1RadiusM
+                near: AppConfig.schweizCenter,
+                radius: AppConfig.schweizRadiusM
             )
             newBarriers = Array(
                 barriers

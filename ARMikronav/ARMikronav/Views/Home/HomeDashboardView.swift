@@ -1,10 +1,11 @@
 // HomeDashboardView.swift
 // ARMikronav
 //
-// Homescreen (Start-Tab): begrüsst den User mit Name und Avatar, zeigt das
-// aktuelle Wetter am Standort, die letzten Navigationsziele und die neuesten
-// Barrieren-Meldungen im Kreis 1. Karten-Interaktionen (Ziel ansteuern,
-// Barriere ansehen) laufen über den onOpenMap-Callback des HomeView.
+// Homescreen (Start-Tab): begrüsst den User mit Name und Profilfoto, zeigt
+// das aktuelle Wetter am Standort (OpenWeather, inkl. UV-Index), die letzten
+// Navigationsziele und die neuesten Barrieren-Meldungen aus der ganzen
+// Schweiz. Karten-Interaktionen (Ziel ansteuern, Barriere ansehen) laufen
+// über den onOpenMap-Callback des HomeView.
 
 import SwiftUI
 import CoreLocation
@@ -17,6 +18,7 @@ struct HomeDashboardView: View {
 
     @StateObject private var viewModel = HomeDashboardViewModel()
     @StateObject private var recentDestinations = RecentDestinationsStore.shared
+    @StateObject private var avatarStore = AvatarStore.shared
 
     var body: some View {
         ScrollView {
@@ -36,6 +38,7 @@ struct HomeDashboardView: View {
         }
         .onAppear {
             viewModel.start()
+            avatarStore.loadIfNeeded()
         }
     }
 
@@ -69,22 +72,29 @@ struct HomeDashboardView: View {
         .accessibilityLabel("\(viewModel.greeting) Heute ist \(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))")
     }
 
-    /// Profilbild als Initialen-Monogramm (die App erfasst kein Foto).
+    /// Profilbild (in den Einstellungen erfasst), sonst Initialen-Monogramm.
     private var avatar: some View {
         ZStack {
-            Circle()
-                .fill(AppColor.accentPrimary)
-            if viewModel.initials.isEmpty {
-                Image(systemName: "person.fill")
-                    .font(.title3)
-                    .foregroundStyle(AppColor.onAccent)
+            if let photo = avatarStore.image {
+                Image(uiImage: photo)
+                    .resizable()
+                    .scaledToFill()
             } else {
-                Text(viewModel.initials)
-                    .font(.headline)
-                    .foregroundStyle(AppColor.onAccent)
+                Circle()
+                    .fill(AppColor.accentPrimary)
+                if viewModel.initials.isEmpty {
+                    Image(systemName: "person.fill")
+                        .font(.title3)
+                        .foregroundStyle(AppColor.onAccent)
+                } else {
+                    Text(viewModel.initials)
+                        .font(.headline)
+                        .foregroundStyle(AppColor.onAccent)
+                }
             }
         }
         .frame(width: 52, height: 52)
+        .clipShape(Circle())
         .accessibilityHidden(true)
     }
 
@@ -94,32 +104,55 @@ struct HomeDashboardView: View {
     private var weatherCard: some View {
         card {
             if let weather = viewModel.weather {
-                HStack(spacing: AppMetrics.Space.m) {
-                    Image(systemName: weather.symbolName)
-                        .font(.system(size: 40))
-                        .symbolRenderingMode(.multicolor)
-                        .frame(width: 56)
+                VStack(spacing: AppMetrics.Space.m) {
+                    HStack(spacing: AppMetrics.Space.m) {
+                        Image(systemName: weather.symbolName)
+                            .font(.system(size: 40))
+                            .symbolRenderingMode(.multicolor)
+                            .frame(width: 56)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(Int(weather.temperatureC.rounded())) °C")
-                            .font(AppTypography.title1)
-                            .foregroundStyle(AppColor.textPrimary)
-                        Text(weather.localizedDescription)
-                            .font(AppTypography.subheadline)
-                            .foregroundStyle(AppColor.textSecondary)
-                    }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("\(Int(weather.temperatureC.rounded())) °C")
+                                .font(AppTypography.title1)
+                                .foregroundStyle(AppColor.textPrimary)
+                            Text(weather.conditionDescription)
+                                .font(AppTypography.subheadline)
+                                .foregroundStyle(AppColor.textSecondary)
+                        }
 
-                    Spacer()
+                        Spacer()
 
-                    VStack(alignment: .trailing, spacing: 4) {
-                        if let place = viewModel.weatherPlaceName {
-                            Label(place, systemImage: "location.fill")
+                        VStack(alignment: .trailing, spacing: 4) {
+                            if let place = viewModel.weatherPlaceName {
+                                Label(place, systemImage: "location.fill")
+                                    .font(AppTypography.footnote)
+                                    .foregroundStyle(AppColor.textSecondary)
+                            }
+                            Label("\(Int(weather.windSpeedKmh.rounded())) km/h", systemImage: "wind")
                                 .font(AppTypography.footnote)
                                 .foregroundStyle(AppColor.textSecondary)
                         }
-                        Label("\(Int(weather.windSpeedKmh.rounded())) km/h", systemImage: "wind")
-                            .font(AppTypography.footnote)
-                            .foregroundStyle(AppColor.textSecondary)
+                    }
+
+                    Divider()
+                        .overlay(AppColor.borderDecorative)
+
+                    HStack(spacing: AppMetrics.Space.s) {
+                        weatherStat(
+                            symbol: "sun.max.trianglebadge.exclamationmark",
+                            label: "UV-Index",
+                            value: String(format: "%.0f · %@", weather.uvIndex.rounded(), weather.uvCategory)
+                        )
+                        weatherStat(
+                            symbol: "thermometer.medium",
+                            label: "Gefühlt",
+                            value: "\(Int(weather.feelsLikeC.rounded())) °C"
+                        )
+                        weatherStat(
+                            symbol: "humidity.fill",
+                            label: "Luftfeuchte",
+                            value: "\(weather.humidityPercent) %"
+                        )
                     }
                 }
                 .accessibilityElement(children: .combine)
@@ -150,13 +183,34 @@ struct HomeDashboardView: View {
         }
     }
 
+    /// Mini-Statistik in der Wetterkarte (UV-Index, gefühlte Temperatur, …).
+    private func weatherStat(symbol: String, label: String, value: String) -> some View {
+        VStack(spacing: 2) {
+            Image(systemName: symbol)
+                .font(AppTypography.subheadline)
+                .foregroundStyle(AppColor.accentPrimary)
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppColor.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(AppColor.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     private func weatherAccessibilityText(_ weather: CurrentWeather) -> String {
         var text = "Aktuelles Wetter"
         if let place = viewModel.weatherPlaceName {
             text += " in \(place)"
         }
-        text += ": \(Int(weather.temperatureC.rounded())) Grad, \(weather.localizedDescription),"
-        text += " Wind \(Int(weather.windSpeedKmh.rounded())) Kilometer pro Stunde"
+        text += ": \(Int(weather.temperatureC.rounded())) Grad, \(weather.conditionDescription),"
+        text += " gefühlt \(Int(weather.feelsLikeC.rounded())) Grad,"
+        text += " Wind \(Int(weather.windSpeedKmh.rounded())) Kilometer pro Stunde,"
+        text += " UV-Index \(Int(weather.uvIndex.rounded())) (\(weather.uvCategory)),"
+        text += " Luftfeuchtigkeit \(weather.humidityPercent) Prozent"
         return text
     }
 
@@ -280,7 +334,7 @@ struct HomeDashboardView: View {
                         Image(systemName: "checkmark.seal.fill")
                             .font(.title2)
                             .foregroundStyle(AppColor.Status.openIcon)
-                        Text("Keine neuen Barrieren-Meldungen im Gebiet.")
+                        Text("Keine neuen Barrieren-Meldungen in der Schweiz.")
                             .font(AppTypography.subheadline)
                             .foregroundStyle(AppColor.textSecondary)
                         Spacer()

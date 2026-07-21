@@ -22,6 +22,13 @@ enum AppConfig {
     static let kreis1Center = CLLocationCoordinate2D(latitude: 47.3710, longitude: 8.5400)
     static let kreis1RadiusM: Double = 1400
 
+    // MARK: - Abdeckung ganze Schweiz (Homescreen)
+    // Der Homescreen zeigt die neuesten Barrieren-Meldungen schweizweit;
+    // der Radius um den geografischen Mittelpunkt (Älggi-Alp) deckt das
+    // ganze Land ab. Die Kartenansicht bleibt beim Kreis-1-Testgebiet.
+    static let schweizCenter = CLLocationCoordinate2D(latitude: 46.8011, longitude: 8.2266)
+    static let schweizRadiusM: Double = 250_000
+
     // MARK: - Defaults
     static let defaultBarrierRadius: Double = 500
     static let approachWarningDistance: Double = 30
