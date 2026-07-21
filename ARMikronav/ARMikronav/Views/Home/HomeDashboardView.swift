@@ -24,9 +24,13 @@ struct HomeDashboardView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppMetrics.Space.l) {
                 header
+                    .appEntrance()
                 weatherCard
+                    .appEntrance(delay: 0.05)
                 recentDestinationsSection
+                    .appEntrance(delay: 0.1)
                 newBarriersSection
+                    .appEntrance(delay: 0.15)
             }
             .padding(.horizontal, AppMetrics.Space.m)
             .padding(.top, AppMetrics.Space.m)
@@ -50,7 +54,7 @@ struct HomeDashboardView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(viewModel.greeting)
-                    .font(AppTypography.title2)
+                    .font(AppTypography.displayTitle2)
                     .foregroundStyle(AppColor.textPrimary)
                 Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))
                     .font(AppTypography.subheadline)
@@ -95,6 +99,18 @@ struct HomeDashboardView: View {
         }
         .frame(width: 52, height: 52)
         .clipShape(Circle())
+        .padding(3)
+        .overlay(
+            Circle()
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [AppColor.Violet.v300, AppColor.accentPrimary],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2.5
+                )
+        )
         .accessibilityHidden(true)
     }
 
@@ -102,62 +118,103 @@ struct HomeDashboardView: View {
 
     @ViewBuilder
     private var weatherCard: some View {
-        card {
-            if let weather = viewModel.weather {
-                VStack(spacing: AppMetrics.Space.m) {
-                    HStack(spacing: AppMetrics.Space.m) {
-                        Image(systemName: weather.symbolName)
-                            .font(.system(size: 40))
-                            .symbolRenderingMode(.multicolor)
-                            .frame(width: 56)
+        if let weather = viewModel.weather {
+            heroWeatherCard(weather)
+        } else {
+            weatherFallbackCard
+        }
+    }
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(Int(weather.temperatureC.rounded())) °C")
-                                .font(AppTypography.title1)
-                                .foregroundStyle(AppColor.textPrimary)
-                            Text(weather.conditionDescription)
-                                .font(AppTypography.subheadline)
-                                .foregroundStyle(AppColor.textSecondary)
-                        }
-
-                        Spacer()
-
-                        VStack(alignment: .trailing, spacing: 4) {
-                            if let place = viewModel.weatherPlaceName {
-                                Label(place, systemImage: "location.fill")
-                                    .font(AppTypography.footnote)
-                                    .foregroundStyle(AppColor.textSecondary)
-                            }
-                            Label("\(Int(weather.windSpeedKmh.rounded())) km/h", systemImage: "wind")
-                                .font(AppTypography.footnote)
-                                .foregroundStyle(AppColor.textSecondary)
-                        }
-                    }
-
-                    Divider()
-                        .overlay(AppColor.borderDecorative)
-
-                    HStack(spacing: AppMetrics.Space.s) {
-                        weatherStat(
-                            symbol: "sun.max.trianglebadge.exclamationmark",
-                            label: "UV-Index",
-                            value: String(format: "%.0f · %@", weather.uvIndex.rounded(), weather.uvCategory)
-                        )
-                        weatherStat(
-                            symbol: "thermometer.medium",
-                            label: "Gefühlt",
-                            value: "\(Int(weather.feelsLikeC.rounded())) °C"
-                        )
-                        weatherStat(
-                            symbol: "humidity.fill",
-                            label: "Luftfeuchte",
-                            value: "\(weather.humidityPercent) %"
-                        )
-                    }
+    /// Hero-Karte: Violett-Verlauf mit weichen Kreisformen im Hintergrund,
+    /// weisser Text (Violett 700 hält >= 7:1 zu Weiss), Werte in SF Rounded.
+    private func heroWeatherCard(_ weather: CurrentWeather) -> some View {
+        VStack(spacing: AppMetrics.Space.m) {
+            HStack(spacing: AppMetrics.Space.m) {
+                ZStack {
+                    Circle()
+                        .fill(.white.opacity(0.14))
+                    Image(systemName: weather.symbolName)
+                        .font(.system(size: 30))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.white)
                 }
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(weatherAccessibilityText(weather))
-            } else if viewModel.isLoadingWeather {
+                .frame(width: 64, height: 64)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("\(Int(weather.temperatureC.rounded())) °C")
+                        .font(AppTypography.displayNumber)
+                        .foregroundStyle(.white)
+                    Text(weather.conditionDescription)
+                        .font(AppTypography.subheadline)
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    if let place = viewModel.weatherPlaceName {
+                        Label(place, systemImage: "location.fill")
+                            .font(AppTypography.footnote)
+                            .foregroundStyle(.white.opacity(0.85))
+                    }
+                    Label("\(Int(weather.windSpeedKmh.rounded())) km/h", systemImage: "wind")
+                        .font(AppTypography.footnote)
+                        .foregroundStyle(.white.opacity(0.85))
+                }
+            }
+
+            HStack(spacing: AppMetrics.Space.s) {
+                weatherStat(
+                    symbol: "sun.max.trianglebadge.exclamationmark",
+                    label: "UV-Index",
+                    value: String(format: "%.0f · %@", weather.uvIndex.rounded(), weather.uvCategory)
+                )
+                weatherStat(
+                    symbol: "thermometer.medium",
+                    label: "Gefühlt",
+                    value: "\(Int(weather.feelsLikeC.rounded())) °C"
+                )
+                weatherStat(
+                    symbol: "humidity.fill",
+                    label: "Luftfeuchte",
+                    value: "\(weather.humidityPercent) %"
+                )
+            }
+        }
+        .padding(AppMetrics.Space.m + 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            ZStack {
+                LinearGradient(
+                    colors: [AppColor.Violet.v900, AppColor.Violet.v700],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                // Dekorative Kreise – reine Formsprache, keine Information.
+                Circle()
+                    .fill(.white.opacity(0.07))
+                    .frame(width: 200, height: 200)
+                    .offset(x: 130, y: -80)
+                Circle()
+                    .fill(.white.opacity(0.05))
+                    .frame(width: 140, height: 140)
+                    .offset(x: -140, y: 70)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous))
+        )
+        .shadow(
+            color: AppColor.Violet.v700.opacity(0.3),
+            radius: AppMetrics.Shadow.cardRadius,
+            y: AppMetrics.Shadow.cardY
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(weatherAccessibilityText(weather))
+    }
+
+    @ViewBuilder
+    private var weatherFallbackCard: some View {
+        card {
+            if viewModel.isLoadingWeather {
                 HStack(spacing: AppMetrics.Space.m) {
                     ProgressView()
                     Text("Wetter wird geladen…")
@@ -184,20 +241,26 @@ struct HomeDashboardView: View {
         }
     }
 
-    /// Mini-Statistik in der Wetterkarte (UV-Index, gefühlte Temperatur, …).
+    /// Mini-Statistik in der Hero-Wetterkarte: Symbol auf transluzentem
+    /// Kreis, Wert in gerundeter Schrift – alles in Weiss auf dem Verlauf.
     private func weatherStat(symbol: String, label: String, value: String) -> some View {
-        VStack(spacing: 2) {
-            Image(systemName: symbol)
-                .font(AppTypography.subheadline)
-                .foregroundStyle(AppColor.accentPrimary)
+        VStack(spacing: 4) {
+            ZStack {
+                Circle()
+                    .fill(.white.opacity(0.14))
+                Image(systemName: symbol)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            .frame(width: 32, height: 32)
             Text(value)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppColor.textPrimary)
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(.white.opacity(0.85))
         }
         .frame(maxWidth: .infinity)
     }
@@ -242,7 +305,7 @@ struct HomeDashboardView: View {
                             } label: {
                                 destinationRow(destination)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.appRow)
 
                             if destination.id != recentDestinations.destinations.prefix(5).last?.id {
                                 Divider()
@@ -258,9 +321,7 @@ struct HomeDashboardView: View {
 
     private func destinationRow(_ destination: RecentDestination) -> some View {
         HStack(spacing: AppMetrics.Space.m) {
-            Image(systemName: "mappin.circle.fill")
-                .font(.title2)
-                .foregroundStyle(AppColor.accentPrimary)
+            IconDisc.tinted("mappin", size: 40)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(destination.name)
@@ -350,7 +411,7 @@ struct HomeDashboardView: View {
                             } label: {
                                 barrierRow(barrier)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.appRow)
 
                             if barrier.id != viewModel.newBarriers.last?.id {
                                 Divider()
@@ -459,7 +520,7 @@ struct HomeDashboardView: View {
 
     private func sectionTitle(_ title: String) -> some View {
         Text(title)
-            .font(AppTypography.title2)
+            .font(AppTypography.displayTitle2)
             .foregroundStyle(AppColor.textPrimary)
             .accessibilityAddTraits(.isHeader)
     }
@@ -468,16 +529,6 @@ struct HomeDashboardView: View {
         padding: CGFloat = AppMetrics.Space.m,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        content()
-            .padding(padding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                AppColor.surfaceRaised,
-                in: RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous)
-                    .stroke(AppColor.borderDecorative, lineWidth: 1)
-            )
+        content().appCard(padding: padding)
     }
 }

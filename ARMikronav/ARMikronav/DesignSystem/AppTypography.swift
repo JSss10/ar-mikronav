@@ -12,6 +12,13 @@ enum AppTypography {
 
     /// Grosstitel · 34/41 · Bold · Screen-Titel.
     static let largeTitle = Font.system(.largeTitle, design: .default, weight: .bold)
+    /// Display · gerundete Variante (SF Rounded) für Hero-Titel und
+    /// Begrüssungen – freundlich, passend zur kreisbasierten Formsprache.
+    static let displayLarge = Font.system(.largeTitle, design: .rounded, weight: .bold)
+    /// Display-Zahlen · gerundet, für grosse Messwerte (z. B. Temperatur).
+    static let displayNumber = Font.system(size: 44, weight: .bold, design: .rounded)
+    /// Display-Titel 2 · gerundet, für Karten-Held-Zeilen.
+    static let displayTitle2 = Font.system(.title2, design: .rounded, weight: .bold)
     /// Titel 1 · 28/34 · Bold · Abschnittstitel.
     static let title1 = Font.system(.title, design: .default, weight: .bold)
     /// Titel 2 · 22/28 · Semibold · Karten-Titel.

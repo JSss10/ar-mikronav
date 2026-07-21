@@ -44,22 +44,18 @@ struct IntroCarouselView: View {
 
             Button {
                 if page < slides.count - 1 {
-                    withAnimation { page += 1 }
+                    withAnimation(AppMotion.spring) { page += 1 }
                 } else {
                     showSignUp = true
                 }
             } label: {
                 Text(page < slides.count - 1 ? "Weiter" : "Los geht's")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(Color.accentColor)
-                    .cornerRadius(12)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 40)
+            .buttonStyle(.appPrimary)
+            .padding(.horizontal, AppMetrics.Space.l)
+            .padding(.bottom, AppMetrics.Space.xxl)
         }
+        .background(AppColor.backgroundPrimary)
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $showSignUp) {
             SignUpView()
@@ -67,27 +63,36 @@ struct IntroCarouselView: View {
     }
 
     private func slideView(_ slide: IntroSlide) -> some View {
-        VStack(spacing: 24) {
+        VStack(spacing: AppMetrics.Space.l) {
             Spacer()
 
-            Image(systemName: slide.symbolName)
-                .font(.system(size: 96))
-                .foregroundStyle(.tint)
-                .frame(maxWidth: .infinity, minHeight: 220)
-                .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 20))
-                .padding(.horizontal, 24)
+            // Illustration auf kreisrunder, getönter Disc – die Kreisform
+            // ist das wiederkehrende Grundmotiv der App.
+            ZStack {
+                Circle()
+                    .fill(AppColor.Violet.v100)
+                    .frame(width: 220, height: 220)
+                Circle()
+                    .strokeBorder(AppColor.Violet.v300.opacity(0.5), lineWidth: 1.5)
+                    .frame(width: 260, height: 260)
+                Image(systemName: slide.symbolName)
+                    .font(.system(size: 88))
+                    .foregroundStyle(AppColor.accentPrimary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 280)
+            .accessibilityHidden(true)
 
             Text(slide.title)
-                .font(.title2)
-                .bold()
+                .font(AppTypography.displayTitle2)
+                .foregroundStyle(AppColor.textPrimary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, AppMetrics.Space.xl)
 
             Text(slide.subtitle)
-                .font(.body)
-                .foregroundStyle(.secondary)
+                .font(AppTypography.body)
+                .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, AppMetrics.Space.xl)
 
             Spacer()
         }

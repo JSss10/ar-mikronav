@@ -24,11 +24,26 @@ enum AppMetrics {
     // MARK: - Eckenradien
 
     enum Radius {
-        static let chip: CGFloat = 6
-        static let field: CGFloat = 12
-        static let button: CGFloat = 14
-        static let card: CGFloat = 16
-        static let sheet: CGFloat = 18
+        static let chip: CGFloat = 10
+        static let field: CGFloat = 14
+        /// Buttons sind Kapseln (Capsule); der Radius dient als Fallback,
+        /// wo eine RoundedRectangle-Form gebraucht wird.
+        static let button: CGFloat = 18
+        static let card: CGFloat = 20
+        static let sheet: CGFloat = 24
+    }
+
+    // MARK: - Schatten (weiche Tiefenstaffelung, kein harter Rand)
+
+    enum Shadow {
+        /// Karten: sehr weicher, tiefer Schatten.
+        static let cardRadius: CGFloat = 14
+        static let cardY: CGFloat = 6
+        static let cardOpacity: Double = 0.06
+        /// Primärbuttons: farbiger Glow in Akzentfarbe.
+        static let buttonRadius: CGFloat = 12
+        static let buttonY: CGFloat = 5
+        static let buttonOpacity: Double = 0.28
     }
 
     // MARK: - Abstände (4-pt-Raster)

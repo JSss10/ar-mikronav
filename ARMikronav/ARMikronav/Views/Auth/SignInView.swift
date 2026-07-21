@@ -1,114 +1,121 @@
 // SignInView.swift
 // ARMikronav
 //
-// Anmeldung mit E-Mail und Passwort
+// Anmeldung mit E-Mail und Passwort – Felder im Styleguide-Stil
+// (.appField mit sichtbarem Fokusring), Aktionen als Kapsel-Buttons.
 
 import SwiftUI
 
 struct SignInView: View {
     @EnvironmentObject var authService: AuthService
-    
+
     @State private var email: String = ""
     @State private var password: String = ""
-    
+
     @State private var isLoading: Bool = false
     @State private var errorMessage: String? = nil
-    
+
     @State private var showResetPassword: Bool = false
-    
+
+    @FocusState private var focusedField: Field?
+
+    private enum Field {
+        case email, password
+    }
+
     private var isFormValid: Bool {
         !email.isEmpty && !password.isEmpty
     }
-    
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: AppMetrics.Space.m + 4) {
                 Text("Anmelden")
-                    .font(.largeTitle)
-                    .bold()
+                    .font(AppTypography.displayLarge)
+                    .foregroundColor(AppColor.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 20)
-                
+                    .padding(.top, AppMetrics.Space.m)
+                    .accessibilityAddTraits(.isHeader)
+
                 Text("Melde dich mit deinem Konto an.")
-                    .font(.body)
-                    .foregroundColor(.secondary)
+                    .font(AppTypography.body)
+                    .foregroundColor(AppColor.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.bottom, 8)
-                
+                    .padding(.bottom, AppMetrics.Space.s)
+
                 // E-Mail
                 VStack(alignment: .leading, spacing: 6) {
                     Text("E-Mail")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(AppTypography.subheadline)
+                        .foregroundColor(AppColor.textSecondary)
                     TextField("name@beispiel.ch", text: $email)
-                        .textFieldStyle(.roundedBorder)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
                         .autocorrectionDisabled()
+                        .focused($focusedField, equals: .email)
+                        .appField(isFocused: focusedField == .email)
                 }
-                
+
                 // Passwort
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Passwort")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(AppTypography.subheadline)
+                        .foregroundColor(AppColor.textSecondary)
                     SecureField("••••••••", text: $password)
-                        .textFieldStyle(.roundedBorder)
                         .textContentType(.password)
+                        .focused($focusedField, equals: .password)
+                        .appField(isFocused: focusedField == .password)
                 }
-                
+
                 // Passwort vergessen
                 Button("Passwort vergessen?") {
                     showResetPassword = true
                 }
-                .font(.caption)
+                .font(AppTypography.subheadline)
+                .foregroundColor(AppColor.accentPrimary)
                 .frame(maxWidth: .infinity, alignment: .trailing)
-                
+                .frame(minHeight: AppMetrics.Touch.minimum)
+
                 // Error
                 if let errorMessage = errorMessage {
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundColor(.red)
+                    Label(errorMessage, systemImage: "exclamationmark.circle.fill")
+                        .font(AppTypography.subheadline)
+                        .foregroundColor(AppColor.Status.blockedText)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                
+
                 // Sign In Button
                 Button {
                     Task { await handleSignIn() }
                 } label: {
                     if isLoading {
                         ProgressView()
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
+                            .tint(AppColor.onAccent)
                     } else {
                         Text("Anmelden")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
                     }
                 }
-                .background(isFormValid ? Color.accentColor : Color.gray)
-                .cornerRadius(12)
+                .buttonStyle(.appPrimary)
                 .disabled(!isFormValid || isLoading)
-                .padding(.top, 8)
-                
+                .padding(.top, AppMetrics.Space.s)
+
                 Spacer()
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, AppMetrics.Space.l)
         }
+        .background(AppColor.backgroundPrimary)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showResetPassword) {
             ResetPasswordView()
         }
     }
-    
+
     private func handleSignIn() async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
-        
+
         do {
             try await authService.signIn(email: email, password: password)
         } catch {
@@ -122,54 +129,56 @@ struct SignInView: View {
 struct ResetPasswordView: View {
     @EnvironmentObject var authService: AuthService
     @Environment(\.dismiss) private var dismiss
-    
+
     @State private var email: String = ""
     @State private var isLoading: Bool = false
     @State private var message: String? = nil
     @State private var isError: Bool = false
-    
+
+    @FocusState private var emailFocused: Bool
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
+            VStack(spacing: AppMetrics.Space.m + 4) {
                 Text("Wir senden dir einen Link zum Zurücksetzen deines Passworts.")
-                    .font(.body)
-                    .foregroundColor(.secondary)
+                    .font(AppTypography.body)
+                    .foregroundColor(AppColor.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 TextField("E-Mail", text: $email)
-                    .textFieldStyle(.roundedBorder)
                     .textContentType(.emailAddress)
                     .keyboardType(.emailAddress)
                     .autocapitalization(.none)
-                
+                    .focused($emailFocused)
+                    .appField(isFocused: emailFocused)
+
                 if let message = message {
-                    Text(message)
-                        .font(.caption)
-                        .foregroundColor(isError ? .red : .green)
+                    Label(
+                        message,
+                        systemImage: isError ? "exclamationmark.circle.fill" : "checkmark.circle.fill"
+                    )
+                    .font(AppTypography.subheadline)
+                    .foregroundColor(isError ? AppColor.Status.blockedText : AppColor.Status.openText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                
+
                 Button {
                     Task { await handleReset() }
                 } label: {
                     if isLoading {
                         ProgressView()
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
+                            .tint(AppColor.onAccent)
                     } else {
                         Text("Reset-Link senden")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
                     }
                 }
-                .background(email.isEmpty ? Color.gray : Color.accentColor)
-                .cornerRadius(12)
+                .buttonStyle(.appPrimary)
                 .disabled(email.isEmpty || isLoading)
-                
+
                 Spacer()
             }
-            .padding(24)
+            .padding(AppMetrics.Space.l)
+            .background(AppColor.backgroundPrimary)
             .navigationTitle("Passwort vergessen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -179,12 +188,12 @@ struct ResetPasswordView: View {
             }
         }
     }
-    
+
     private func handleReset() async {
         isLoading = true
         message = nil
         defer { isLoading = false }
-        
+
         do {
             try await authService.resetPassword(email: email)
             message = "E-Mail gesendet. Prüfe dein Postfach."
