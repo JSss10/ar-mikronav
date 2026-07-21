@@ -2,7 +2,7 @@
 // ARMikronav
 //
 // Homescreen (Start-Tab): begrüsst den User mit Name und Profilfoto, zeigt
-// das aktuelle Wetter am Standort (OpenWeather, inkl. UV-Index), die letzten
+// das aktuelle Wetter am Standort (Open-Meteo, inkl. UV-Index), die letzten
 // Navigationsziele und die neuesten Barrieren-Meldungen aus der ganzen
 // Schweiz. Karten-Interaktionen (Ziel ansteuern, Barriere ansehen) laufen
 // über den onOpenMap-Callback des HomeView.
@@ -165,14 +165,15 @@ struct HomeDashboardView: View {
                         .foregroundStyle(AppColor.textSecondary)
                 }
             } else {
-                HStack(spacing: AppMetrics.Space.m) {
+                HStack(alignment: .top, spacing: AppMetrics.Space.m) {
                     Image(systemName: "cloud.slash")
                         .font(.title2)
                         .foregroundStyle(AppColor.textSecondary)
                     Text(viewModel.weatherError ?? "Wetter derzeit nicht verfügbar.")
                         .font(AppTypography.subheadline)
                         .foregroundStyle(AppColor.textSecondary)
-                    Spacer()
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     Button("Erneut") {
                         Task { await viewModel.loadWeather() }
                     }

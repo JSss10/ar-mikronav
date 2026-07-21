@@ -1,10 +1,10 @@
 // HomeDashboardViewModel.swift
 // ARMikronav
 //
-// Datenquelle des Homescreens: Wetter am aktuellen Standort (OpenWeather),
-// Name/Initialen aus den Auth-Metadaten und die neuesten Barrieren-Meldungen
-// aus der ganzen Schweiz. Die letzten Ziele kommen aus dem
-// RecentDestinationsStore.
+// Datenquelle des Homescreens: Wetter am aktuellen Standort (Open-Meteo,
+// inkl. UV-Index), Name/Initialen aus den Auth-Metadaten und die neuesten
+// Barrieren-Meldungen aus der ganzen Schweiz. Die letzten Ziele kommen aus
+// dem RecentDestinationsStore.
 
 import Foundation
 import Combine
@@ -128,10 +128,11 @@ final class HomeDashboardViewModel: ObservableObject {
             async let placeTask = WeatherService.shared.placeName(for: coordinate)
             weather = try await weatherTask
             weatherPlaceName = await placeTask
-        } catch WeatherServiceError.missingAPIKey {
-            weatherError = "OpenWeather-API-Key fehlt (Secrets.swift)."
+        } catch let error as WeatherServiceError {
+            weatherError = error.userMessage
         } catch {
-            weatherError = "Wetter konnte nicht geladen werden."
+            // Netzwerk-/Transportfehler (kein HTTP-Status).
+            weatherError = "Wetter konnte nicht geladen werden: \(error.localizedDescription)"
         }
     }
 
