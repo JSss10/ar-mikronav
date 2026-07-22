@@ -81,16 +81,35 @@ struct SettingsView: View {
         "Steigung max \(Int(profile.effectiveMaxIncline))% · Bordstein max \(Int(profile.effectiveMaxCurb))cm · Breite min \(profile.effectiveWidthNeeded)cm"
     }
 
-    // MARK: - Begleitung
+    // MARK: - Heute (Tages-Zustände: Begleitung, Nässe, Energie)
 
     private var companionSection: some View {
         Section {
             Toggle("Heute mit Begleitperson", isOn: $profile.companionTodayOverride)
+            Toggle("Nasse Bedingungen", isOn: $profile.wetConditionsToday)
+            Toggle("Heute weniger Energie", isOn: $profile.lowEnergyToday)
+        } header: {
+            Text("Heute")
         } footer: {
-            Text(profile.companionTodayOverride
-                 ? "Deine Limits sind heute leicht erhöht (mehr Steigung und Bordsteinhöhe erlaubt)."
-                 : "Verschiebt deine Schwellenwerte temporär, wenn dich heute jemand begleitet.")
+            Text(todayFooter)
         }
+    }
+
+    private var todayFooter: String {
+        var parts: [String] = []
+        if profile.companionTodayOverride {
+            parts.append("Begleitung: Limits leicht erhöht (+3 % Steigung, +4 cm Bordstein).")
+        }
+        if profile.wetConditionsToday {
+            parts.append("Nässe: Oberflächen-Toleranz eine Stufe strenger.")
+        }
+        if profile.lowEnergyToday {
+            parts.append("Weniger Energie: Limits um 20 % gesenkt.")
+        }
+        if parts.isEmpty {
+            return "Tages-Zustände passen deine Warn-Schwellen temporär an – dein Profil bleibt unverändert."
+        }
+        return parts.joined(separator: " ")
     }
 
     // MARK: - Menü (4.1)

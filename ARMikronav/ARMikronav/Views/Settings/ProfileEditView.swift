@@ -108,12 +108,17 @@ struct ProfileEditView: View {
     }
 
     private var companionSection: some View {
-        Section("Begleitung") {
+        Section {
             Picker("Standard", selection: $draft.companionStatus) {
                 ForEach(CompanionStatus.allCases, id: \.self) { status in
                     Text(status.displayName).tag(status)
                 }
             }
+            Toggle("Ich besitze einen Eurokey", isOn: $draft.hasEurokey)
+        } header: {
+            Text("Begleitung & Ausstattung")
+        } footer: {
+            Text("Mit Eurokey werden abgeschlossene Behinderten-WCs für dich als zugänglich bewertet.")
         }
     }
 
