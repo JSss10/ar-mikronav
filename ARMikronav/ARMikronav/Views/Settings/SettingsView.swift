@@ -6,6 +6,7 @@
 // (Benachrichtigungen, Karte, Sprache, Datenschutz) und das Abmelden.
 
 import SwiftUI
+import Auth
 
 struct SettingsView: View {
     @EnvironmentObject var authService: AuthService
@@ -20,10 +21,12 @@ struct SettingsView: View {
     // Geteilte Karten-Präferenzen (auch über das Ebenen-Menü auf der
     // Karte änderbar).
     @StateObject private var mapPreferences = MapPreferences.shared
+    @StateObject private var avatarStore = AvatarStore.shared
 
     var body: some View {
         NavigationStack {
             Form {
+                profileHeaderSection
                 profileSection
                 companionSection
                 editSection
@@ -33,8 +36,10 @@ struct SettingsView: View {
                 privacyAndAboutSection
                 accountSection
             }
+            .tint(AppColor.accentPrimary)
             .navigationTitle("Profil")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear { avatarStore.loadIfNeeded() }
             .trackScreen("settings")
             .alert("Barrieren-Daten löschen?", isPresented: $showingCacheDeleteConfirm) {
                 Button("Löschen", role: .destructive) {
@@ -130,6 +135,86 @@ struct SettingsView: View {
     private func deleteBarrierCache() {
         // Cache-Key des kommenden Offline-Cachings; heute noch leer.
         UserDefaults.standard.removeObject(forKey: "armikronav.barrierCache")
+    }
+
+    // MARK: - Profil-Kopf (Avatar, Name, Rollstuhltyp)
+
+    private var profileHeaderSection: some View {
+        Section {
+            NavigationLink {
+                ProfileEditView(profile: $profile)
+            } label: {
+                HStack(spacing: AppMetrics.Space.m) {
+                    avatar
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(displayName)
+                            .font(AppTypography.title2)
+                            .foregroundStyle(AppColor.textPrimary)
+                        Text(profile.wheelchairType.displayName)
+                            .font(AppTypography.subheadline)
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                }
+                .padding(.vertical, AppMetrics.Space.s)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(displayName), \(profile.wheelchairType.displayName), Profil bearbeiten")
+            }
+        }
+    }
+
+    /// Profilbild (in den Einstellungen erfasst), sonst Initialen-Monogramm.
+    private var avatar: some View {
+        ZStack {
+            if let photo = avatarStore.image {
+                Image(uiImage: photo)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Circle().fill(AppColor.accentPrimary)
+                if initials.isEmpty {
+                    Image(systemName: "person.fill")
+                        .font(.title2)
+                        .foregroundStyle(AppColor.onAccent)
+                } else {
+                    Text(initials)
+                        .font(AppTypography.title2)
+                        .foregroundStyle(AppColor.onAccent)
+                }
+            }
+        }
+        .frame(width: 60, height: 60)
+        .clipShape(Circle())
+        .accessibilityHidden(true)
+    }
+
+    /// Voller Name aus den Auth-Metadaten; sonst freundlicher Fallback.
+    private var displayName: String {
+        let metadata = authService.currentUser?.userMetadata
+        func string(_ key: String) -> String? {
+            if case .string(let value)? = metadata?[key] {
+                let trimmed = value.trimmingCharacters(in: .whitespaces)
+                return trimmed.isEmpty ? nil : trimmed
+            }
+            return nil
+        }
+        let parts = [string("first_name"), string("last_name")].compactMap { $0 }
+        return parts.isEmpty ? "Mein Profil" : parts.joined(separator: " ")
+    }
+
+    /// Initialen für das Avatar-Monogramm (z. B. "JS").
+    private var initials: String {
+        let metadata = authService.currentUser?.userMetadata
+        var result = ""
+        if case .string(let first)? = metadata?["first_name"],
+           let c = first.trimmingCharacters(in: .whitespaces).first {
+            result.append(c)
+        }
+        if case .string(let last)? = metadata?["last_name"],
+           let c = last.trimmingCharacters(in: .whitespaces).first {
+            result.append(c)
+        }
+        return result.uppercased()
     }
 
     // MARK: - Profil

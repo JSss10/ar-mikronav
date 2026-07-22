@@ -102,7 +102,7 @@ struct HomeDashboardView: View {
 
     @ViewBuilder
     private var weatherCard: some View {
-        card {
+        heroCard {
             if let weather = viewModel.weather {
                 VStack(spacing: AppMetrics.Space.m) {
                     HStack(spacing: AppMetrics.Space.m) {
@@ -473,6 +473,29 @@ struct HomeDashboardView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 AppColor.surfaceRaised,
+                in: RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous)
+                    .stroke(AppColor.borderDecorative, lineWidth: 1)
+            )
+    }
+
+    /// Hervorgehobene Karte (Wetter) mit sanftem Akzent-Verlauf – gibt dem
+    /// Homescreen einen freundlichen, modernen Auftakt, ohne die Lesbarkeit
+    /// der Werte zu beeinträchtigen.
+    private func heroCard<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        content()
+            .padding(AppMetrics.Space.m)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                LinearGradient(
+                    colors: [AppColor.Violet.v100, AppColor.surfaceRaised],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
                 in: RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous)
             )
             .overlay(

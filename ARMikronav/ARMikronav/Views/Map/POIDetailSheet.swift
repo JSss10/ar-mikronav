@@ -1,9 +1,9 @@
 // POIDetailSheet.swift
 // ARMikronav
 //
-// POI-Detail als Bottom-Sheet: Name, Kategorie, Adresse, Distanz, Fotos
-// (ginto), Zugänglichkeits-Status fürs Profil, ginto-Bewertung für den
-// eigenen Rollstuhltyp, Detail-Werte aus accessibility_details, Quellen und
+// POI-Detail als Bottom-Sheet: Name, Kategorie, Adresse, Distanz, Fotos,
+// Zugänglichkeits-Status fürs Profil, Bewertung für den eigenen
+// Rollstuhltyp, Detail-Werte aus accessibility_details, Webseite und
 // Aktionen (Route in AR starten, Ort speichern, Route auf der Karte anzeigen).
 //
 // Styling gemäss Styleguide v1.0: ausschliesslich Design-Tokens (AppColor,
@@ -43,7 +43,7 @@ struct POIDetailSheet: View {
                 eurokeyHint
                 ratingsCard
                 detailsCard
-                sourceFooter
+                websiteRow
 
                 VStack(spacing: AppMetrics.Space.s + AppMetrics.Space.xs) {
                     arButton
@@ -261,6 +261,9 @@ struct POIDetailSheet: View {
     private var detailsCard: some View {
         if let details = poi.accessibilityDetails, !details.isEmpty {
             let rows = details.keys.sorted().compactMap { key -> (String, String)? in
+                // URL-/Webseiten-Felder werden separat als «Webseite»-Zeile
+                // gezeigt (websiteRow); interne Quell-Schlüssel bleiben aussen vor.
+                guard !isWebsiteKey(key) else { return nil }
                 guard let text = displayValue(details[key]) else { return nil }
                 return (key, text)
             }
@@ -293,19 +296,56 @@ struct POIDetailSheet: View {
         }
     }
 
-    private var sourceFooter: some View {
-        HStack(spacing: AppMetrics.Space.xs + 2) {
-            Image(systemName: "info.circle")
-            Text("Quelle: \(poi.source.uppercased())")
+    /// Webseite des Ortes als eigene, angehobene Zeile mit sauber gekürzter
+    /// Adresse (ohne Schema/«www.»). Öffnet die Seite im Browser.
+    @ViewBuilder
+    private var websiteRow: some View {
+        if let url = poi.websiteURL {
+            Link(destination: url) {
+                HStack(spacing: AppMetrics.Space.m) {
+                    Image(systemName: "safari")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(AppColor.accentPrimary)
+                        .frame(width: 28)
 
-            if let gintoURL = poi.gintoURL {
-                Text("·")
-                Link("Auf ginto ansehen", destination: gintoURL)
-                    .foregroundStyle(AppColor.accentPrimary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Webseite")
+                            .font(AppTypography.headline)
+                            .foregroundStyle(AppColor.textPrimary)
+                        Text(cleanHost(url))
+                            .font(AppTypography.footnote)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: AppMetrics.Space.s)
+
+                    Image(systemName: "arrow.up.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                .padding(AppMetrics.Space.m)
+                .cardBackground()
             }
+            .accessibilityLabel("Webseite öffnen, \(cleanHost(url))")
         }
-        .font(AppTypography.footnote)
-        .foregroundStyle(AppColor.textSecondary)
+    }
+
+    /// Host einer URL ohne Schema und führendes «www.» – für eine ruhige,
+    /// lesbare Darstellung (z. B. «beispiel.ch» statt «https://www.beispiel.ch/»).
+    private func cleanHost(_ url: URL) -> String {
+        var host = url.host ?? url.absoluteString
+        if host.lowercased().hasPrefix("www.") {
+            host = String(host.dropFirst(4))
+        }
+        return host
+    }
+
+    /// Schlüssel, deren Wert eine Webseite/URL ist – separat als websiteRow
+    /// dargestellt und in der Detail-Tabelle ausgeblendet.
+    private func isWebsiteKey(_ key: String) -> Bool {
+        let k = key.lowercased()
+        return k.contains("url") || k == "website" || k == "homepage"
     }
 
     private var arButton: some View {

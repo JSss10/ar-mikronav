@@ -24,9 +24,9 @@ struct Screen11_MobilityCategory: View {
     ]
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: AppMetrics.Space.s + AppMetrics.Space.xs) {
             ForEach(categories, id: \.0) { category, label, icon in
-                CategoryRow(
+                SelectionRow(
                     label: label,
                     icon: icon,
                     selected: draft.mobilityCategory == category
@@ -39,10 +39,10 @@ struct Screen11_MobilityCategory: View {
             }
 
             Text("Im Prototyp ist aktuell nur die Rollstuhl-Kategorie vollständig umgesetzt.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(AppTypography.footnote)
+                .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
-                .padding(.top, 8)
+                .padding(.top, AppMetrics.Space.s)
         }
         .alert("Dieses Profil wird in einer zukünftigen Version verfügbar.", isPresented: $showingUnavailableDialog) {
             Button("Verstanden") {}
@@ -52,47 +52,5 @@ struct Screen11_MobilityCategory: View {
         } message: {
             Text("Im Prototyp ist aktuell nur das Rollstuhl-Profil vollständig umgesetzt. Deine Auswahl wird gespeichert.")
         }
-    }
-}
-
-private struct CategoryRow: View {
-    let label: String
-    let icon: String
-    let selected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .frame(width: 32)
-                    .foregroundStyle(Color.accentColor)
-
-                Text(label)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(Color.primary)
-
-                Spacer()
-
-                if selected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(Color.accentColor)
-                }
-            }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(selected ? Color.accentColor.opacity(0.08) : Color(.secondarySystemBackground))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(selected ? Color.accentColor : Color.clear, lineWidth: 2)
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
-        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
