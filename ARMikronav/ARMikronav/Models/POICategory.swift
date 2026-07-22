@@ -21,6 +21,16 @@ enum POICategory {
         "Haltestelle": "bus_stop"
     ]
 
+    /// Kategorie-Chips (deutsche Labels) in fixer Reihenfolge für die Filter
+    /// in der Suche (SearchSheet) und im AR-Modus.
+    static let chipLabels = ["Café", "Restaurant", "WC", "Apotheke", "Haltestelle"]
+
+    /// SF-Symbol für einen Kategorie-Chip (deutsches Label), z. B. für die
+    /// Filter-Chips in der Suche.
+    static func symbol(forChip chip: String) -> String {
+        symbol(for: searchTerm(forChip: chip))
+    }
+
     /// Case-insensitiv, damit auch Freitext-Eingaben wie "wc" oder "café"
     /// auf den DB-Kategorie-Begriff gemappt werden.
     static func searchTerm(forChip chip: String) -> String {

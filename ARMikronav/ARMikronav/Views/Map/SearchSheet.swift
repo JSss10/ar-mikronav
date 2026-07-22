@@ -2,8 +2,9 @@
 // ARMikronav
 //
 // POI-Suche mit Ergebnisliste (sortiert nach Distanz, mit
-// Zugänglichkeits-Status) und letzten Suchen. Tap auf ein Ergebnis schließt
-// das Sheet und übergibt den POI an die Karte (zentrieren + Detail).
+// Zugänglichkeits-Status), Kategorie-Filtern (Café, WC, Restaurant …) und
+// letzten Suchen. Tap auf ein Ergebnis schließt das Sheet und übergibt den
+// POI an die Karte (zentrieren + Detail).
 
 import SwiftUI
 
@@ -16,13 +17,19 @@ struct SearchSheet: View {
     @State private var results: [POI] = []
     @State private var isSearching = false
     @State private var hasSearched = false
+    /// Aktiver Kategorie-Chip (für die Hervorhebung); nil bei Freitext-Suche.
+    @State private var activeChip: String?
     @FocusState private var searchFieldFocused: Bool
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 searchField
-                    .padding()
+                    .padding(.horizontal)
+                    .padding(.top)
+
+                categoryFilters
+                    .padding(.vertical, 12)
 
                 if isSearching {
                     ProgressView()
@@ -61,12 +68,16 @@ struct SearchSheet: View {
                 .focused($searchFieldFocused)
                 .submitLabel(.search)
                 .autocorrectionDisabled()
-                .onSubmit { runSearch(query) }
+                .onSubmit {
+                    activeChip = nil
+                    runSearch(query)
+                }
             if !query.isEmpty {
                 Button {
                     query = ""
                     results = []
                     hasSearched = false
+                    activeChip = nil
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundStyle(.secondary)
@@ -76,6 +87,35 @@ struct SearchSheet: View {
         }
         .padding(10)
         .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    /// Kategorie-Filter (Café, WC, Restaurant …) als antippbare Chips – der
+    /// frühere Kategorie-Button-Streifen der Karte ist hierher gewandert.
+    private var categoryFilters: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(POICategory.chipLabels, id: \.self) { chip in
+                    let isActive = activeChip == chip
+                    Button {
+                        runCategory(chip)
+                    } label: {
+                        Label(chip, systemImage: POICategory.symbol(forChip: chip))
+                            .font(.subheadline.weight(.medium))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(
+                                isActive ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color(.systemGray6)),
+                                in: Capsule()
+                            )
+                            .foregroundStyle(isActive ? .white : .primary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(chip) suchen")
+                    .accessibilityAddTraits(isActive ? .isSelected : [])
+                }
+            }
+            .padding(.horizontal)
+        }
     }
 
     private var resultsList: some View {
@@ -166,6 +206,7 @@ struct SearchSheet: View {
     private func runSearch(_ term: String) {
         let trimmed = term.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
+        searchFieldFocused = false
         isSearching = true
         hasSearched = false
         Task {
@@ -173,6 +214,22 @@ struct SearchSheet: View {
             isSearching = false
             hasSearched = true
         }
+    }
+
+    /// Kategorie-Chip getippt: Suchfeld füllen, Chip markieren und die Suche
+    /// für diese Kategorie ausführen.
+    private func runCategory(_ chip: String) {
+        if activeChip == chip {
+            // Erneutes Tippen hebt den Filter auf.
+            activeChip = nil
+            query = ""
+            results = []
+            hasSearched = false
+            return
+        }
+        activeChip = chip
+        query = chip
+        runSearch(chip)
     }
 }
 

@@ -1,20 +1,21 @@
 // SettingsView.swift
 // ARMikronav
 //
-// Einstellungs-Hauptseite. Zeigt Profil-Übersicht und den "Heute mit Begleitung"-
-// Toggle, der direkt auf das gebundene UserProfile schreibt. Weitere Settings
-// (Benachrichtigungen, Datenschutz, Konto) folgen in S2/S3.
+// Profil-Tab. Zeigt Profil-Übersicht und den "Heute mit Begleitung"-Toggle,
+// der direkt auf das gebundene UserProfile schreibt, dazu Einstellungen
+// (Benachrichtigungen, Karte, Sprache, Datenschutz) und das Abmelden.
 
 import SwiftUI
 
 struct SettingsView: View {
-    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var authService: AuthService
     @Binding var profile: UserProfile
 
     // Daten-Präferenzen. Der WLAN-Toggle wird vom künftigen
     // Offline-Caching ausgewertet; der Cache-Key ist dort definiert.
     @AppStorage("armikronav.wifiOnlyUpdates") private var wifiOnlyUpdates = false
     @State private var showingCacheDeleteConfirm = false
+    @State private var showingSignOutConfirm = false
 
     // Geteilte Karten-Präferenzen (auch über das Ebenen-Menü auf der
     // Karte änderbar).
@@ -30,16 +31,11 @@ struct SettingsView: View {
                 mapSection
                 generalSection
                 privacyAndAboutSection
+                accountSection
             }
-            .navigationTitle("Einstellungen")
+            .navigationTitle("Profil")
             .navigationBarTitleDisplayMode(.inline)
             .trackScreen("settings")
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Fertig") { dismiss() }
-                        .bold()
-                }
-            }
             .alert("Barrieren-Daten löschen?", isPresented: $showingCacheDeleteConfirm) {
                 Button("Löschen", role: .destructive) {
                     deleteBarrierCache()
@@ -48,6 +44,30 @@ struct SettingsView: View {
             } message: {
                 Text("Gecachte Daten werden entfernt und beim nächsten Start neu geladen. Offline sind dann keine Barrieren verfügbar.")
             }
+            .confirmationDialog(
+                "Du kannst dich jederzeit wieder anmelden. Dein Profil bleibt gespeichert.",
+                isPresented: $showingSignOutConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Abmelden", role: .destructive) {
+                    Task { try? await authService.signOut() }
+                }
+                Button("Abbrechen", role: .cancel) {}
+            }
+        }
+    }
+
+    // MARK: - Konto (Abmelden)
+
+    private var accountSection: some View {
+        Section {
+            Button(role: .destructive) {
+                showingSignOutConfirm = true
+            } label: {
+                Label("Abmelden", systemImage: "rectangle.portrait.and.arrow.right")
+            }
+        } header: {
+            Text("Konto")
         }
     }
 

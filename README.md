@@ -28,7 +28,7 @@ Diese iOS-App visualisiert situative Barrieren (Stufen, Steigungen, Engstellen, 
 | Karten       | MapKit                                          |
 | Backend      | Supabase (PostgreSQL + PostGIS)                 |
 | Auth         | Supabase Auth (E-Mail, Google, Apple Sign-in)   |
-| Datenquellen | OSM/Overpass API, ginto API (GraphQL), Wheelmap |
+| Datenquellen | OSM/Overpass API, ginto API (GraphQL, ganze Schweiz), Wheelmap |
 | Design       | Figma (iPhone 17, 402×874pt)                    |
 
 ## Projektstruktur
@@ -128,7 +128,7 @@ SELECT * FROM test_event_overview WHERE test_day = '2026-07-21';
 | Quelle        | Typ                                              | Lizenz                    |
 | ------------- | ------------------------------------------------ | ------------------------- |
 | OpenStreetMap | Barrieren (kerb, incline, surface, width, steps) | ODbL                      |
-| ginto API     | POI-Zugänglichkeit (GraphQL, 440 POIs Altstadt)  | Nutzungsbedingungen ginto |
+| ginto API     | POI-Zugänglichkeit (GraphQL, POIs ganze Schweiz) | Nutzungsbedingungen ginto |
 | Wheelmap      | POI wheelchair=yes/limited/no                    | CC-BY-SA                  |
 
 ## Commit Convention

@@ -15,17 +15,16 @@ enum AppConfig {
     static let testAreaMinLng = 8.539
     static let testAreaMaxLng = 8.547
 
-    // MARK: - Anzeigegebiet Kreis 1 Stadt Zürich
-    // Barrieren werden immer für den ganzen Kreis 1 (Altstadt: Rathaus,
-    // Hochschulen, Lindenhof, City) geladen, nicht nur um den Standort.
-    // Der Radius um das Zentrum deckt die Quartiergrenzen inkl. Rand ab.
+    // MARK: - Feldtest-Gebiet Kreis 1 Stadt Zürich
+    // Bezugspunkt für den Feldtest (Altstadt: Rathaus, Hochschulen,
+    // Lindenhof, City) und Wetter-Fallback ohne GPS-Fix.
     static let kreis1Center = CLLocationCoordinate2D(latitude: 47.3710, longitude: 8.5400)
     static let kreis1RadiusM: Double = 1400
 
-    // MARK: - Abdeckung ganze Schweiz (Homescreen)
-    // Der Homescreen zeigt die neuesten Barrieren-Meldungen schweizweit;
-    // der Radius um den geografischen Mittelpunkt (Älggi-Alp) deckt das
-    // ganze Land ab. Die Kartenansicht bleibt beim Kreis-1-Testgebiet.
+    // MARK: - Abdeckung ganze Schweiz
+    // Karte (Barrieren) und Homescreen laden schweizweit; der Radius um den
+    // geografischen Mittelpunkt (Älggi-Alp) deckt das ganze Land ab. POIs
+    // (ginto) werden ebenfalls schweizweit gesucht.
     static let schweizCenter = CLLocationCoordinate2D(latitude: 46.8011, longitude: 8.2266)
     static let schweizRadiusM: Double = 250_000
 

@@ -2,9 +2,10 @@
 // ARMikronav
 //
 // Verbindet LocationService und BarrierRepository für die Kartenansicht.
-// Barrieren werden immer für das ganze Anzeigegebiet Kreis 1 Stadt Zürich
-// geladen (AppConfig.kreis1Center/-RadiusM) und bei Bewegung des Users um
-// mehr als `reloadThreshold` Meter aufgefrischt.
+// Barrieren werden schweizweit geladen (AppConfig.schweizCenter/-RadiusM),
+// unabhängig vom Standort – ein einmaliger Ladevorgang deckt das ganze Land
+// ab. POIs (ginto) werden ebenfalls schweizweit gesucht (nächste Treffer zur
+// Position).
 
 import Foundation
 import Combine
@@ -39,7 +40,6 @@ final class MapViewModel: ObservableObject {
     private let locationService: LocationService
     private let repository: BarrierRepository
     private let poiRepository: POIRepository
-    private let reloadThreshold: CLLocationDistance = 100
     private let recentSearchesKey = "armikronav.recentSearches"
 
     private var lastLoadCenter: CLLocation?
@@ -140,8 +140,8 @@ final class MapViewModel: ObservableObject {
     }
 
     func applyFilter(_ newFilter: BarrierFilterState) {
-        // Der Radius wirkt nur noch auf die POI-Suche; Barrieren kommen
-        // immer für den ganzen Kreis 1.
+        // Nur die aktiven Barrierentypen sind relevant; Barrieren und POIs
+        // decken beide die ganze Schweiz ab.
         filterState = newFilter
     }
 
@@ -165,19 +165,18 @@ final class MapViewModel: ObservableObject {
     }
 
     private func handleLocationUpdate(_ location: CLLocation) {
+        // Barrieren sind schweizweit und standortunabhängig geladen – hier nur
+        // die Position für die POI-Suche merken und den Routenfortschritt
+        // aktualisieren.
+        lastLoadCenter = location
         if let route = activeRoute {
             routeProgress = RouteService.progress(of: route, at: location)
             nextManeuver = RouteService.nextManeuver(of: route, at: location)
         }
-        if let last = lastLoadCenter, location.distance(from: last) < reloadThreshold {
-            return
-        }
-        lastLoadCenter = location
-        Task { await loadBarriers() }
     }
 
-    /// Lädt alle Barrieren des Kreis 1 (fixes Gebiet, unabhängig vom
-    /// Standort). Der Aufruf bei Bewegung dient nur der Datenauffrischung.
+    /// Lädt die Barrieren der ganzen Schweiz (fixes Gebiet, unabhängig vom
+    /// Standort – der Radius um den Landesmittelpunkt deckt das ganze Land ab).
     func loadBarriers() async {
         isLoading = true
         loadError = nil
@@ -185,8 +184,8 @@ final class MapViewModel: ObservableObject {
 
         do {
             barriers = try await repository.fetchBarriers(
-                near: AppConfig.kreis1Center,
-                radius: AppConfig.kreis1RadiusM
+                near: AppConfig.schweizCenter,
+                radius: AppConfig.schweizRadiusM
             )
         } catch {
             loadError = error.localizedDescription
@@ -306,12 +305,14 @@ final class MapViewModel: ObservableObject {
     /// Freitext-Suche aus dem SearchSheet. Ergebnis wird zurückgegeben UND als
     /// Karten-Marker übernommen.
     func searchPOIs(query: String) async -> [POI] {
-        guard let center = searchCenter else { return [] }
+        // Ohne GPS-Fix vom Landesmittelpunkt aus suchen, damit die Suche auch
+        // vor dem ersten Standort-Update schweizweit Treffer liefert.
+        let center = searchCenter ?? AppConfig.schweizCenter
         recordRecentSearch(query)
         do {
             let results = try await poiRepository.fetchPOIs(
                 near: center,
-                radius: filterState.radius,
+                radius: AppConfig.schweizRadiusM,
                 search: POICategory.searchTerm(forChip: query)
             )
             pois = results
@@ -324,11 +325,11 @@ final class MapViewModel: ObservableObject {
     }
 
     private func loadPOIs(search: String?) async {
-        guard let center = searchCenter else { return }
+        let center = searchCenter ?? AppConfig.schweizCenter
         do {
             pois = try await poiRepository.fetchPOIs(
                 near: center,
-                radius: filterState.radius,
+                radius: AppConfig.schweizRadiusM,
                 search: search
             )
         } catch {

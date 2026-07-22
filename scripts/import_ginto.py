@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 ginto API Import Script - AR-Mikronavigation
-Laedt alle POIs aus der ginto GraphQL API fuer das Testgebiet Altstadt
-Zuerich und schreibt sie in die Supabase poi_accessibility Tabelle.
+Laedt alle verfuegbaren POIs aus der ginto GraphQL API fuer die ganze
+Schweiz und schreibt sie in die Supabase poi_accessibility Tabelle.
 
 Verwendung:
     python3 import_ginto.py
@@ -27,10 +27,13 @@ GINTO_ENDPOINT = "https://api.ginto.guide/graphql"
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
 
-# Testgebiet Altstadt Zuerich
-ALTSTADT_LAT = 47.372
-ALTSTADT_LNG = 8.543
-RADIUS_KM = 1
+# Ganze Schweiz: geografischer Mittelpunkt (Aelggi-Alp) mit einem Radius,
+# der das ganze Land inkl. Rand abdeckt. Die ginto-API paginiert die
+# Ergebnisse, deshalb werden mit diesem einen Suchmittelpunkt alle POIs
+# der Schweiz geladen.
+CH_LAT = 46.8011
+CH_LNG = 8.2266
+RADIUS_KM = 300
 
 # Rating Profile IDs
 PROFILE_MANUAL = "Z2lkOi8vcmFpbHMtYXBwL1JhdGluZ1Byb2ZpbGVzOjpSYXRpbmdQcm9maWxlLzc4"
@@ -60,7 +63,7 @@ def build_query(after_cursor=None, extra_fields=""):
 
     return """
     {
-      entriesBySearch(lat: """ + str(ALTSTADT_LAT) + """, lng: """ + str(ALTSTADT_LNG) + """, query: "", within: """ + str(RADIUS_KM) + """, first: 50""" + after_clause + """) {
+      entriesBySearch(lat: """ + str(CH_LAT) + """, lng: """ + str(CH_LNG) + """, query: "", within: """ + str(RADIUS_KM) + """, first: 50""" + after_clause + """) {
         totalCount
         pageInfo {
           hasNextPage
@@ -284,7 +287,7 @@ def import_to_supabase(pois):
 def main():
     print("=" * 60)
     print("ginto Import - AR-Mikronavigation")
-    print("Testgebiet: Altstadt Zuerich (" + str(ALTSTADT_LAT) + ", " + str(ALTSTADT_LNG) + ")")
+    print("Gebiet: ganze Schweiz (" + str(CH_LAT) + ", " + str(CH_LNG) + ")")
     print("Radius: " + str(RADIUS_KM) + "km")
     print("=" * 60)
     

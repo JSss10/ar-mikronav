@@ -20,7 +20,7 @@ struct FilterSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Barrierentypen") {
+                Section {
                     ForEach(BarrierType.allCases, id: \.self) { type in
                         Toggle(isOn: binding(for: type)) {
                             Label(type.localizedLabel, systemImage: type.symbolName)
@@ -28,28 +28,10 @@ struct FilterSheet: View {
                         }
                         .accessibilityLabel(type.localizedLabel)
                     }
-                }
-
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text("Radius")
-                            Spacer()
-                            Text("\(Int(draft.radius)) m")
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
-                        }
-                        Slider(
-                            value: $draft.radius,
-                            in: BarrierFilterState.minRadius...BarrierFilterState.maxRadius,
-                            step: BarrierFilterState.radiusStep
-                        )
-                        .accessibilityValue("\(Int(draft.radius)) Meter")
-                    }
                 } header: {
-                    Text("Suchradius")
+                    Text("Barrierentypen")
                 } footer: {
-                    Text("Bestimmt, wie weit um deine Position nach Orten (POIs) gesucht wird. Barrieren werden immer für den ganzen Kreis 1 angezeigt.")
+                    Text("Barrieren und Orte (POIs) decken die ganze Schweiz ab; hier wählst du, welche Barrierentypen auf der Karte erscheinen.")
                 }
             }
             .navigationTitle("Filter")
