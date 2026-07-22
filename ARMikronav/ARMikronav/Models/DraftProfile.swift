@@ -18,6 +18,11 @@ struct DraftProfile {
     var heightCm: Int = 130
     var weightKg: Int = 80
 
+    // Zusätzlicher Wende-/Rangier-Puffer in cm (Wendekreis, Länge). Kommt zur
+    // benötigten Durchfahrtsbreite hinzu – für Engstellen mit Kurve
+    // (z. B. Umlaufgitter), die nicht an der reinen Breite scheitern.
+    var maneuverBufferCm: Int = 0
+
     // Fähigkeiten – werden in Screen 1.4 mit Defaults aus wheelchairSubtype vorbelegt
     var maxIncline: Double = 6.0
     var maxCurbHeight: Double = 3.0
@@ -61,6 +66,7 @@ struct DraftProfile {
             widthCm: widthCm,
             heightCm: heightCm,
             weightKg: weightKg,
+            maneuverBufferCm: maneuverBufferCm,
             maxIncline: maxIncline,
             maxCurbHeight: maxCurbHeight,
             surfaceTolerance: surfaceTolerance,

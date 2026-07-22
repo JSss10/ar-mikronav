@@ -119,6 +119,7 @@ struct SettingsView: View {
             row("Rollstuhltyp", profile.wheelchairType.displayName)
             row("Mobilitätskategorie", profile.mobilityCategory.displayName)
             row("Breite", "\(profile.widthCm) cm  (effektiv \(profile.effectiveWidthNeeded) cm)")
+            row("Wende-Puffer", "\(profile.maneuverBufferCm) cm")
             row("Sitzhöhe", "\(profile.heightCm) cm")
             row("Gewicht", "\(profile.weightKg) kg")
             row("Max. Steigung", "\(Int(profile.effectiveMaxIncline)) %")

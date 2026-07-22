@@ -153,6 +153,8 @@ struct ProfileEditView: View {
                     value: $draft.heightCm, in: 80...160, step: 1)
             Stepper("Gewicht: \(draft.weightKg) kg",
                     value: $draft.weightKg, in: 30...200, step: 1)
+            Stepper("Wende-Puffer: \(draft.maneuverBufferCm) cm",
+                    value: $draft.maneuverBufferCm, in: 0...40, step: 1)
         }
     }
 

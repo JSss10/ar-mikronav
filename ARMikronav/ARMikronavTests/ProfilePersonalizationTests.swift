@@ -15,6 +15,8 @@ struct ProfilePersonalizationTests {
 
     /// Basisprofil: manueller Rollstuhl, alleine unterwegs, keine Heute-Toggles.
     private func makeProfile(
+        widthCm: Int = 65,
+        maneuverBufferCm: Int = 0,
         maxIncline: Double = 6,
         maxCurbHeight: Double = 3,
         surfaceTolerance: SurfaceTolerance = .almostAll,
@@ -28,9 +30,10 @@ struct ProfilePersonalizationTests {
             id: UUID(),
             mobilityCategory: .wheelchair,
             wheelchairType: .manual,
-            widthCm: 65,
+            widthCm: widthCm,
             heightCm: 130,
             weightKg: 75,
+            maneuverBufferCm: maneuverBufferCm,
             maxIncline: maxIncline,
             maxCurbHeight: maxCurbHeight,
             surfaceTolerance: surfaceTolerance,
@@ -87,6 +90,29 @@ struct ProfilePersonalizationTests {
         )
         #expect(profile.effectiveMaxIncline == (6 + 3) * 0.8)
         #expect(profile.effectiveMaxCurb == (3 + 4) * 0.8)
+    }
+
+    // MARK: - Wende-Puffer
+
+    @Test func maneuverBufferAddsToNeededWidth() {
+        // Basis: Breite + 10 cm fester Puffer.
+        #expect(makeProfile(widthCm: 65, maneuverBufferCm: 0).effectiveWidthNeeded == 75)
+        // Wende-Puffer kommt obendrauf.
+        #expect(makeProfile(widthCm: 65, maneuverBufferCm: 15).effectiveWidthNeeded == 90)
+    }
+
+    @Test func maneuverBufferMakesTightSpotWarn() {
+        // 82 cm Engstelle: ohne Puffer passierbar (braucht 75), mit 15 cm nicht (braucht 90).
+        let narrow = Barrier(
+            id: UUID(), type: .narrow, subtype: nil,
+            value: 82, unit: "cm", latitude: 47.37, longitude: 8.54,
+            valueSource: .measured, source: "test", sourceId: nil,
+            isActive: true, lastVerified: nil
+        )
+        #expect(shouldWarn(barrier: narrow, profile:
+            makeProfile(widthCm: 65, maneuverBufferCm: 0)) == false)
+        #expect(shouldWarn(barrier: narrow, profile:
+            makeProfile(widthCm: 65, maneuverBufferCm: 15)) == true)
     }
 
     // MARK: - Wetter-Toggle
@@ -184,11 +210,16 @@ struct ProfilePersonalizationTests {
         #expect(profile.wetConditionsToday == false)
         #expect(profile.lowEnergyToday == false)
         #expect(profile.hasEurokey == false)
+        #expect(profile.maneuverBufferCm == 0)
         #expect(profile.effectiveMaxIncline == 6)
+        #expect(profile.effectiveWidthNeeded == 75)
     }
 
     @Test func encodeThenDecodeRoundTripsNewFields() throws {
-        let profile = makeProfile(wetConditionsToday: true, lowEnergyToday: true, hasEurokey: true)
+        let profile = makeProfile(
+            maneuverBufferCm: 12,
+            wetConditionsToday: true, lowEnergyToday: true, hasEurokey: true
+        )
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         let decoder = JSONDecoder()
@@ -200,5 +231,6 @@ struct ProfilePersonalizationTests {
         #expect(restored.wetConditionsToday)
         #expect(restored.lowEnergyToday)
         #expect(restored.hasEurokey)
+        #expect(restored.maneuverBufferCm == 12)
     }
 }

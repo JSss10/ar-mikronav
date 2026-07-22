@@ -10,6 +10,9 @@ struct UserProfile: Codable {
     var widthCm: Int
     var heightCm: Int
     var weightKg: Int
+    /// Zusätzlicher Wende-/Rangier-Puffer in cm (Wendekreis, Länge), der zur
+    /// benötigten Durchfahrtsbreite addiert wird. 0 = kein zusätzlicher Puffer.
+    var maneuverBufferCm: Int = 0
     var maxIncline: Double
     var maxCurbHeight: Double
     var surfaceTolerance: SurfaceTolerance
@@ -45,7 +48,7 @@ struct UserProfile: Codable {
         lowEnergyToday ? 0.8 : 1.0
     }
 
-    var effectiveWidthNeeded: Int { widthCm + 10 }
+    var effectiveWidthNeeded: Int { widthCm + 10 + maneuverBufferCm }
 
     var effectiveMaxIncline: Double {
         let base = hasCompanion ? maxIncline + 3.0 : maxIncline
@@ -68,9 +71,9 @@ extension UserProfile {
     /// Profile weiterhin passen und der eigene Decoder eindeutig auflöst.
     enum CodingKeys: String, CodingKey {
         case id, mobilityCategory, wheelchairType, widthCm, heightCm, weightKg
-        case maxIncline, maxCurbHeight, surfaceTolerance, companionStatus
-        case companionTodayOverride, wetConditionsToday, lowEnergyToday
-        case hasEurokey, createdAt, updatedAt
+        case maneuverBufferCm, maxIncline, maxCurbHeight, surfaceTolerance
+        case companionStatus, companionTodayOverride, wetConditionsToday
+        case lowEnergyToday, hasEurokey, createdAt, updatedAt
     }
 
     /// Rückwärtskompatibles Decoding: die v2.1-Felder fehlen in Profilen, die
@@ -84,6 +87,7 @@ extension UserProfile {
         widthCm = try c.decode(Int.self, forKey: .widthCm)
         heightCm = try c.decode(Int.self, forKey: .heightCm)
         weightKg = try c.decode(Int.self, forKey: .weightKg)
+        maneuverBufferCm = try c.decodeIfPresent(Int.self, forKey: .maneuverBufferCm) ?? 0
         maxIncline = try c.decode(Double.self, forKey: .maxIncline)
         maxCurbHeight = try c.decode(Double.self, forKey: .maxCurbHeight)
         surfaceTolerance = try c.decode(SurfaceTolerance.self, forKey: .surfaceTolerance)
