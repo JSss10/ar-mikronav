@@ -140,9 +140,15 @@ final class MapViewModel: ObservableObject {
     }
 
     func applyFilter(_ newFilter: BarrierFilterState) {
-        // Nur die aktiven Barrierentypen sind relevant; Barrieren und POIs
-        // decken beide die ganze Schweiz ab.
+        // Barrieren decken immer den ganzen Kreis 1 (Testgebiet) ab; der
+        // Suchradius steuert nur, wie weit um die eigene Position nach Orten
+        // (POIs) gesucht wird. Ändert sich der Radius bei aktiver Kategorie,
+        // werden die POIs im neuen Umkreis nachgeladen.
+        let radiusChanged = newFilter.radius != filterState.radius
         filterState = newFilter
+        if radiusChanged, let category = activeCategory {
+            Task { await loadPOIs(search: POICategory.searchTerm(forChip: category)) }
+        }
     }
 
     func start() {
@@ -325,11 +331,22 @@ final class MapViewModel: ObservableObject {
     }
 
     private func loadPOIs(search: String?) async {
-        let center = searchCenter ?? AppConfig.schweizCenter
+        // Mit Standort-Fix wird im eingestellten Suchradius um die eigene
+        // Position gesucht (FilterSheet). Ohne Fix bleibt der schweizweite
+        // Fallback, damit auch vor dem ersten GPS-Update Treffer erscheinen.
+        let center: CLLocationCoordinate2D
+        let radius: Double
+        if let userCenter = searchCenter {
+            center = userCenter
+            radius = filterState.radius
+        } else {
+            center = AppConfig.schweizCenter
+            radius = AppConfig.schweizRadiusM
+        }
         do {
             pois = try await poiRepository.fetchPOIs(
                 near: center,
-                radius: AppConfig.schweizRadiusM,
+                radius: radius,
                 search: search
             )
         } catch {

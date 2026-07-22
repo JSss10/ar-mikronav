@@ -1,5 +1,7 @@
 // OnboardingProgressBar.swift
-// ARMikronav – Geteilte Progress-Bar für alle 6 Onboarding-Screens.
+// ARMikronav – Geteilte Chrome (Fortschritt, Titel, Navigation) für alle
+// Onboarding-Screens. Styling ausschliesslich über Design-Tokens
+// (AppColor, AppTypography, AppMetrics) und die gemeinsamen Button-Stile.
 
 import SwiftUI
 
@@ -7,23 +9,28 @@ struct OnboardingProgressBar: View {
     let step: OnboardingStep
 
     var body: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 6) {
+        VStack(spacing: AppMetrics.Space.s) {
+            HStack(spacing: AppMetrics.Space.xs + 2) {
                 ForEach(OnboardingStep.allCases, id: \.rawValue) { s in
                     Capsule()
-                        .fill(s.rawValue <= step.rawValue ? Color.accentColor : Color.gray.opacity(0.25))
-                        .frame(height: 4)
+                        .fill(s.rawValue <= step.rawValue
+                              ? AppColor.accentPrimary
+                              : AppColor.borderDecorative)
+                        .frame(height: 5)
                         .animation(.easeInOut(duration: 0.25), value: step)
                 }
             }
+
             HStack {
                 Text("Schritt \(step.rawValue) von \(OnboardingStep.allCases.count)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(AppTypography.footnote)
+                    .foregroundStyle(AppColor.textSecondary)
                 Spacer()
             }
         }
-        .padding(.horizontal)
+        .padding(.horizontal, AppMetrics.Space.m)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Schritt \(step.rawValue) von \(OnboardingStep.allCases.count)")
     }
 }
 
@@ -31,17 +38,19 @@ struct OnboardingHeader: View {
     let step: OnboardingStep
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: AppMetrics.Space.s) {
             Text(step.title)
-                .font(.largeTitle.weight(.bold))
+                .font(AppTypography.largeTitle)
+                .foregroundStyle(AppColor.textPrimary)
                 .accessibilityAddTraits(.isHeader)
             Text(step.subtitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(AppTypography.callout)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal)
-        .padding(.top, 16)
+        .padding(.horizontal, AppMetrics.Space.m)
+        .padding(.top, AppMetrics.Space.m)
     }
 }
 
@@ -52,25 +61,22 @@ struct OnboardingNavigationBar: View {
     let onNext: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppMetrics.Space.s + AppMetrics.Space.xs) {
             Button(action: onBack) {
                 Label("Zurück", systemImage: "chevron.left")
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
+            .buttonStyle(.appSecondary(fullWidth: true))
 
             Button(action: onNext) {
                 Text(isLastStep ? "Fertig" : "Weiter")
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(.appPrimary(fullWidth: true))
             .disabled(!canProceed)
+            .opacity(canProceed ? 1 : 0.5)
         }
-        .padding(.horizontal)
-        .padding(.bottom, 16)
+        .padding(.horizontal, AppMetrics.Space.m)
+        .padding(.top, AppMetrics.Space.s)
+        .padding(.bottom, AppMetrics.Space.m)
+        .background(AppColor.backgroundPrimary)
     }
 }

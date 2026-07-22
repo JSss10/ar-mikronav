@@ -9,16 +9,17 @@ struct Screen12_WheelchairType: View {
     let onSelect: (WheelchairSubtype) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: AppMetrics.Space.l) {
             ForEach(WheelchairCategory.allCases) { category in
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: AppMetrics.Space.s + AppMetrics.Space.xs) {
                     Text(category.displayName)
-                        .font(.headline)
-                        .padding(.horizontal, 4)
+                        .font(AppTypography.headline)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .padding(.horizontal, AppMetrics.Space.xs)
 
                     ForEach(category.subtypes) { subtype in
-                        WheelchairRow(
-                            subtype: subtype,
+                        SelectionRow(
+                            label: subtype.displayName,
                             selected: draft.wheelchairSubtype == subtype
                         ) {
                             onSelect(subtype)
@@ -28,43 +29,9 @@ struct Screen12_WheelchairType: View {
             }
 
             Text("Dein gewählter Typ bestimmt die Standard-Schwellenwerte für Breite, Steigung und Bordsteine. Du kannst diese in den nächsten Schritten anpassen.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
+                .font(AppTypography.footnote)
+                .foregroundStyle(AppColor.textSecondary)
+                .padding(.horizontal, AppMetrics.Space.xs)
         }
-    }
-}
-
-private struct WheelchairRow: View {
-    let subtype: WheelchairSubtype
-    let selected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                Text(subtype.displayName)
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                Spacer()
-                if selected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color.accentColor)
-                }
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(selected ? Color.accentColor.opacity(0.08) : Color(.secondarySystemBackground))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(selected ? Color.accentColor : Color.clear, lineWidth: 2)
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(subtype.displayName)
-        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
