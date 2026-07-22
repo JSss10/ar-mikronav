@@ -36,6 +36,32 @@ struct Screen13_Measurements: View {
             )
 
             MeasurementSlider(
+                icon: "arrow.up.to.line.compact",
+                label: "Sitzhöhe",
+                value: Binding(
+                    get: { Double(draft.seatHeightCm) },
+                    set: { draft.seatHeightCm = Int($0) }
+                ),
+                range: 35...70,
+                step: 1,
+                unit: "cm",
+                hint: "Oberkante Sitzfläche inkl. Kissen ab Boden – damit der AR-Pfad aus deiner Perspektive exakt auf dem Boden liegt"
+            )
+
+            MeasurementSlider(
+                icon: "arrow.forward.to.line",
+                label: "Gesamtlänge",
+                value: Binding(
+                    get: { Double(draft.lengthCm) },
+                    set: { draft.lengthCm = Int($0) }
+                ),
+                range: 80...160,
+                step: 1,
+                unit: "cm",
+                hint: "Inklusive Fussstützen – relevant für Lifte und Wendeflächen"
+            )
+
+            MeasurementSlider(
                 icon: "scalemass",
                 label: "Gesamtgewicht",
                 value: Binding(

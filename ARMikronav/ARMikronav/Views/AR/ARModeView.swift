@@ -85,6 +85,7 @@ struct ARModeView: View {
                 origin: originCoordinate,
                 pois: viewModel.displayedPOIs,
                 route: viewModel.activeRoute,
+                deviceHeight: profile.arDeviceHeightM,
                 projector: projector
             )
             .ignoresSafeArea()
