@@ -19,7 +19,7 @@ struct Screen15_Support: View {
         (.usually,
          "Meistens mit Begleitung",
          "figure.2.arms.open",
-         "Steigungen bis +3 % und Bordsteine bis +4 cm werden als passierbar eingestuft.")
+         "Barrieren werden mit deinen Begleitungs-Werten (unten einstellbar) bewertet.")
     ]
 
     var body: some View {
@@ -35,12 +35,73 @@ struct Screen15_Support: View {
                 }
             }
 
-            Text("Mit Begleitperson passt die App die Schwellenwerte automatisch an: +3 % max. Steigung und +4 cm max. Bordsteinhöhe.")
+            if draft.companionStatus != .alwaysAlone {
+                companionBonusCard
+            }
+
+            Text(footerText)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
                 .padding(.top, 8)
         }
+    }
+
+    private var footerText: String {
+        if draft.companionStatus == .alwaysAlone {
+            return "Alle Schwellenwerte gelten unverändert – so wie du sie in den Fähigkeiten eingestellt hast."
+        }
+        return "Mit Begleitperson hebt die App deine Schwellenwerte an: +\(Int(draft.companionInclineBonus)) % max. Steigung und +\(Int(draft.companionCurbBonus)) cm max. Bordsteinhöhe. Stell ein, wie viel deine Begleitung realistisch zusätzlich schafft."
+    }
+
+    // MARK: - Individuelle Begleit-Boni
+
+    private var companionBonusCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 10) {
+                Image(systemName: "plusminus.circle")
+                    .font(.title3)
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 28)
+                Text("Wie viel hilft deine Begleitung?")
+                    .font(.headline)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Zusätzliche Steigung")
+                        .font(.subheadline)
+                    Spacer()
+                    Text("+\(Int(draft.companionInclineBonus)) %")
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(Color.accentColor)
+                }
+                Slider(value: $draft.companionInclineBonus, in: 0...6, step: 1)
+                    .tint(Color.accentColor)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Zusätzliche Steigung mit Begleitung: \(Int(draft.companionInclineBonus)) Prozent")
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Zusätzliche Bordsteinhöhe")
+                        .font(.subheadline)
+                    Spacer()
+                    Text("+\(Int(draft.companionCurbBonus)) cm")
+                        .font(.headline.monospacedDigit())
+                        .foregroundStyle(Color.accentColor)
+                }
+                Slider(value: $draft.companionCurbBonus, in: 0...8, step: 1)
+                    .tint(Color.accentColor)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Zusätzliche Bordsteinhöhe mit Begleitung: \(Int(draft.companionCurbBonus)) Zentimeter")
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color(.secondarySystemBackground))
+        )
     }
 }
 

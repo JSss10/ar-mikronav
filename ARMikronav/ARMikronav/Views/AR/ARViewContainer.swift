@@ -19,6 +19,10 @@ struct ARViewContainer: UIViewRepresentable {
     let origin: CLLocationCoordinate2D?
     var pois: [POI]
     var route: ActiveRoute?
+    /// Geschätzte Höhe, in der das Gerät gehalten wird (aus dem UserProfile:
+    /// Sitzhöhe + Oberkörper). Bestimmt, wie tief der Routen-Pfad unter dem
+    /// Session-Ursprung auf den Boden gelegt wird.
+    var deviceHeight: Float = ARRouteRenderer.defaultDeviceHeight
     let projector: ARPOIProjector
 
     func makeCoordinator() -> Coordinator {
@@ -41,6 +45,7 @@ struct ARViewContainer: UIViewRepresentable {
         context.coordinator.origin = origin
         context.coordinator.pois = pois
         context.coordinator.route = route
+        context.coordinator.deviceHeight = deviceHeight
     }
 
     static func dismantleUIView(_ uiView: ARView, coordinator: Coordinator) {
@@ -56,6 +61,7 @@ struct ARViewContainer: UIViewRepresentable {
         var origin: CLLocationCoordinate2D?
         var pois: [POI] = []
         var route: ActiveRoute?
+        var deviceHeight: Float = ARRouteRenderer.defaultDeviceHeight
 
         private let projector: ARPOIProjector
         private var projectionTask: Task<Void, Never>?
@@ -98,7 +104,11 @@ struct ARViewContainer: UIViewRepresentable {
             renderedRouteID = route?.id
 
             guard let route else { return }
-            let anchor = ARRouteRenderer.makeRouteAnchor(for: route, origin: origin)
+            let anchor = ARRouteRenderer.makeRouteAnchor(
+                for: route,
+                origin: origin,
+                deviceHeight: deviceHeight
+            )
             arView.scene.addAnchor(anchor)
             routeAnchor = anchor
         }

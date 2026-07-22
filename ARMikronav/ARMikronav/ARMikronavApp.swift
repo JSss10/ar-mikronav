@@ -125,6 +125,8 @@ private extension UserProfile {
             widthCm: 65,
             heightCm: 130,
             weightKg: 75,
+            seatHeightCm: 50,
+            lengthCm: 110,
             maxIncline: 6,
             maxCurbHeight: 3,
             surfaceTolerance: .fineCobble,

@@ -13,31 +13,37 @@ import UIKit
 import simd
 
 enum ARRouteRenderer {
-    /// Annahme: das iPhone wird ~1.4 m über dem Boden gehalten; der Session-
-    /// Ursprung (y = 0) liegt auf Gerätehöhe, der Pfad entsprechend darunter.
-    static let groundY: Float = -1.4
+    /// Fallback, falls kein Profil verfügbar ist: iPhone ~1.4 m über Boden.
+    /// Der Session-Ursprung (y = 0) liegt auf Gerätehöhe, der Pfad darunter.
+    static let defaultDeviceHeight: Float = 1.4
     static let pathWidth: Float = 0.8
     static let chevronSpacing: Float = 4
     static let maxChevrons = 80
 
     /// Erzeugt einen Welt-Anker mit allen Route-Entities.
+    /// `deviceHeight` ist die geschätzte Höhe, in der das iPhone gehalten wird
+    /// (aus dem UserProfile: Sitzhöhe + Oberkörper) – der Pfad wird um diesen
+    /// Betrag unter den Session-Ursprung gelegt und liegt so für jeden User
+    /// individuell auf dem Boden.
     static func makeRouteAnchor(
         for route: ActiveRoute,
-        origin: CLLocationCoordinate2D
+        origin: CLLocationCoordinate2D,
+        deviceHeight: Float = defaultDeviceHeight
     ) -> AnchorEntity {
         let anchor = AnchorEntity(world: SIMD3<Float>.zero)
+        let groundY = -deviceHeight
 
         let points = route.coordinates.map {
             ARGeoMapper.arPosition(of: $0, relativeTo: origin, height: groundY)
         }
         guard points.count >= 2 else {
-            addDestinationMarker(to: anchor, for: route, origin: origin)
+            addDestinationMarker(to: anchor, for: route, origin: origin, groundY: groundY)
             return anchor
         }
 
         addCarpet(to: anchor, along: points)
-        addChevrons(to: anchor, along: points)
-        addDestinationMarker(to: anchor, for: route, origin: origin)
+        addChevrons(to: anchor, along: points, groundY: groundY)
+        addDestinationMarker(to: anchor, for: route, origin: origin, groundY: groundY)
         return anchor
     }
 
@@ -65,7 +71,11 @@ enum ARRouteRenderer {
 
     // MARK: - Richtungs-Chevrons
 
-    private static func addChevrons(to anchor: AnchorEntity, along points: [SIMD3<Float>]) {
+    private static func addChevrons(
+        to anchor: AnchorEntity,
+        along points: [SIMD3<Float>],
+        groundY: Float
+    ) {
         let mesh = chevronMesh()
         let material = unlitMaterial(color: .white, opacity: 0.92)
 
@@ -130,7 +140,8 @@ enum ARRouteRenderer {
     private static func addDestinationMarker(
         to anchor: AnchorEntity,
         for route: ActiveRoute,
-        origin: CLLocationCoordinate2D
+        origin: CLLocationCoordinate2D,
+        groundY: Float
     ) {
         let base = ARGeoMapper.arPosition(
             of: route.destinationCoordinate,
