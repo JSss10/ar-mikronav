@@ -75,6 +75,7 @@ struct Screen16_Summary: View {
                         subdued: true
                     )
                 }
+                SummaryRow(label: "Eurokey", value: draft.hasEurokey ? "Ja" : "Nein")
             }
 
             Text("Du kannst dein Profil später in den Einstellungen jederzeit anpassen.")

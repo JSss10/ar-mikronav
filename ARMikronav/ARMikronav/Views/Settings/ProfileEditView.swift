@@ -211,11 +211,14 @@ struct ProfileEditView: View {
                     Slider(value: $draft.companionCurbBonus, in: 0...8, step: 1)
                 }
             }
+            Toggle("Ich besitze einen Eurokey", isOn: $draft.hasEurokey)
         } header: {
-            Text("Begleitung")
+            Text("Begleitung & Ausstattung")
         } footer: {
             if draft.companionStatus != .alwaysAlone {
-                Text("Diese Werte werden zu deinen Limits addiert, wenn du mit Begleitung unterwegs bist.")
+                Text("Die Begleit-Werte werden zu deinen Limits addiert, wenn du mit Begleitung unterwegs bist. Mit Eurokey werden abgeschlossene Behinderten-WCs als zugänglich bewertet.")
+            } else {
+                Text("Mit Eurokey werden abgeschlossene Behinderten-WCs für dich als zugänglich bewertet.")
             }
         }
     }

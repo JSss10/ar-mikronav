@@ -31,6 +31,9 @@ struct DraftProfile {
     var companionInclineBonus: Double = 3.0
     var companionCurbBonus: Double = 4.0
 
+    // Eurokey-Besitz (Screen 1.5) – schaltet Eurokey-WCs als zugänglich frei
+    var hasEurokey: Bool = false
+
     /// Gibt den internen Rollstuhltyp (5 Kategorien) für die Barrierenlogik zurück.
     var wheelchairType: WheelchairType? {
         wheelchairSubtype?.internalType
@@ -75,6 +78,7 @@ struct DraftProfile {
             companionTodayOverride: false,
             companionInclineBonus: companionInclineBonus,
             companionCurbBonus: companionCurbBonus,
+            hasEurokey: hasEurokey,
             createdAt: now,
             updatedAt: now
         )
