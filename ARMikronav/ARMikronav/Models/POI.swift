@@ -61,6 +61,29 @@ struct POI: Decodable, Identifiable {
         return URL(string: urlString)
     }
 
+    /// Webseite des Ortes für die Detailansicht. Nimmt das erste vorhandene
+    /// URL-Feld aus den Detaildaten (ohne Bezug auf die Datenquelle in der UI).
+    var websiteURL: URL? {
+        let candidateKeys = ["website", "homepage", "url", "ginto_url"]
+        for key in candidateKeys {
+            if case .string(let urlString)? = accessibilityDetails?[key],
+               let url = normalizedURL(urlString) {
+                return url
+            }
+        }
+        return nil
+    }
+
+    /// Ergänzt fehlende Schemata (z. B. «www.beispiel.ch») zu einer gültigen URL.
+    private func normalizedURL(_ raw: String) -> URL? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if trimmed.lowercased().hasPrefix("http://") || trimmed.lowercased().hasPrefix("https://") {
+            return URL(string: trimmed)
+        }
+        return URL(string: "https://\(trimmed)")
+    }
+
     /// Deutscher Kategorie-Name aus ginto (accessibility_details.categories[0].name),
     /// z.B. "Café" statt des DB-Keys "coffee".
     var categoryDisplayName: String? {

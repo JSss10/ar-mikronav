@@ -93,7 +93,15 @@ struct HomeView: View {
         MapView(profile: profile, viewModel: viewModel, onStartARRoute: startARRoute)
             .ignoresSafeArea(edges: .bottom)
             .overlay(alignment: .topTrailing) { homeButton }
-            .overlay(alignment: .bottomTrailing) { arFAB }
+            // Der AR-FAB verschwindet während der aktiven Navigation: Das
+            // Routen-Panel (Abbiege-Anweisung) darf die volle Breite nutzen.
+            .overlay(alignment: .bottomTrailing) {
+                if viewModel.activeRoute == nil {
+                    arFAB
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .animation(.spring(duration: 0.35), value: viewModel.activeRoute)
     }
 
     // AR erst aufbauen, wenn der Tab aktiv ist – so starten Kamera und

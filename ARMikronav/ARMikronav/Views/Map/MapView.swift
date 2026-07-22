@@ -208,8 +208,9 @@ struct MapView: View {
                     onShowBarriers: { showingRouteBarriers = true },
                     onStop: { viewModel.stopNavigation() }
                 )
-                .padding(.leading)
-                .padding(.trailing, 96) // Platz für den AR-FAB (HomeView)
+                // Volle Breite während der Navigation: Der AR-FAB ist
+                // ausgeblendet, die Abbiege-Anweisung bekommt so mehr Platz.
+                .padding(.horizontal)
                 .padding(.bottom, 12)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }

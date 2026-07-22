@@ -112,15 +112,24 @@ struct RouteInfoBar: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: routeIcon)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(hasArrived ? AppColor.Status.openIcon : AppColor.textPrimary)
+        HStack(spacing: 14) {
+            // Abbiege-Symbol prominent im Akzentkreis (Apple-Maps-Manier),
+            // damit «wo man durch muss» sofort erfassbar ist.
+            ZStack {
+                Circle()
+                    .fill(hasArrived ? AppColor.Status.openFill : AppColor.accentPrimary)
+                    .frame(width: 48, height: 48)
+                Image(systemName: routeIcon)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(hasArrived ? AppColor.Status.openIcon : AppColor.onAccent)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(headlineText)
-                    .font(.headline)
-                    .lineLimit(1)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
                 Text(subheadlineText)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
