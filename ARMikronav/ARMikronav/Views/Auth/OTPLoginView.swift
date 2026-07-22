@@ -1,7 +1,7 @@
 // OTPLoginView.swift
 // ARMikronav
 //
-// Anmeldung per Einmalcode (OTP): E-Mail eingeben, 6-stelligen Code
+// Anmeldung per Einmalcode (OTP): E-Mail eingeben, Einmalcode
 // erhalten, Code eingeben – ganz ohne Passwort.
 
 import SwiftUI
@@ -30,8 +30,8 @@ struct OTPLoginView: View {
                     .padding(.top, 20)
 
                 Text(codeSent
-                     ? "Wir haben einen 6-stelligen Code an \(email) geschickt."
-                     : "Wir senden dir einen 6-stelligen Einmalcode per E-Mail – kein Passwort nötig.")
+                     ? "Wir haben einen \(AppConfig.emailOTPCodeLength)-stelligen Code an \(email) geschickt."
+                     : "Wir senden dir einen \(AppConfig.emailOTPCodeLength)-stelligen Einmalcode per E-Mail – kein Passwort nötig.")
                     .font(.body)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -50,7 +50,7 @@ struct OTPLoginView: View {
                             .autocorrectionDisabled()
                     }
                 } else {
-                    OTPCodeField(code: $code) {
+                    OTPCodeField(code: $code, length: AppConfig.emailOTPCodeLength) {
                         Task { await verifyCode() }
                     }
                 }
@@ -98,7 +98,7 @@ struct OTPLoginView: View {
     }
 
     private var isActionEnabled: Bool {
-        codeSent ? code.count == 6 : isEmailValid
+        codeSent ? code.count == AppConfig.emailOTPCodeLength : isEmailValid
     }
 
     private func sendCode() async {
@@ -119,7 +119,7 @@ struct OTPLoginView: View {
     }
 
     private func verifyCode() async {
-        guard code.count == 6, !isLoading else { return }
+        guard code.count == AppConfig.emailOTPCodeLength, !isLoading else { return }
         isLoading = true
         message = nil
         defer { isLoading = false }

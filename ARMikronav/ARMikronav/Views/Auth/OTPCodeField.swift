@@ -1,9 +1,10 @@
 // OTPCodeField.swift
 // ARMikronav
 //
-// 6-stelliges Code-Eingabefeld für E-Mail-Bestätigung und Code-Anmeldung.
-// Ein verstecktes TextField hält den Wert; sechs Kästchen zeigen die
-// Ziffern an, damit die Eingabe wie bei Apples eigenen Code-Feldern wirkt.
+// Mehrstelliges Code-Eingabefeld für E-Mail-Bestätigung und Code-Anmeldung.
+// Ein verstecktes TextField hält den Wert; ein Kästchen pro Ziffer zeigt die
+// Eingabe an, damit sie wie bei Apples eigenen Code-Feldern wirkt.
+// Die Länge kommt von aussen (AppConfig.emailOTPCodeLength).
 
 import SwiftUI
 

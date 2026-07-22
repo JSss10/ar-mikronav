@@ -1,7 +1,7 @@
 // EmailVerificationView.swift
 // ARMikronav
 //
-// Nach der Registrierung: Das Konto wird mit dem 6-stelligen Code aus der
+// Nach der Registrierung: Das Konto wird mit dem Einmalcode aus der
 // Bestätigungs-E-Mail verifiziert (alternativ funktioniert weiterhin der
 // Link in der E-Mail). Der Code kann erneut angefordert werden.
 
@@ -30,13 +30,13 @@ struct EmailVerificationView: View {
                     .bold()
                     .multilineTextAlignment(.center)
 
-                Text("Wir haben einen 6-stelligen Code an \(email) geschickt. Gib ihn hier ein – oder tippe auf den Link in der E-Mail.")
+                Text("Wir haben einen \(AppConfig.emailOTPCodeLength)-stelligen Code an \(email) geschickt. Gib ihn hier ein – oder tippe auf den Link in der E-Mail.")
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
 
-                OTPCodeField(code: $code) {
+                OTPCodeField(code: $code, length: AppConfig.emailOTPCodeLength) {
                     Task { await verify() }
                 }
                 .padding(.horizontal, 24)
@@ -64,9 +64,9 @@ struct EmailVerificationView: View {
                             .frame(height: 56)
                     }
                 }
-                .background(code.count == 6 ? Color.accentColor : Color.gray)
+                .background(code.count == AppConfig.emailOTPCodeLength ? Color.accentColor : Color.gray)
                 .cornerRadius(12)
-                .disabled(code.count != 6 || isVerifying)
+                .disabled(code.count != AppConfig.emailOTPCodeLength || isVerifying)
                 .padding(.horizontal, 24)
 
                 Button {
@@ -87,7 +87,7 @@ struct EmailVerificationView: View {
     }
 
     private func verify() async {
-        guard code.count == 6, !isVerifying else { return }
+        guard code.count == AppConfig.emailOTPCodeLength, !isVerifying else { return }
         isVerifying = true
         message = nil
         defer { isVerifying = false }

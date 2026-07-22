@@ -42,6 +42,11 @@ enum AppConfig {
     static let gintoScewoBroID = "Z2lkOi8vcmFpbHMtYXBwL1JhdGluZ1Byb2ZpbGVzOjpSYXRpbmdQcm9maWxlLzM5NTE"
     static let gintoPushchairID = "Z2lkOi8vcmFpbHMtYXBwL1JhdGluZ1Byb2ZpbGVzOjpSYXRpbmdQcm9maWxlLzgw"
 
+    // MARK: - Auth
+    // Länge des E-Mail-Einmalcodes (Bestätigung + Code-Login). Muss mit der
+    // OTP-Länge im Supabase-Dashboard übereinstimmen (Authentication → Emails).
+    static let emailOTPCodeLength = 8
+
     // MARK: - Rechtliches
     // Die App verwendet Apples Standard-Lizenzvertrag für lizenzierte
     // Apps (Standard-EULA) statt eigener Nutzungsbedingungen.
