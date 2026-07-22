@@ -3,8 +3,8 @@
 //
 // Datenquelle des Homescreens: Wetter am aktuellen Standort (Open-Meteo,
 // inkl. UV-Index), Name/Initialen aus den Auth-Metadaten und die neuesten
-// Barrieren-Meldungen aus der ganzen Schweiz. Die letzten Ziele kommen aus
-// dem RecentDestinationsStore.
+// Barrieren-Meldungen aus der ganzen Stadt Zürich. Die letzten Ziele kommen
+// aus dem RecentDestinationsStore.
 
 import Foundation
 import Combine
@@ -136,8 +136,8 @@ final class HomeDashboardViewModel: ObservableObject {
         }
     }
 
-    /// Neueste aktive Barrieren-Meldungen – schweizweit (der Radius um den
-    /// Landesmittelpunkt deckt die ganze Schweiz ab, sortiert nach Meldedatum).
+    /// Neueste aktive Barrieren-Meldungen – stadtweit (der Radius um das
+    /// Stadtzentrum deckt ganz Zürich ab, sortiert nach Meldedatum).
     func loadBarriers() async {
         isLoadingBarriers = true
         barriersError = nil
@@ -145,8 +145,8 @@ final class HomeDashboardViewModel: ObservableObject {
 
         do {
             let barriers = try await BarrierRepository.shared.fetchBarriers(
-                near: AppConfig.schweizCenter,
-                radius: AppConfig.schweizRadiusM
+                near: AppConfig.zuerichCenter,
+                radius: AppConfig.zuerichRadiusM
             )
             newBarriers = Array(
                 barriers

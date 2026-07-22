@@ -31,7 +31,7 @@ struct FilterSheet: View {
                 } header: {
                     Text("Barrierentypen")
                 } footer: {
-                    Text("Barrieren und Orte (POIs) decken die ganze Schweiz ab; hier wählst du, welche Barrierentypen auf der Karte erscheinen.")
+                    Text("Barrieren und Orte (POIs) decken die ganze Stadt Zürich ab; hier wählst du, welche Barrierentypen auf der Karte erscheinen.")
                 }
             }
             .navigationTitle("Filter")
