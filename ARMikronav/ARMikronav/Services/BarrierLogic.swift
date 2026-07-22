@@ -74,7 +74,7 @@ func shouldWarn(barrier: Barrier, profile: UserProfile) -> Bool {
         
     case .surface:
         guard let subtype = barrier.subtype else { return false }
-        switch profile.surfaceTolerance {
+        switch profile.effectiveSurfaceTolerance {
         case .smoothOnly:
             return ["cobblestone_coarse", "cobblestone_fine", "sett",
                     "gravel", "sand", "unhewn_cobblestone"].contains(subtype)
