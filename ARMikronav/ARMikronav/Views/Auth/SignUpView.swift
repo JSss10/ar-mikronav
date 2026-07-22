@@ -20,11 +20,22 @@ struct SignUpView: View {
     @State private var showVerification: Bool = false
     @State private var showPassword: Bool = false
     
+    // Passwort-Regeln, live geprüft und unter dem Feld angezeigt.
+    private var hasMinLength: Bool { password.count >= 8 }
+    private var hasLetter: Bool { password.rangeOfCharacter(from: .letters) != nil }
+    private var hasDigit: Bool { password.rangeOfCharacter(from: .decimalDigits) != nil }
+    private var isPasswordValid: Bool { hasMinLength && hasLetter && hasDigit }
+    private var passwordsMatch: Bool { !passwordConfirm.isEmpty && password == passwordConfirm }
+
+    private var isEmailValid: Bool {
+        email.contains("@") && email.contains(".") && !email.contains(" ")
+    }
+
     private var isFormValid: Bool {
         !firstName.isEmpty &&
         !lastName.isEmpty &&
-        !email.isEmpty &&
-        password.count >= 6 &&
+        isEmailValid &&
+        isPasswordValid &&
         password == passwordConfirm
     }
     
@@ -78,7 +89,7 @@ struct SignUpView: View {
                 
                 // Passwort (mit "zeigen"-Toggle, Wireframe 0.2)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Passwort (min. 6 Zeichen)")
+                    Text("Passwort")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     HStack {
@@ -104,8 +115,18 @@ struct SignUpView: View {
                         RoundedRectangle(cornerRadius: 6)
                             .stroke(Color(.systemGray4), lineWidth: 0.5)
                     )
+
+                    // Live-Prüfung der Passwort-Regeln
+                    if !password.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            passwordRule("Mindestens 8 Zeichen", fulfilled: hasMinLength)
+                            passwordRule("Mindestens ein Buchstabe", fulfilled: hasLetter)
+                            passwordRule("Mindestens eine Zahl", fulfilled: hasDigit)
+                        }
+                        .padding(.top, 2)
+                    }
                 }
-                
+
                 // Passwort bestätigen
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Passwort bestätigen")
@@ -114,6 +135,15 @@ struct SignUpView: View {
                     SecureField("••••••••", text: $passwordConfirm)
                         .textFieldStyle(.roundedBorder)
                         .textContentType(.newPassword)
+
+                    if !passwordConfirm.isEmpty && !passwordsMatch {
+                        HStack(spacing: 6) {
+                            Image(systemName: "xmark.circle.fill")
+                            Text("Passwörter stimmen nicht überein")
+                        }
+                        .font(.caption)
+                        .foregroundColor(.red)
+                    }
                 }
                 
                 // Error
@@ -144,7 +174,19 @@ struct SignUpView: View {
                 .cornerRadius(12)
                 .disabled(!isFormValid || isLoading)
                 .padding(.top, 8)
-                
+
+                // Rechtliches: Apples Standard-Lizenzvertrag (EULA) statt eigener Texte
+                VStack(spacing: 4) {
+                    Text("Mit dem Erstellen eines Kontos akzeptierst du den [Standard-Lizenzvertrag (EULA) von Apple](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/).")
+                    NavigationLink("Datenschutzerklärung anzeigen") {
+                        PrivacyView()
+                    }
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
+
                 Spacer()
             }
             .padding(.horizontal, 24)
@@ -154,7 +196,21 @@ struct SignUpView: View {
             EmailVerificationView(email: email)
         }
     }
-    
+
+    // Eine Zeile der Passwort-Checkliste (Häkchen = Regel erfüllt).
+    private func passwordRule(_ text: String, fulfilled: Bool) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: fulfilled ? "checkmark.circle.fill" : "circle")
+                .font(.caption)
+                .foregroundColor(fulfilled ? .green : .secondary)
+            Text(text)
+                .font(.caption)
+                .foregroundColor(fulfilled ? .green : .secondary)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(text): \(fulfilled ? "erfüllt" : "nicht erfüllt")")
+    }
+
     private func handleSignUp() async {
         isLoading = true
         errorMessage = nil

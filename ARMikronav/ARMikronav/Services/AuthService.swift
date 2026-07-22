@@ -98,4 +98,41 @@ final class AuthService: ObservableObject {
     func resendConfirmation(email: String) async throws {
         try await client.auth.resend(email: email, type: .signup)
     }
+
+    // MARK: - E-Mail-Bestätigung per Code
+
+    /// Bestätigt das Konto mit dem 6-stelligen Code aus der
+    /// Registrierungs-E-Mail (Alternative zum Link).
+    func verifySignUpCode(email: String, code: String) async throws {
+        let response = try await client.auth.verifyOTP(
+            email: email,
+            token: code,
+            type: .signup
+        )
+        self.currentUser = response.user
+        self.isAuthenticated = response.session != nil
+    }
+
+    // MARK: - Anmeldung per Einmalcode (OTP)
+
+    /// Sendet einen 6-stelligen Einmalcode an die angegebene Adresse.
+    /// `shouldCreateUser: false` verhindert, dass dabei versehentlich
+    /// ein neues Konto entsteht.
+    func sendLoginCode(email: String) async throws {
+        try await client.auth.signInWithOTP(
+            email: email,
+            shouldCreateUser: false
+        )
+    }
+
+    /// Prüft den Einmalcode und meldet die Person an.
+    func verifyLoginCode(email: String, code: String) async throws {
+        let response = try await client.auth.verifyOTP(
+            email: email,
+            token: code,
+            type: .email
+        )
+        self.currentUser = response.user
+        self.isAuthenticated = response.session != nil
+    }
 }

@@ -1,10 +1,12 @@
 // ConsentView.swift
 // ARMikronav
 //
-// Datenschutz/Einwilligung nach nDSG. Wird einmalig nach dem
-// ersten Login gezeigt, bevor das Onboarding startet. Die drei Karten sind
-// informativ (was wird erhoben); die eigentliche Einwilligung ist die
-// Checkbox unten. Der Consent-Zeitpunkt wird lokal persistiert.
+// Datenschutz-Hinweis nach Apples eigenem Muster ("Daten & Datenschutz"-
+// Splash-Screen): Icon, Titel, Daten-Übersicht, Link auf Details und ein
+// einzelner Fortfahren-Button. Rechtlich gilt Apples Standard-Lizenzvertrag
+// für lizenzierte Apps (Standard-EULA) statt eigener Nutzungsbedingungen;
+// die Zustimmung erfolgt – wie bei Apple üblich – durch Tippen auf
+// "Fortfahren". Der Zeitpunkt wird lokal persistiert.
 
 import SwiftUI
 
@@ -29,72 +31,87 @@ enum ConsentStore {
 struct ConsentView: View {
     let onContinue: () -> Void
 
-    @State private var agreed = false
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Deine Daten, deine Kontrolle")
-                .font(.title)
-                .bold()
-                .padding(.top, 24)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 16) {
+                    Image(systemName: "hand.raised.fill")
+                        .font(.system(size: 56))
+                        .foregroundStyle(.tint)
+                        .padding(.top, 48)
 
-            Text("Diese Daten werden erhoben:")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                    Text("Daten & Datenschutz")
+                        .font(.title)
+                        .bold()
+                        .multilineTextAlignment(.center)
 
-            dataCard(
-                symbolName: "location.fill",
-                title: "Standort",
-                detail: "für Barrieren in deiner Nähe"
-            )
-            dataCard(
-                symbolName: "camera.fill",
-                title: "Kamera",
-                detail: "für die AR-Ansicht"
-            )
-            dataCard(
-                symbolName: "person.crop.rectangle.fill",
-                title: "Profildaten",
-                detail: "verschlüsselt in der Cloud (Supabase)"
-            )
+                    Text("ARMikronav verarbeitet nur die Daten, die für die Barriere-Warnungen nötig sind – und nur, während du die App nutzt.")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
 
-            Spacer()
+                    VStack(spacing: 12) {
+                        dataRow(
+                            symbolName: "location.fill",
+                            title: "Standort",
+                            detail: "Zeigt Barrieren in deiner Nähe. Keine Ortung im Hintergrund."
+                        )
+                        dataRow(
+                            symbolName: "camera.fill",
+                            title: "Kamera",
+                            detail: "Nur für die AR-Ansicht. Es werden keine Aufnahmen gespeichert."
+                        )
+                        dataRow(
+                            symbolName: "person.crop.rectangle.fill",
+                            title: "Profildaten",
+                            detail: "Dein Mobilitätsprofil, verschlüsselt gespeichert (Supabase, EU-Region)."
+                        )
+                    }
+                    .padding(.top, 8)
 
-            Toggle(isOn: $agreed) {
-                Text("Ich stimme der Datenschutzerklärung zu")
-                    .font(.subheadline)
+                    NavigationLink {
+                        PrivacyView()
+                    } label: {
+                        Text("Weitere Informationen zum Datenschutz …")
+                            .font(.footnote)
+                    }
+                    .padding(.top, 4)
+                }
+                .padding(.horizontal, 24)
             }
-            .toggleStyle(CheckboxToggleStyle())
 
-            NavigationLink {
-                PrivacyView()
-            } label: {
-                Text("Vollständige Datenschutzerklärung")
-                    .font(.footnote)
-                    .frame(maxWidth: .infinity)
-            }
+            // Fusszeile nach Apple-Muster: Zustimmung durch Fortfahren,
+            // rechtliche Grundlage ist Apples Standard-EULA.
+            VStack(spacing: 12) {
+                Text("Durch Tippen auf „Fortfahren“ akzeptierst du den [Standard-Lizenzvertrag (EULA) von Apple](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/) und die Datenschutzerklärung.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
 
-            Button {
-                ConsentStore.recordConsent()
-                TestAnalyticsService.shared.track("consent_given", screen: "consent")
-                onContinue()
-            } label: {
-                Text("Weiter")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(agreed ? Color.accentColor : Color.gray)
-                    .cornerRadius(12)
+                Button {
+                    ConsentStore.recordConsent()
+                    TestAnalyticsService.shared.track("consent_given", screen: "consent")
+                    onContinue()
+                } label: {
+                    Text("Fortfahren")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Color.accentColor)
+                        .cornerRadius(12)
+                }
             }
-            .disabled(!agreed)
+            .padding(.horizontal, 24)
+            .padding(.top, 12)
             .padding(.bottom, 24)
         }
-        .padding(.horizontal, 24)
     }
 
-    private func dataCard(symbolName: String, title: String, detail: String) -> some View {
-        HStack(spacing: 14) {
+    private func dataRow(symbolName: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
             Image(systemName: symbolName)
                 .font(.title3)
                 .foregroundStyle(.tint)
@@ -112,24 +129,5 @@ struct ConsentView: View {
         }
         .padding(14)
         .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-/// Checkbox-Optik für die Einwilligung (statt Standard-Switch).
-private struct CheckboxToggleStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        Button {
-            configuration.isOn.toggle()
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
-                    .font(.title3)
-                    .foregroundStyle(configuration.isOn ? Color.accentColor : Color.secondary)
-                configuration.label
-                    .foregroundStyle(.primary)
-                Spacer()
-            }
-        }
-        .buttonStyle(.plain)
     }
 }

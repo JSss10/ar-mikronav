@@ -12,6 +12,7 @@ struct AboutView: View {
             appSection
             sourcesSection
             librariesSection
+            legalSection
             projectSection
         }
         .navigationTitle("Über die App")
@@ -55,6 +56,23 @@ struct AboutView: View {
             row("MapKit", "Apple SDK")
         } header: {
             Text("Verwendete Bibliotheken")
+        }
+    }
+
+    private var legalSection: some View {
+        Section {
+            Link(destination: AppConfig.appleStandardEULAURL) {
+                Label("Nutzungsbedingungen (Standard-EULA von Apple)", systemImage: "doc.text")
+            }
+            NavigationLink {
+                PrivacyView()
+            } label: {
+                Label("Datenschutzerklärung", systemImage: "lock")
+            }
+        } header: {
+            Text("Rechtliches")
+        } footer: {
+            Text("Für die Nutzung gilt Apples Standard-Lizenzvertrag für lizenzierte Apps (Standard-EULA).")
         }
     }
 

@@ -7,15 +7,15 @@ import SwiftUI
 
 struct SignInView: View {
     @EnvironmentObject var authService: AuthService
-    
+
     @State private var email: String = ""
     @State private var password: String = ""
-    
+
     @State private var isLoading: Bool = false
     @State private var errorMessage: String? = nil
-    
+
     @State private var showResetPassword: Bool = false
-    
+
     private var isFormValid: Bool {
         !email.isEmpty && !password.isEmpty
     }
@@ -64,7 +64,7 @@ struct SignInView: View {
                 }
                 .font(.caption)
                 .frame(maxWidth: .infinity, alignment: .trailing)
-                
+
                 // Error
                 if let errorMessage = errorMessage {
                     Text(errorMessage)
@@ -93,7 +93,16 @@ struct SignInView: View {
                 .cornerRadius(12)
                 .disabled(!isFormValid || isLoading)
                 .padding(.top, 8)
-                
+
+                // Alternative: Anmeldung per Einmalcode
+                NavigationLink {
+                    OTPLoginView()
+                } label: {
+                    Text("Mit E-Mail-Code anmelden")
+                        .font(.subheadline)
+                }
+                .padding(.top, 4)
+
                 Spacer()
             }
             .padding(.horizontal, 24)
@@ -103,12 +112,12 @@ struct SignInView: View {
             ResetPasswordView()
         }
     }
-    
+
     private func handleSignIn() async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
-        
+
         do {
             try await authService.signIn(email: email, password: password)
         } catch {
