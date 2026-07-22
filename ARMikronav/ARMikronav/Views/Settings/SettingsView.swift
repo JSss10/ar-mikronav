@@ -6,6 +6,7 @@
 // (Benachrichtigungen, Karte, Sprache, Datenschutz) und das Abmelden.
 
 import SwiftUI
+import Auth
 
 struct SettingsView: View {
     @EnvironmentObject var authService: AuthService
