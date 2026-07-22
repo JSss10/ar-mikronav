@@ -135,11 +135,18 @@ struct ARModeView: View {
             }
             .padding(.top, 8)
 
+            // Persistenter Kompass (Blickrichtung des Geräts) oben rechts.
+            CompassView(heading: locationService.heading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .padding(.trailing, 16)
+                .padding(.top, 8)
+
             // Coaching-Overlay, solange die Session startet
             if case .starting = arService.sessionState {
                 coachingOverlay
             }
         }
+        .onAppear { locationService.startUpdatingHeading() }
         .animation(.spring(duration: 0.35), value: warningService.activeWarning?.barrier.id)
         .animation(.spring(duration: 0.35), value: viewModel.activeRoute?.id)
         .onReceive(locationService.$currentLocation) { _ in
@@ -289,7 +296,7 @@ struct POIARMarker: View {
         // verschieben, damit der Ankerpunkt (unten) auf dem Punkt liegt.
         .offset(y: -(Self.badgeSize + Self.stemHeight) / 2)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(poi.name), \(poi.accessStatus.shortLabel), \(Int(poi.distanceM)) Meter")
+        .accessibilityLabel("\(poi.name), \(poi.accessStatus.shortLabel), \(DistanceFormatter.string(fromMeters: poi.distanceM))")
         .accessibilityAddTraits(.isButton)
     }
 

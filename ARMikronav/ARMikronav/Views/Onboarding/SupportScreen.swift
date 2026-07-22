@@ -78,7 +78,7 @@ struct Screen15_Support: View {
     // MARK: - Individuelle Begleit-Boni
 
     private var companionBonusCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
                 Image(systemName: "plusminus.circle")
                     .font(.title3)
@@ -88,35 +88,23 @@ struct Screen15_Support: View {
                     .font(.headline)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Zusätzliche Steigung")
-                        .font(.subheadline)
-                    Spacer()
-                    Text("+\(Int(draft.companionInclineBonus)) %")
-                        .font(.headline.monospacedDigit())
-                        .foregroundStyle(Color.accentColor)
-                }
-                Slider(value: $draft.companionInclineBonus, in: 0...6, step: 1)
-                    .tint(Color.accentColor)
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Zusätzliche Steigung mit Begleitung: \(Int(draft.companionInclineBonus)) Prozent")
+            OnboardingNumberField(
+                icon: "triangle",
+                label: "Zusätzliche Steigung",
+                value: $draft.companionInclineBonus,
+                unit: "%",
+                hint: "Wie viel mehr Steigung schafft ihr gemeinsam?",
+                prefix: "+"
+            )
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Zusätzliche Bordsteinhöhe")
-                        .font(.subheadline)
-                    Spacer()
-                    Text("+\(Int(draft.companionCurbBonus)) cm")
-                        .font(.headline.monospacedDigit())
-                        .foregroundStyle(Color.accentColor)
-                }
-                Slider(value: $draft.companionCurbBonus, in: 0...8, step: 1)
-                    .tint(Color.accentColor)
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Zusätzliche Bordsteinhöhe mit Begleitung: \(Int(draft.companionCurbBonus)) Zentimeter")
+            OnboardingNumberField(
+                icon: "square.stack.3d.up",
+                label: "Zusätzliche Bordsteinhöhe",
+                value: $draft.companionCurbBonus,
+                unit: "cm",
+                hint: "Wie viel höhere Kanten überwindet ihr gemeinsam?",
+                prefix: "+"
+            )
         }
         .padding()
         .background(

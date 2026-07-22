@@ -109,11 +109,10 @@ struct RouteManeuver: Equatable {
         if direction == .straight {
             return "Geradeaus weiter"
         }
-        let meters = max(0, Int(distanceM.rounded()))
-        if meters < 15 {
+        if distanceM < 15 {
             return "Jetzt \(direction.phrase)"
         }
-        return "In \(meters) m \(direction.phrase)"
+        return "In \(DistanceFormatter.string(fromMeters: distanceM)) \(direction.phrase)"
     }
 }
 

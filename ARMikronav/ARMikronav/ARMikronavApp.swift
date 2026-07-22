@@ -22,6 +22,10 @@ struct ARMikronavApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(authService)
+                // Prototyp ist bewusst nur auf Deutsch (Schweiz): Datums- und
+                // Zahlenformate app-weit auf Deutsch fixieren, unabhängig von
+                // der Gerätesprache (Wochentag, Monat, relative Daten …).
+                .environment(\.locale, Locale(identifier: "de_CH"))
         }
     }
 }

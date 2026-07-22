@@ -120,7 +120,7 @@ struct POIDetailSheet: View {
         HStack(spacing: AppMetrics.Space.xs) {
             Image(systemName: "location.fill")
                 .font(.caption2.weight(.bold))
-            Text("\(Int(poi.distanceM)) m")
+            Text(DistanceFormatter.string(fromMeters: poi.distanceM))
                 .font(AppTypography.subheadline.weight(.semibold))
                 .monospacedDigit()
         }
@@ -130,7 +130,7 @@ struct POIDetailSheet: View {
         .background(AppColor.Violet.v100, in: Capsule())
         .fixedSize()
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(Int(poi.distanceM)) Meter entfernt")
+        .accessibilityLabel(DistanceFormatter.awayString(fromMeters: poi.distanceM))
     }
 
     /// Kategorie (deutscher ginto-Name) und Adresse, soweit vorhanden.

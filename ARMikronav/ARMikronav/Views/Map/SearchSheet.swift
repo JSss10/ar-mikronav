@@ -157,7 +157,7 @@ struct SearchSheet: View {
                 }
             }
             Spacer()
-            Text("\(Int(poi.distanceM)) m")
+            Text(DistanceFormatter.string(fromMeters: poi.distanceM))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()

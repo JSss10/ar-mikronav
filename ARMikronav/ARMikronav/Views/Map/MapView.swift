@@ -116,7 +116,6 @@ struct MapView: View {
         }
         .mapControls {
             MapUserLocationButton()
-            MapCompass()
             MapScaleView()
         }
         // Direkt auf der Map, damit Hell-/Dunkel-Modus und Satellitenansicht
@@ -184,6 +183,13 @@ struct MapView: View {
             .padding(.top, 16)
             .animation(.easeInOut(duration: 0.25), value: connectivity.isOnline)
             .animation(.spring(duration: 0.35), value: proximityService.activeWarning?.barrier.id)
+        }
+        // Persistenter Kompass (Blickrichtung des Geräts), unterhalb des
+        // Home-Buttons (HomeView, rechts oben).
+        .overlay(alignment: .topTrailing) {
+            CompassView(heading: locationService.heading)
+                .padding(.trailing, 16)
+                .padding(.top, 72)
         }
         .overlay(alignment: .bottomLeading) {
             // Während der Navigation ersetzt das Routen-Panel Filter und Chips.

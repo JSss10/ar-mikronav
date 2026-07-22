@@ -175,10 +175,7 @@ struct RouteInfoBar: View {
     }
 
     private func distanceText(_ meters: Double) -> String {
-        if meters >= 1000 {
-            return String(format: "%.1f km", meters / 1000)
-        }
-        return "\(max(0, Int(meters.rounded()))) m"
+        DistanceFormatter.string(fromMeters: meters)
     }
 
     private var accessibilitySummary: String {
