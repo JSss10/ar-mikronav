@@ -38,6 +38,47 @@ struct UserProfile: Codable {
     var createdAt: Date
     var updatedAt: Date
 
+    /// Expliziter Initializer, damit die neuen v2.1-Felder (mit Defaults) den
+    /// synthetisierten Memberwise-Init nicht mehrdeutig machen. Bestehende
+    /// Aufrufer, die die neuen Felder weglassen, kompilieren unverändert.
+    init(
+        id: UUID,
+        mobilityCategory: MobilityCategory,
+        wheelchairType: WheelchairType,
+        widthCm: Int,
+        heightCm: Int,
+        weightKg: Int,
+        maneuverBufferCm: Int = 0,
+        maxIncline: Double,
+        maxCurbHeight: Double,
+        surfaceTolerance: SurfaceTolerance,
+        companionStatus: CompanionStatus,
+        companionTodayOverride: Bool,
+        wetConditionsToday: Bool = false,
+        lowEnergyToday: Bool = false,
+        hasEurokey: Bool = false,
+        createdAt: Date,
+        updatedAt: Date
+    ) {
+        self.id = id
+        self.mobilityCategory = mobilityCategory
+        self.wheelchairType = wheelchairType
+        self.widthCm = widthCm
+        self.heightCm = heightCm
+        self.weightKg = weightKg
+        self.maneuverBufferCm = maneuverBufferCm
+        self.maxIncline = maxIncline
+        self.maxCurbHeight = maxCurbHeight
+        self.surfaceTolerance = surfaceTolerance
+        self.companionStatus = companionStatus
+        self.companionTodayOverride = companionTodayOverride
+        self.wetConditionsToday = wetConditionsToday
+        self.lowEnergyToday = lowEnergyToday
+        self.hasEurokey = hasEurokey
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
     /// Ob effektiv eine Begleitperson dabei ist (Standardprofil oder Heute-Toggle).
     private var hasCompanion: Bool {
         companionTodayOverride || companionStatus == .usually
