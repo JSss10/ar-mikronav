@@ -40,7 +40,28 @@ struct Screen15_Support: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
                 .padding(.top, 8)
+
+            eurokeyToggle
         }
+    }
+
+    // Eurokey-Besitz: schaltet abgeschlossene Eurokey-WCs als zugänglich frei.
+    private var eurokeyToggle: some View {
+        Toggle(isOn: $draft.hasEurokey) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Ich besitze einen Eurokey")
+                    .font(.body.weight(.medium))
+                Text("Viele Behinderten-WCs in der Schweiz sind mit dem Eurokey zugänglich.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color(.secondarySystemBackground))
+        )
+        .padding(.top, 4)
     }
 }
 
