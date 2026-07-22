@@ -1,11 +1,13 @@
 // HomeView.swift
 // ARMikronav
 //
-// Haupt-Container für authentifizierte User. Hält das MapViewModel und schaltet
-// zwischen Start- (Homescreen), Karten- und AR-Modus (Task A5). Filter- und
-// Barrieren-State bleiben beim Wechsel erhalten, weil Karte und AR auf dem
-// gleichen ViewModel laufen. Profil-Binding fließt von hier weiter ins
-// SettingsSheet (S1).
+// Haupt-Container für authentifizierte User. Hält das MapViewModel und stellt
+// die Tab-Navigation bereit: Start (Homescreen), Karte, AR, Gespeicherte Orte
+// und Profil. Karte und AR laufen im Vollbild – dort wird die Tab-Leiste
+// ausgeblendet, die Navigation ist also nur auf Start, Gespeicherte Orte und
+// Profil sichtbar. Filter- und Barrieren-State bleiben beim Tab-Wechsel
+// erhalten, weil Karte und AR auf dem gleichen ViewModel laufen. Das
+// Profil-Binding fliesst von hier weiter ins Profil (Settings/Abmelden, S1).
 
 import SwiftUI
 import CoreLocation
@@ -16,17 +18,10 @@ struct HomeView: View {
 
     @StateObject private var viewModel = MapViewModel()
     @StateObject private var locationService = LocationService.shared
-    @State private var mode: DisplayMode = .map
     @State private var selectedTab: Tab = .home
-    @State private var showingSettings = false
-    @State private var showingSignOutConfirm = false
-
-    enum DisplayMode {
-        case map, ar
-    }
 
     enum Tab {
-        case home, map
+        case home, map, ar, saved, profile
     }
 
     var body: some View {
@@ -34,32 +29,18 @@ struct HomeView: View {
             if needsLocationPermission {
                 LocationPermissionView(locationService: locationService)
             } else {
-                switch mode {
-                case .map:
-                    tabContent
-                case .ar:
-                    ARModeView(
-                        profile: profile,
-                        viewModel: viewModel,
-                        originCoordinate: locationService.currentLocation?.coordinate,
-                        onClose: { mode = .map }
-                    )
-                }
+                tabView
             }
-        }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView(profile: $profile)
-                .environmentObject(authService)
         }
     }
 
-    // Start-Tab (Homescreen) und Karten-Tab; der AR-Modus bleibt Vollbild
-    // ausserhalb der TabView.
-    private var tabContent: some View {
+    // Fünf Tabs; Karte und AR blenden die Tab-Leiste aus (Vollbild), damit die
+    // Navigation nur auf Start, Gespeicherte Orte und Profil erscheint.
+    private var tabView: some View {
         TabView(selection: $selectedTab) {
             HomeDashboardView(
                 onOpenMap: { selectedTab = .map },
-                onShowSettings: { showingSettings = true }
+                onOpenProfile: { selectedTab = .profile }
             )
             .tabItem {
                 Label("Start", systemImage: "house.fill")
@@ -67,10 +48,33 @@ struct HomeView: View {
             .tag(Tab.home)
 
             mapContent
+                .toolbar(.hidden, for: .tabBar)
                 .tabItem {
                     Label("Karte", systemImage: "map.fill")
                 }
                 .tag(Tab.map)
+
+            arContent
+                .toolbar(.hidden, for: .tabBar)
+                .tabItem {
+                    Label("AR", systemImage: "arkit")
+                }
+                .tag(Tab.ar)
+
+            NavigationStack {
+                SavedPlacesListView()
+            }
+            .tabItem {
+                Label("Orte", systemImage: "bookmark.fill")
+            }
+            .tag(Tab.saved)
+
+            SettingsView(profile: $profile)
+                .environmentObject(authService)
+                .tabItem {
+                    Label("Profil", systemImage: "person.fill")
+                }
+                .tag(Tab.profile)
         }
     }
 
@@ -88,68 +92,55 @@ struct HomeView: View {
     private var mapContent: some View {
         MapView(profile: profile, viewModel: viewModel, onStartARRoute: startARRoute)
             .ignoresSafeArea(edges: .bottom)
-            .overlay(alignment: .topTrailing) { topRightStack }
+            .overlay(alignment: .topTrailing) { homeButton }
             .overlay(alignment: .bottomTrailing) { arFAB }
     }
 
+    // AR erst aufbauen, wenn der Tab aktiv ist – so starten Kamera und
+    // AR-Session (samt zugehöriger Services) nicht im Hintergrund.
+    @ViewBuilder
+    private var arContent: some View {
+        if selectedTab == .ar {
+            ARModeView(
+                profile: profile,
+                viewModel: viewModel,
+                originCoordinate: locationService.currentLocation?.coordinate,
+                onClose: { selectedTab = .map }
+            )
+        } else {
+            Color.black.ignoresSafeArea()
+        }
+    }
+
     /// "Route in AR starten" aus dem POI-Detail: Route berechnen,
-    /// bei Erfolg in den AR-Modus wechseln.
+    /// bei Erfolg in den AR-Tab wechseln.
     private func startARRoute(to poi: POI) {
         Task {
             if await viewModel.startNavigation(to: poi, profile: profile) {
-                mode = .ar
+                selectedTab = .ar
             }
         }
     }
 
-    private var topRightStack: some View {
-        HStack(spacing: 8) {
-            settingsButton
-            signOutButton
+    // Zurück zum Start – die Tab-Leiste ist auf der Vollbild-Karte ausgeblendet,
+    // dieser Button ist der Weg zurück zur Navigation.
+    private var homeButton: some View {
+        Button {
+            selectedTab = .home
+        } label: {
+            Image(systemName: "house.fill")
+                .font(.title3)
+                // Gleiche Höhe wie die Suchleiste (MapView).
+                .frame(width: 44, height: 44)
+                .background(.thinMaterial, in: Circle())
         }
         .padding()
-    }
-
-    private var settingsButton: some View {
-        Button {
-            showingSettings = true
-        } label: {
-            Image(systemName: "gearshape.fill")
-                .font(.title3)
-                // Gleiche Höhe wie die Suchleiste (MapView).
-                .frame(width: 44, height: 44)
-                .background(.thinMaterial, in: Circle())
-        }
-        .accessibilityLabel("Einstellungen")
-    }
-
-    // Destruktive Aktion mit Bestätigungs-Action-Sheet.
-    private var signOutButton: some View {
-        Button {
-            showingSignOutConfirm = true
-        } label: {
-            Image(systemName: "rectangle.portrait.and.arrow.right")
-                .font(.title3)
-                // Gleiche Höhe wie die Suchleiste (MapView).
-                .frame(width: 44, height: 44)
-                .background(.thinMaterial, in: Circle())
-        }
-        .accessibilityLabel("Abmelden")
-        .confirmationDialog(
-            "Du kannst dich jederzeit wieder anmelden. Dein Profil bleibt gespeichert.",
-            isPresented: $showingSignOutConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Abmelden", role: .destructive) {
-                Task { try? await authService.signOut() }
-            }
-            Button("Abbrechen", role: .cancel) {}
-        }
+        .accessibilityLabel("Zurück zum Start")
     }
 
     private var arFAB: some View {
         Button {
-            mode = .ar
+            selectedTab = .ar
         } label: {
             Image(systemName: "arkit")
                 .font(.title)

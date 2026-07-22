@@ -19,6 +19,7 @@ export GINTO_API_KEY="YOUR_GINTO_BEARER_TOKEN"
 ## Scripts
 
 ### import_osm.py
+
 Lädt Barrieren-Daten aus OpenStreetMap (Overpass API) für die Altstadt Zürich und schreibt sie in die `barriers` Tabelle.
 
 ```bash
@@ -26,6 +27,7 @@ python3 import_osm.py
 ```
 
 **Was wird importiert:**
+
 - Bordsteine (kerb mit Höhe oder Default-Mapping)
 - Treppen (highway=steps mit step_count)
 - Steigungen (incline mit % oder Default 8%)
@@ -33,17 +35,20 @@ python3 import_osm.py
 - Engstellen (width < 200cm)
 
 **value_source:**
+
 - `measured`: Wert direkt aus OSM-Tag
 - `estimated`: Wert aus Default-Mapping (NFA-15: eher warnen)
 
 ### import_ginto.py
-Lädt alle POIs aus der ginto GraphQL API für die Altstadt und schreibt sie in die `poi_accessibility` Tabelle. Holt die Bewertungen für 3 Rollstuhltypen (Handrollstuhl, E-Rollstuhl, Scewo BRO).
+
+Lädt alle verfügbaren POIs aus der ginto GraphQL API für die **ganze Schweiz** (Suchmittelpunkt Älggi-Alp, Radius 300 km, mit Paginierung) und schreibt sie in die `poi_accessibility` Tabelle. Holt die Bewertungen für 3 Rollstuhltypen (Handrollstuhl, E-Rollstuhl, Scewo BRO).
 
 ```bash
 python3 import_ginto.py
 ```
 
 **Was wird importiert:**
+
 - Name, Adresse, Koordinaten
 - Kategorie (Café, Restaurant, WC, etc.)
 - Zugänglichkeit pro Rollstuhltyp:
@@ -67,7 +72,7 @@ python3 import_ginto.py
 
 # 3. In Supabase Table Editor prüfen:
 # - barriers: sollte ~50-200 Einträge haben
-# - poi_accessibility: sollte ~440 Einträge haben
+# - poi_accessibility: enthält die POIs der ganzen Schweiz (ginto)
 ```
 
 ## Backups

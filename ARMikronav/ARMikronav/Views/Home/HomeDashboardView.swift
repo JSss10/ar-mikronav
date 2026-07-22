@@ -13,8 +13,8 @@ import CoreLocation
 struct HomeDashboardView: View {
     /// Wechselt zum Karten-Tab (z. B. Tap auf ein Ziel oder eine Barriere).
     let onOpenMap: () -> Void
-    /// Öffnet das Einstellungs-Sheet des HomeView.
-    let onShowSettings: () -> Void
+    /// Wechselt zum Profil-Tab (Einstellungen, Abmelden).
+    let onOpenProfile: () -> Void
 
     @StateObject private var viewModel = HomeDashboardViewModel()
     @StateObject private var recentDestinations = RecentDestinationsStore.shared
@@ -59,14 +59,14 @@ struct HomeDashboardView: View {
 
             Spacer()
 
-            Button(action: onShowSettings) {
+            Button(action: onOpenProfile) {
                 Image(systemName: "gearshape.fill")
                     .font(.title3)
                     .foregroundStyle(AppColor.accentPrimary)
                     .frame(width: AppMetrics.Touch.minimum, height: AppMetrics.Touch.minimum)
                     .background(AppColor.surfaceRaised, in: Circle())
             }
-            .accessibilityLabel("Einstellungen")
+            .accessibilityLabel("Profil")
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(viewModel.greeting) Heute ist \(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))")

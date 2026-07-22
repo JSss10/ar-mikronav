@@ -1,9 +1,10 @@
 // MapView.swift
 // ARMikronav
 //
-// Kartenansicht (iOS 17 Map API). Default-Region: Altstadt Zürich.
+// Kartenansicht (iOS 17 Map API). Startregion: aktueller Standort bzw. als
+// Fallback die Altstadt Zürich; die Barrieren werden schweizweit geladen.
 // Zeigt Userposition, profilrelevante Barrieren, POI-Marker mit
-// Zugänglichkeits-Status, Suchleiste, Kategorie-Chips und ein
+// Zugänglichkeits-Status, Suchleiste (inkl. Kategorie-Filter) und ein
 // Annäherungs-Banner. MapViewModel kommt vom HomeView, damit Filter-
 // und Barrieren-State mit dem AR-Modus geteilt werden.
 
@@ -37,8 +38,6 @@ struct MapView: View {
     @State private var pendingListBarrier: Barrier?
     /// Auf der Karte markierter gespeicherter Ort (aus dem Bookmark-Sheet).
     @State private var selectedSavedPlace: SavedPlace?
-
-    private static let categoryChips = ["Café", "WC", "Restaurant", "Apotheke", "Haltestelle"]
 
     // Enger Zoom (~150 m Bildausschnitt), damit nur Barrieren in unmittelbarer
     // Nähe des aktuellen Standorts sichtbar sind.
@@ -150,7 +149,7 @@ struct MapView: View {
             VStack(spacing: 8) {
                 searchBar
                     .padding(.leading)
-                    .padding(.trailing, 120) // Platz für Settings/Abmelden (HomeView)
+                    .padding(.trailing, 68) // Platz für den Home-Button (HomeView)
 
                 // Fallback-Banner nur ohne Mitteilungs-Berechtigung; sonst
                 // kommt die Warnung als System-Mitteilung (UserNotifications).
@@ -181,7 +180,7 @@ struct MapView: View {
                     .background(.thinMaterial, in: Capsule())
                 }
             }
-            // Bündig mit Settings-/Abmelde-Button (HomeView, .padding() = 16).
+            // Bündig mit dem Home-Button (HomeView, .padding() = 16).
             .padding(.top, 16)
             .animation(.easeInOut(duration: 0.25), value: connectivity.isOnline)
             .animation(.spring(duration: 0.35), value: proximityService.activeWarning?.barrier.id)
@@ -193,7 +192,6 @@ struct MapView: View {
                     mapStyleButton
                     savedPlacesButton
                     filterButton
-                    categoryChipRow
                 }
                 .padding(.leading)
                 .padding(.bottom, 12)
@@ -310,7 +308,7 @@ struct MapView: View {
             }
             .foregroundStyle(.secondary)
             .padding(.horizontal, 12)
-            // Gleiche Höhe wie Settings-/Abmelde-Button (HomeView).
+            // Gleiche Höhe wie der Home-Button (HomeView).
             .frame(height: 44)
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
@@ -362,32 +360,6 @@ struct MapView: View {
                 .background(.thinMaterial, in: Circle())
         }
         .accessibilityLabel("Filter")
-    }
-
-    private var categoryChipRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(Self.categoryChips, id: \.self) { chip in
-                    let isActive = viewModel.activeCategory == chip
-                    Button {
-                        viewModel.toggleCategory(chip)
-                    } label: {
-                        Text(chip)
-                            .font(.subheadline.weight(.medium))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(
-                                isActive ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.thinMaterial),
-                                in: Capsule()
-                            )
-                            .foregroundStyle(isActive ? .white : .primary)
-                    }
-                    .accessibilityLabel("\(chip) anzeigen")
-                    .accessibilityAddTraits(isActive ? .isSelected : [])
-                }
-            }
-            .padding(.trailing, 96) // Platz für den AR-FAB (HomeView)
-        }
     }
 
     // Banner ~30 m vor profilrelevanter Barriere.

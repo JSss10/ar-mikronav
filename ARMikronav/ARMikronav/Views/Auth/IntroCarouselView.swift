@@ -3,7 +3,7 @@
 //
 // Zweiseitiger Intro-Carousel vor der Registrierung.
 // "Überspringen" und "Los geht's" führen beide zur Registrierung.
-// Illustrationen sind bewusst SF-Symbol-Platzhalter, bis finale Assets da sind.
+// Die Illustrationen sind bewusst Bild-Platzhalter, bis finale Assets da sind.
 
 import SwiftUI
 
@@ -13,12 +13,10 @@ struct IntroCarouselView: View {
 
     private let slides: [IntroSlide] = [
         IntroSlide(
-            symbolName: "map.fill",
             title: "Barrieren erkennen, bevor du dort ankommst",
             subtitle: "Die Karte zeigt dir Stufen, Steigungen und Engstellen in deiner Umgebung."
         ),
         IntroSlide(
-            symbolName: "person.crop.circle.badge.checkmark",
             title: "Persönlich. Nur Warnungen, die DICH betreffen.",
             subtitle: "Dein Profil bestimmt, was eine Barriere ist. Keine Warnung = für dich passierbar."
         )
@@ -70,9 +68,9 @@ struct IntroCarouselView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Image(systemName: slide.symbolName)
-                .font(.system(size: 96))
-                .foregroundStyle(.tint)
+            // Platzhalter-Bild: klarer "Bild folgt"-Rahmen, bis die finalen
+            // Illustrationen vorliegen.
+            imagePlaceholder
                 .frame(maxWidth: .infinity, minHeight: 220)
                 .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 20))
                 .padding(.horizontal, 24)
@@ -92,10 +90,21 @@ struct IntroCarouselView: View {
             Spacer()
         }
     }
+
+    private var imagePlaceholder: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "photo")
+                .font(.system(size: 72))
+                .foregroundStyle(.secondary)
+            Text("Bild folgt")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityHidden(true)
+    }
 }
 
 private struct IntroSlide {
-    let symbolName: String
     let title: String
     let subtitle: String
 }
