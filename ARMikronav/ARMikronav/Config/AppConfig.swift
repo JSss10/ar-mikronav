@@ -53,7 +53,7 @@ enum AppConfig {
     static let appleStandardEULAURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
 
     // MARK: - Feldtest
-    static let fieldTestModeEnabled = false
+    static let fieldTestModeEnabled = true
     static let fieldTestSurveyURL = "https://docs.google.com/forms/d/e/1FAIpQLSfqUaSbVZUignM6xjY4NhPtxaKBANLNqPMaOnp23Rj7nHWL0A/viewform"
     static let fieldTestSurveyNameEntryID = "entry.274175680"
     static let fieldTestSurveyKeyEntryID = "entry.2040937465"
