@@ -35,6 +35,7 @@ struct POIDetailSheet: View {
                 header
                 photoCarousel
                 statusBadge
+                eurokeyNote
                 ratingsCard
                 detailsCard
                 sourceFooter
@@ -108,15 +109,48 @@ struct POIDetailSheet: View {
         }
     }
 
+    /// Status fürs eigene Profil: eine Eurokey-Toilette gilt ohne eigenen
+    /// Eurokey als nicht nutzbar, obwohl sie baulich zugänglich ist.
+    private var profileStatus: POIAccessStatus {
+        poi.accessStatus(for: profile)
+    }
+
     private var statusBadge: some View {
         HStack(spacing: 8) {
-            Image(systemName: poi.accessStatus.symbolName)
+            Image(systemName: profileStatus.symbolName)
                 .font(.body.weight(.semibold))
-                .foregroundStyle(poi.accessStatus.tint)
-            Text(poi.accessStatus.label)
+                .foregroundStyle(profileStatus.tint)
+            Text(profileStatus.label)
                 .font(.body.weight(.medium))
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// Hinweis bei Eurokey-Toiletten: erklärt, warum das WC (nicht) nutzbar ist,
+    /// abhängig davon, ob im Profil ein Eurokey hinterlegt ist.
+    @ViewBuilder
+    private var eurokeyNote: some View {
+        if poi.isEurokeyToilet {
+            let hasKey = profile.hasEurokey
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: hasKey ? "key.fill" : "key.slash.fill")
+                    .foregroundStyle(hasKey ? POIAccessStatus.accessible.tint
+                                            : POIAccessStatus.notAccessible.tint)
+                Text(hasKey
+                     ? "Abgeschlossenes WC – mit deinem Eurokey zugänglich."
+                     : "Abgeschlossenes WC – benötigt einen Eurokey. In deinem Profil ist keiner hinterlegt.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.secondarySystemBackground))
+            )
+            .accessibilityElement(children: .combine)
+        }
     }
 
     /// ginto-Bewertung für den eigenen Rollstuhltyp mit Einstufung und

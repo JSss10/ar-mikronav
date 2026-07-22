@@ -123,33 +123,46 @@ struct SettingsView: View {
             row("Gewicht", "\(profile.weightKg) kg")
             row("Max. Steigung", "\(Int(profile.effectiveMaxIncline)) %")
             row("Max. Bordstein", "\(Int(profile.effectiveMaxCurb)) cm")
-            row("Oberflächentoleranz", profile.surfaceTolerance.displayName)
+            row("Oberflächentoleranz", profile.effectiveSurfaceTolerance.displayName)
+            row("Eurokey", profile.hasEurokey ? "vorhanden" : "nicht vorhanden")
         }
     }
 
-    // MARK: - Begleitung
+    // MARK: - Heute unterwegs (Tagesform & Bedingungen)
 
     private var companionSection: some View {
         Section {
             Toggle("Heute mit Begleitung", isOn: $profile.companionTodayOverride)
+            Toggle("Nasse Bedingungen", isOn: $profile.wetConditionsToday)
+            Toggle("Heute weniger Kraft", isOn: $profile.lowEnergyToday)
         } header: {
-            Text("Begleitung")
+            Text("Heute unterwegs")
         } footer: {
-            Text(companionFooter)
+            Text(todayFooter)
         }
     }
 
-    private var companionFooter: String {
+    /// Erklärt die Standard-Begleitung plus die Wirkung der aktiven Heute-Toggles.
+    private var todayFooter: String {
         let base: String
         switch profile.companionStatus {
         case .alwaysAlone: base = "Standard: alleine unterwegs."
         case .sometimes:   base = "Standard: manchmal in Begleitung."
         case .usually:     base = "Standard: meistens in Begleitung."
         }
-        let suffix = profile.companionTodayOverride
-            ? " Heute hebt der Toggle dein Limit etwas an (mehr Steigung und Bordsteinhöhe erlaubt)."
-            : ""
-        return base + suffix
+
+        var effects: [String] = []
+        if profile.companionTodayOverride {
+            effects.append("Begleitung hebt dein Limit etwas an (mehr Steigung und Bordsteinhöhe erlaubt).")
+        }
+        if profile.wetConditionsToday {
+            effects.append("Nässe verschärft deine Oberflächentoleranz um eine Stufe.")
+        }
+        if profile.lowEnergyToday {
+            effects.append("Weniger Kraft senkt deine Steigungs- und Bordstein-Limits um 20 %.")
+        }
+
+        return effects.isEmpty ? base : base + " " + effects.joined(separator: " ")
     }
 
     // MARK: - Edit-Link + Gespeicherte Orte

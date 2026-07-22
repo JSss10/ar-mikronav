@@ -26,6 +26,9 @@ struct DraftProfile {
     // Unterstützung – Screen 1.5
     var companionStatus: CompanionStatus = .alwaysAlone
 
+    // Zugang – im Onboarding vorerst nicht abgefragt, im Profil editierbar.
+    var hasEurokey: Bool = false
+
     /// Gibt den internen Rollstuhltyp (5 Kategorien) für die Barrierenlogik zurück.
     var wheelchairType: WheelchairType? {
         wheelchairSubtype?.internalType
@@ -63,6 +66,7 @@ struct DraftProfile {
             surfaceTolerance: surfaceTolerance,
             companionStatus: companionStatus,
             companionTodayOverride: false,
+            hasEurokey: hasEurokey,
             createdAt: now,
             updatedAt: now
         )

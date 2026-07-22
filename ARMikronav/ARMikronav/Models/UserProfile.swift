@@ -15,19 +15,85 @@ struct UserProfile: Codable {
     var surfaceTolerance: SurfaceTolerance
     var companionStatus: CompanionStatus
     var companionTodayOverride: Bool
+
+    // MARK: - Tagesform & Bedingungen (v2.1)
+
+    /// Nasse/rutschige Bedingungen heute (Regen, Laub, Schnee). Verschärft die
+    /// Oberflächentoleranz um eine Stufe – nasses Pflaster ist glatter als
+    /// trockenes. Transienter Tages-Zustand, analog zu `companionTodayOverride`.
+    var wetConditionsToday: Bool = false
+
+    /// Weniger Kraft/Energie heute (langer Tag, Erschöpfung). Senkt die
+    /// kraftabhängigen Limits (Steigung, Bordstein) um 20 %.
+    var lowEnergyToday: Bool = false
+
+    /// Besitzt einen Schweizer Eurokey (Euroschlüssel). Persistentes Merkmal:
+    /// öffnet abgeschlossene barrierefreie WCs (Eurokey-Toiletten), die ohne
+    /// Schlüssel faktisch nicht nutzbar sind.
+    var hasEurokey: Bool = false
+
     var createdAt: Date
     var updatedAt: Date
-    
-    var effectiveWidthNeeded: Int { widthCm + 10 }
-    
-    var effectiveMaxIncline: Double {
-        let hasCompanion = companionTodayOverride || companionStatus == .usually
-        return hasCompanion ? maxIncline + 3.0 : maxIncline
+
+    /// Ob effektiv eine Begleitperson dabei ist (Standardprofil oder Heute-Toggle).
+    private var hasCompanion: Bool {
+        companionTodayOverride || companionStatus == .usually
     }
-    
+
+    /// Reduktionsfaktor für kraftabhängige Limits bei „heute weniger Energie".
+    private var energyFactor: Double {
+        lowEnergyToday ? 0.8 : 1.0
+    }
+
+    var effectiveWidthNeeded: Int { widthCm + 10 }
+
+    var effectiveMaxIncline: Double {
+        let base = hasCompanion ? maxIncline + 3.0 : maxIncline
+        return base * energyFactor
+    }
+
     var effectiveMaxCurb: Double {
-        let hasCompanion = companionTodayOverride || companionStatus == .usually
-        return hasCompanion ? maxCurbHeight + 4.0 : maxCurbHeight
+        let base = hasCompanion ? maxCurbHeight + 4.0 : maxCurbHeight
+        return base * energyFactor
+    }
+
+    /// Oberflächentoleranz nach Tagesbedingungen: bei Nässe eine Stufe strenger.
+    var effectiveSurfaceTolerance: SurfaceTolerance {
+        wetConditionsToday ? surfaceTolerance.oneStepStricter : surfaceTolerance
+    }
+}
+
+extension UserProfile {
+    /// Explizite Schlüssel (Raw-Wert = Property-Name), damit bestehende JSON-
+    /// Profile weiterhin passen und der eigene Decoder eindeutig auflöst.
+    enum CodingKeys: String, CodingKey {
+        case id, mobilityCategory, wheelchairType, widthCm, heightCm, weightKg
+        case maxIncline, maxCurbHeight, surfaceTolerance, companionStatus
+        case companionTodayOverride, wetConditionsToday, lowEnergyToday
+        case hasEurokey, createdAt, updatedAt
+    }
+
+    /// Rückwärtskompatibles Decoding: die v2.1-Felder fehlen in Profilen, die
+    /// vor dem Update in UserDefaults / user_metadata gespeichert wurden. Sie
+    /// werden dann auf `false` gesetzt statt das Decoding scheitern zu lassen.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        mobilityCategory = try c.decode(MobilityCategory.self, forKey: .mobilityCategory)
+        wheelchairType = try c.decode(WheelchairType.self, forKey: .wheelchairType)
+        widthCm = try c.decode(Int.self, forKey: .widthCm)
+        heightCm = try c.decode(Int.self, forKey: .heightCm)
+        weightKg = try c.decode(Int.self, forKey: .weightKg)
+        maxIncline = try c.decode(Double.self, forKey: .maxIncline)
+        maxCurbHeight = try c.decode(Double.self, forKey: .maxCurbHeight)
+        surfaceTolerance = try c.decode(SurfaceTolerance.self, forKey: .surfaceTolerance)
+        companionStatus = try c.decode(CompanionStatus.self, forKey: .companionStatus)
+        companionTodayOverride = try c.decode(Bool.self, forKey: .companionTodayOverride)
+        wetConditionsToday = try c.decodeIfPresent(Bool.self, forKey: .wetConditionsToday) ?? false
+        lowEnergyToday = try c.decodeIfPresent(Bool.self, forKey: .lowEnergyToday) ?? false
+        hasEurokey = try c.decodeIfPresent(Bool.self, forKey: .hasEurokey) ?? false
+        createdAt = try c.decode(Date.self, forKey: .createdAt)
+        updatedAt = try c.decode(Date.self, forKey: .updatedAt)
     }
 }
 
@@ -91,6 +157,16 @@ enum WheelchairType: String, Codable, CaseIterable {
 
 enum SurfaceTolerance: String, Codable, CaseIterable {
     case smoothOnly, fineCobble, almostAll
+
+    /// Eine Stufe strenger – für nasse/rutschige Bedingungen. `smoothOnly` ist
+    /// bereits die strengste Stufe und bleibt unverändert.
+    var oneStepStricter: SurfaceTolerance {
+        switch self {
+        case .almostAll:  return .fineCobble
+        case .fineCobble: return .smoothOnly
+        case .smoothOnly: return .smoothOnly
+        }
+    }
 }
 
 enum CompanionStatus: String, Codable, CaseIterable {

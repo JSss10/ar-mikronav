@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SearchSheet: View {
     @ObservedObject var viewModel: MapViewModel
+    let profile: UserProfile
     let onSelect: (POI) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -98,7 +99,8 @@ struct SearchSheet: View {
     }
 
     private func resultRow(_ poi: POI) -> some View {
-        HStack(alignment: .top) {
+        let status = poi.accessStatus(for: profile)
+        return HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(poi.name)
                     .font(.body.weight(.semibold))
@@ -108,10 +110,10 @@ struct SearchSheet: View {
                         .foregroundStyle(.secondary)
                 }
                 HStack(spacing: 6) {
-                    Image(systemName: poi.accessStatus.symbolName)
+                    Image(systemName: status.symbolName)
                         .font(.footnote.weight(.semibold))
-                        .foregroundStyle(poi.accessStatus.tint)
-                    Text(poi.accessStatus.shortLabel)
+                        .foregroundStyle(status.tint)
+                    Text(status.shortLabel)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

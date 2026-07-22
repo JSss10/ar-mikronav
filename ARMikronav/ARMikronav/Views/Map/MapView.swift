@@ -96,7 +96,7 @@ struct MapView: View {
                         longitude: poi.longitude
                     )
                 ) {
-                    POIMarker(poi: poi)
+                    POIMarker(poi: poi, profile: profile)
                         .onTapGesture { selectedPOI = poi }
                 }
             }
@@ -279,7 +279,7 @@ struct MapView: View {
             .trackScreen("filter")
         }
         .sheet(isPresented: $showingSearch) {
-            SearchSheet(viewModel: viewModel) { poi in
+            SearchSheet(viewModel: viewModel, profile: profile) { poi in
                 focus(on: poi)
             }
             .trackScreen("search")
@@ -562,6 +562,9 @@ struct SavedPlaceMarker: View {
 /// Symbol-Icon (Häkchen/Warndreieck/Kreuz) oben rechts am Ring.
 struct POIMarker: View {
     let poi: POI
+    let profile: UserProfile
+
+    private var status: POIAccessStatus { poi.accessStatus(for: profile) }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -578,9 +581,9 @@ struct POIMarker: View {
                     .foregroundStyle(.white)
             }
 
-            POIStatusIcon(status: poi.accessStatus, diameter: 15)
+            POIStatusIcon(status: status, diameter: 15)
                 .offset(x: 3, y: -3)
         }
-        .accessibilityLabel("\(poi.name), \(poi.accessStatus.shortLabel)")
+        .accessibilityLabel("\(poi.name), \(status.shortLabel)")
     }
 }

@@ -194,7 +194,7 @@ struct ARModeView: View {
     private var poiCards: some View {
         GeometryReader { _ in
             ForEach(projector.projected) { item in
-                POIARMarker(poi: item.poi)
+                POIARMarker(poi: item.poi, profile: profile)
                     .position(item.point)
                     .onTapGesture { selectedPOI = item.poi }
             }
@@ -250,6 +250,9 @@ struct ARModeView: View {
 /// rechts zeigt die Zugänglichkeit als Symbol (Häkchen/Warndreieck/Kreuz).
 struct POIARMarker: View {
     let poi: POI
+    let profile: UserProfile
+
+    private var status: POIAccessStatus { poi.accessStatus(for: profile) }
 
     private static let badgeSize: CGFloat = 52
     private static let stemHeight: CGFloat = 44
@@ -274,7 +277,7 @@ struct POIARMarker: View {
         // verschieben, damit der Ankerpunkt (unten) auf dem Punkt liegt.
         .offset(y: -(Self.badgeSize + Self.stemHeight) / 2)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(poi.name), \(poi.accessStatus.shortLabel), \(Int(poi.distanceM)) Meter")
+        .accessibilityLabel("\(poi.name), \(status.shortLabel), \(Int(poi.distanceM)) Meter")
         .accessibilityAddTraits(.isButton)
     }
 
@@ -293,7 +296,7 @@ struct POIARMarker: View {
                     .foregroundStyle(.white)
             }
 
-            POIStatusIcon(status: poi.accessStatus, diameter: 19)
+            POIStatusIcon(status: status, diameter: 19)
                 .offset(x: 2, y: -2)
         }
     }

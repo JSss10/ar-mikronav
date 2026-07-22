@@ -36,6 +36,25 @@ struct POI: Decodable, Identifiable {
         }
     }
 
+    /// Eine Eurokey-Toilette: barrierefreies WC, das mit dem Schweizer Eurokey
+    /// (Euroschlüssel) abgeschlossen ist. In den Daten als `public_toilets` mit
+    /// „Eurokey" im Namen erfasst und baulich als zugänglich (`yes`) markiert –
+    /// ohne Schlüssel aber faktisch nicht nutzbar.
+    var isEurokeyToilet: Bool {
+        category?.lowercased() == "public_toilets"
+            && name.localizedCaseInsensitiveContains("eurokey")
+    }
+
+    /// Zugänglichkeits-Status angepasst ans Profil. Aktuell: eine Eurokey-
+    /// Toilette gilt ohne eigenen Eurokey als nicht nutzbar, sonst wie
+    /// `accessStatus`.
+    func accessStatus(for profile: UserProfile) -> POIAccessStatus {
+        if isEurokeyToilet && !profile.hasEurokey {
+            return .notAccessible
+        }
+        return accessStatus
+    }
+
     // MARK: - ginto-Detailinformationen (accessibility_details JSONB)
 
     /// Bild-URLs des Ortes aus dem ginto-Import (accessibility_details.images,

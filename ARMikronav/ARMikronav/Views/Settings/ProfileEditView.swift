@@ -34,6 +34,7 @@ struct ProfileEditView: View {
             abilitiesSection
             surfaceSection
             companionSection
+            accessSection
         }
         .navigationTitle("Profil bearbeiten")
         .navigationBarTitleDisplayMode(.inline)
@@ -191,6 +192,16 @@ struct ProfileEditView: View {
                     Text(status.displayName).tag(status)
                 }
             }
+        }
+    }
+
+    private var accessSection: some View {
+        Section {
+            Toggle("Eurokey vorhanden", isOn: $draft.hasEurokey)
+        } header: {
+            Text("Zugang")
+        } footer: {
+            Text("Mit dem Eurokey (Euroschlüssel) sind abgeschlossene barrierefreie WCs für dich nutzbar. Ohne ihn werden Eurokey-Toiletten als nicht zugänglich angezeigt.")
         }
     }
 }
