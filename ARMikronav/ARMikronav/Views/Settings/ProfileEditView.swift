@@ -145,13 +145,21 @@ struct ProfileEditView: View {
     }
 
     private var measurementsSection: some View {
-        Section("Maße") {
+        Section {
             Stepper("Breite: \(draft.widthCm) cm",
                     value: $draft.widthCm, in: 50...100, step: 1)
-            Stepper("Sitzhöhe: \(draft.heightCm) cm",
-                    value: $draft.heightCm, in: 80...160, step: 1)
+            Stepper("Gesamthöhe (sitzend): \(draft.heightCm) cm",
+                    value: $draft.heightCm, in: 100...180, step: 1)
+            Stepper("Sitzhöhe: \(draft.seatHeightCm) cm",
+                    value: $draft.seatHeightCm, in: 35...70, step: 1)
+            Stepper("Länge: \(draft.lengthCm) cm",
+                    value: $draft.lengthCm, in: 80...160, step: 1)
             Stepper("Gewicht: \(draft.weightKg) kg",
                     value: $draft.weightKg, in: 30...200, step: 1)
+        } header: {
+            Text("Maße")
+        } footer: {
+            Text("Die Sitzhöhe (Sitzfläche inkl. Kissen ab Boden) bestimmt zusammen mit der Gesamthöhe, auf welcher Höhe der AR-Pfad auf dem Boden angezeigt wird.")
         }
     }
 
@@ -165,6 +173,8 @@ struct ProfileEditView: View {
                 Text("Max. Bordsteinhöhe: \(Int(draft.maxCurbHeight)) cm")
                 Slider(value: $draft.maxCurbHeight, in: 0...15, step: 1)
             }
+            Stepper("Manövrier-Spielraum: +\(draft.maneuverBufferCm) cm",
+                    value: $draft.maneuverBufferCm, in: 0...25, step: 1)
         } header: {
             Text("Was du bewältigst")
         } footer: {
@@ -185,11 +195,30 @@ struct ProfileEditView: View {
     }
 
     private var companionSection: some View {
-        Section("Begleitung") {
+        Section {
             Picker("Standard", selection: $draft.companionStatus) {
                 ForEach(CompanionStatus.allCases, id: \.self) { status in
                     Text(status.displayName).tag(status)
                 }
+            }
+            if draft.companionStatus != .alwaysAlone {
+                VStack(alignment: .leading) {
+                    Text("Mit Begleitung: +\(Int(draft.companionInclineBonus)) % Steigung")
+                    Slider(value: $draft.companionInclineBonus, in: 0...6, step: 1)
+                }
+                VStack(alignment: .leading) {
+                    Text("Mit Begleitung: +\(Int(draft.companionCurbBonus)) cm Bordstein")
+                    Slider(value: $draft.companionCurbBonus, in: 0...8, step: 1)
+                }
+            }
+            Toggle("Ich besitze einen Eurokey", isOn: $draft.hasEurokey)
+        } header: {
+            Text("Begleitung & Ausstattung")
+        } footer: {
+            if draft.companionStatus != .alwaysAlone {
+                Text("Die Begleit-Werte werden zu deinen Limits addiert, wenn du mit Begleitung unterwegs bist. Mit Eurokey werden abgeschlossene Behinderten-WCs als zugänglich bewertet.")
+            } else {
+                Text("Mit Eurokey werden abgeschlossene Behinderten-WCs für dich als zugänglich bewertet.")
             }
         }
     }

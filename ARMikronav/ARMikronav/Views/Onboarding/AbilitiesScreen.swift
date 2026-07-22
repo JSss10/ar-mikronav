@@ -60,6 +60,38 @@ struct Screen14_Abilities: View {
                 .foregroundStyle(.secondary)
             }
 
+            // MARK: Manövrier-Spielraum
+            AbilityCard(
+                icon: "arrow.left.and.right.square",
+                title: "Manövrier-Spielraum",
+                subtitle: "Wie viel Platz brauchst du zusätzlich zur Rollstuhlbreite, um eine Engstelle sicher zu passieren?",
+                valueText: "+\(draft.maneuverBufferCm) cm"
+            ) {
+                Slider(
+                    value: Binding(
+                        get: { Double(draft.maneuverBufferCm) },
+                        set: { draft.maneuverBufferCm = Int($0) }
+                    ),
+                    in: 0...25,
+                    step: 1
+                )
+                .tint(Color.accentColor)
+
+                HStack {
+                    Text("0 cm")
+                    Spacer()
+                    Text("10 cm (empfohlen)")
+                    Spacer()
+                    Text("25 cm")
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+                Text("Bei Engstellen warnt dich die App, wenn der Durchgang schmaler ist als \(draft.widthCm + draft.maneuverBufferCm) cm (Breite + Spielraum).")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             // MARK: Untergrund
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 10) {

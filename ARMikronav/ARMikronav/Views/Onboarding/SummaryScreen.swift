@@ -52,6 +52,8 @@ struct Screen16_Summary: View {
             SummarySection(title: "Masse") {
                 SummaryRow(label: "Breite", value: "\(draft.widthCm) cm")
                 SummaryRow(label: "Höhe (sitzend)", value: "\(draft.heightCm) cm")
+                SummaryRow(label: "Sitzhöhe", value: "\(draft.seatHeightCm) cm")
+                SummaryRow(label: "Länge", value: "\(draft.lengthCm) cm")
                 SummaryRow(label: "Gewicht", value: "\(draft.weightKg) kg")
             }
 
@@ -60,10 +62,20 @@ struct Screen16_Summary: View {
                 SummaryRow(label: "Max. Bordsteinhöhe",
                            value: String(format: "%.1f cm", draft.maxCurbHeight))
                 SummaryRow(label: "Untergrund", value: draft.surfaceTolerance.displayName)
+                SummaryRow(label: "Manövrier-Spielraum",
+                           value: "+\(draft.maneuverBufferCm) cm")
             }
 
             SummarySection(title: "Unterstützung") {
                 SummaryRow(label: "Begleitung", value: draft.companionStatus.displayName)
+                if draft.companionStatus != .alwaysAlone {
+                    SummaryRow(
+                        label: "Mit Begleitung",
+                        value: "+\(Int(draft.companionInclineBonus)) % / +\(Int(draft.companionCurbBonus)) cm",
+                        subdued: true
+                    )
+                }
+                SummaryRow(label: "Eurokey", value: draft.hasEurokey ? "Ja" : "Nein")
             }
 
             Text("Du kannst dein Profil später in den Einstellungen jederzeit anpassen.")

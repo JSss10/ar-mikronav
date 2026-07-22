@@ -16,15 +16,23 @@ struct DraftProfile {
     // Masse – werden in Screen 1.3 mit Defaults aus wheelchairSubtype vorbelegt
     var widthCm: Int = 65
     var heightCm: Int = 130
+    var seatHeightCm: Int = 50
+    var lengthCm: Int = 120
     var weightKg: Int = 80
 
     // Fähigkeiten – werden in Screen 1.4 mit Defaults aus wheelchairSubtype vorbelegt
     var maxIncline: Double = 6.0
     var maxCurbHeight: Double = 3.0
     var surfaceTolerance: SurfaceTolerance = .fineCobble
+    var maneuverBufferCm: Int = 10
 
     // Unterstützung – Screen 1.5
     var companionStatus: CompanionStatus = .alwaysAlone
+    var companionInclineBonus: Double = 3.0
+    var companionCurbBonus: Double = 4.0
+
+    // Eurokey-Besitz (Screen 1.5) – schaltet Eurokey-WCs als zugänglich frei
+    var hasEurokey: Bool = false
 
     /// Gibt den internen Rollstuhltyp (5 Kategorien) für die Barrierenlogik zurück.
     var wheelchairType: WheelchairType? {
@@ -36,6 +44,8 @@ struct DraftProfile {
     mutating func applyDefaults(for subtype: WheelchairSubtype) {
         let type = subtype.internalType
         widthCm = type.defaultWidth
+        seatHeightCm = type.defaultSeatHeight
+        lengthCm = type.defaultLength
         maxIncline = type.defaultMaxIncline
         maxCurbHeight = type.defaultMaxCurb
     }
@@ -58,11 +68,17 @@ struct DraftProfile {
             widthCm: widthCm,
             heightCm: heightCm,
             weightKg: weightKg,
+            seatHeightCm: seatHeightCm,
+            lengthCm: lengthCm,
             maxIncline: maxIncline,
             maxCurbHeight: maxCurbHeight,
             surfaceTolerance: surfaceTolerance,
+            maneuverBufferCm: maneuverBufferCm,
             companionStatus: companionStatus,
             companionTodayOverride: false,
+            companionInclineBonus: companionInclineBonus,
+            companionCurbBonus: companionCurbBonus,
+            hasEurokey: hasEurokey,
             createdAt: now,
             updatedAt: now
         )
