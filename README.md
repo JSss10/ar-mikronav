@@ -82,6 +82,28 @@ cp Config.example.swift Config.swift
 # → Supabase URL und Anon Key eintragen
 ```
 
+## Standort simulieren (Rathaus Zürich)
+
+Zum Testen ohne vor Ort zu sein lässt sich der GPS-Standort faken –
+die GPX-Datei `ARMikronav/Testing/RathausZuerich.gpx` enthält das
+Rathaus Zürich (47.37172, 8.54222) als Wegpunkt.
+
+**Simulator oder echtes iPhone (via Xcode):**
+
+1. `RathausZuerich.gpx` per Drag & Drop ins Xcode-Projekt ziehen (einmalig).
+2. App mit ▶︎ starten, dann in der Debug-Leiste unten auf das
+   Pfeil-Symbol **„Simulate Location"** klicken → **RathausZuerich** wählen.
+3. Alternativ als Standard setzen: **Product → Scheme → Edit Scheme… →
+   Run → Options → Core Location → Default Location → RathausZuerich** –
+   dann startet jeder Run direkt beim Rathaus.
+
+**Nur Simulator (ohne GPX):** **Features → Location → Custom Location…**
+und Breite `47.37172` / Länge `8.54222` eintragen.
+
+Hinweis: Der simulierte Standort wirkt auf Karte, Suche, Routing und
+Annäherungswarnungen. ARGeoTracking (AR-Modus) braucht dagegen echtes
+GPS + Kamerabild vor Ort und lässt sich nicht sinnvoll simulieren.
+
 ## Feldtest-Modus (Altstadt Zürich, 3 Testtage)
 
 Für die Feldtests wählen Testpersonen auf dem Welcome-Screen unter

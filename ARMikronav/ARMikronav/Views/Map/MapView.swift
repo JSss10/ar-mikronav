@@ -510,7 +510,7 @@ struct MapView: View {
         !viewModel.isLoading
             && viewModel.loadError == nil
             && viewModel.filteredBarriers.isEmpty
-            && viewModel.pois.isEmpty
+            && viewModel.displayedPOIs.isEmpty
             && locationService.currentLocation != nil
     }
 }

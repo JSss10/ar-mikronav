@@ -3,8 +3,9 @@
 //
 // Vollbild-AR-Ansicht.
 // Barrieren-Modus: sauberes Kamerabild, Barrieren melden sich NUR über das
-// Warn-Banner (keine 3D-Objekte). POI-Modus: Chips oben aktivieren eine
-// Kategorie; die POIs erscheinen als projizierte Karten im Kamerabild.
+// Warn-Banner (keine 3D-Objekte). POI-Modus: die POIs der Stadt erscheinen
+// als projizierte Karten im Kamerabild; der Filter-Button oben öffnet das
+// Kategorie-Sheet (alle ginto-Kategorien, ARPOIFilterSheet).
 // Beim Start läuft ein Coaching-Overlay (Lokalisierung); nach Timeout oder
 // Session-Fehler erscheint der Fehler-State mit Rückweg zur Karte.
 
@@ -29,8 +30,8 @@ struct ARModeView: View {
     @State private var localizationTimedOut = false
     @State private var selectedBarrier: Barrier?
     @State private var selectedPOI: POI?
-
-    private static let poiChips = ["Café", "WC", "Restaurant"]
+    /// Kategorie-Filter-Sheet (alle ginto-Kategorien).
+    @State private var showingPOIFilter = false
 
     var body: some View {
         Group {
@@ -118,7 +119,7 @@ struct ARModeView: View {
             }
 
             VStack(spacing: 10) {
-                poiChipRow
+                poiFilterRow
 
                 // Fallback-Banner nur ohne Mitteilungs-Berechtigung; sonst
                 // kommt die Warnung als System-Mitteilung (UserNotifications).
@@ -165,6 +166,10 @@ struct ARModeView: View {
         .sheet(item: $selectedBarrier) { barrier in
             BarrierDetailSheet(barrier: barrier, profile: profile)
         }
+        .sheet(isPresented: $showingPOIFilter) {
+            ARPOIFilterSheet(viewModel: viewModel)
+                .trackScreen("ar_poi_filter")
+        }
         .sheet(item: $selectedPOI) { poi in
             POIDetailSheet(
                 poi: poi,
@@ -188,25 +193,42 @@ struct ARModeView: View {
 
     // MARK: - POI-Modus
 
-    private var poiChipRow: some View {
+    /// Filter-Button (öffnet das Kategorie-Sheet mit allen ginto-Kategorien)
+    /// plus Chip des aktiven Filters, der ihn per Tap wieder aufhebt.
+    private var poiFilterRow: some View {
         HStack(spacing: 8) {
-            ForEach(Self.poiChips, id: \.self) { chip in
-                let isActive = viewModel.activeCategory == chip
+            Button {
+                showingPOIFilter = true
+            } label: {
+                Label(
+                    viewModel.activeCategory ?? "Orte filtern",
+                    systemImage: "line.3.horizontal.decrease.circle.fill"
+                )
+                .font(.subheadline.weight(.medium))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(
+                    viewModel.activeCategory != nil
+                        ? AnyShapeStyle(Color.accentColor)
+                        : AnyShapeStyle(.regularMaterial),
+                    in: Capsule()
+                )
+                .foregroundStyle(viewModel.activeCategory != nil ? .white : .primary)
+            }
+            .accessibilityLabel(
+                viewModel.activeCategory.map { "Orte filtern, aktiv: \($0)" } ?? "Orte filtern"
+            )
+
+            if viewModel.activeCategory != nil {
                 Button {
-                    viewModel.toggleCategory(chip)
+                    viewModel.setCategory(nil)
                 } label: {
-                    Text(chip)
-                        .font(.subheadline.weight(.medium))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(
-                            isActive ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.regularMaterial),
-                            in: Capsule()
-                        )
-                        .foregroundStyle(isActive ? .white : .primary)
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title3)
+                        .padding(6)
+                        .background(.regularMaterial, in: Circle())
                 }
-                .accessibilityLabel("\(chip) im Kamerabild anzeigen")
-                .accessibilityAddTraits(isActive ? .isSelected : [])
+                .accessibilityLabel("Filter aufheben")
             }
             Spacer()
         }

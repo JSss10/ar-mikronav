@@ -18,10 +18,15 @@ final class MapViewModel: ObservableObject {
     @Published private(set) var loadError: String?
     @Published private(set) var filterState: BarrierFilterState = .default
 
-    // POIs (Wireframe 2.1/2.1a): standardmässig alle POIs der Stadt Zürich;
-    // ein Kategorie-Chip oder eine Suche grenzt die Auswahl ein.
-    @Published private(set) var pois: [POI] = []
-    @Published var activeCategory: String?
+    // POIs (Wireframe 2.1/2.1a): standardmässig alle POIs der Stadt Zürich
+    // (einmalig geladen). Kategorie-Chips filtern diese Liste client-seitig
+    // über die exakten ginto-Kategorie-Keys; nur die Freitext-Suche läuft
+    // über die RPC.
+    @Published private(set) var cityPOIs: [POI] = []
+    /// Ergebnis der letzten Freitext-Suche (nil = keine aktive Suche).
+    @Published private(set) var searchResults: [POI]?
+    /// Aktiver Kategorie-Chip (deutsches Label, siehe POICategory.chips).
+    @Published private(set) var activeCategory: String?
     @Published private(set) var recentSearches: [String] = []
 
     // Navigation: aktive rollstuhlgerechte Route zu einem POI plus
@@ -109,11 +114,32 @@ final class MapViewModel: ObservableObject {
             .sorted { $0.distanceFromStartM < $1.distanceFromStartM }
     }
 
-    /// POIs, die auf der Karte/AR angezeigt werden: während einer aktiven
-    /// Navigation nur noch das Ziel, sonst alle geladenen POIs.
+    /// POIs, die auf der Karte/AR angezeigt werden:
+    /// – aktive Navigation → nur noch das Ziel
+    /// – aktive Freitext-Suche → deren Treffer
+    /// – aktiver Kategorie-Chip → alle Stadt-POIs dieser Kategorie
+    /// – sonst → alle POIs der Stadt
     var displayedPOIs: [POI] {
-        guard activeRoute != nil else { return pois }
-        return navigationTarget.map { [$0] } ?? []
+        if activeRoute != nil {
+            return navigationTarget.map { [$0] } ?? []
+        }
+        if let searchResults {
+            return searchResults
+        }
+        if let activeCategory {
+            return poisForCategory(activeCategory)
+        }
+        return cityPOIs
+    }
+
+    /// Alle Stadt-POIs eines Kategorie-Chips (exaktes Key-Matching),
+    /// nach Distanz sortiert – auch die Datenbasis der Ergebnisliste
+    /// im SearchSheet.
+    func poisForCategory(_ label: String) -> [POI] {
+        guard let chip = POICategory.chip(forLabel: label) else { return [] }
+        return cityPOIs
+            .filter { chip.matches(category: $0.category) }
+            .sorted { $0.distanceM < $1.distanceM }
     }
 
     init() {
@@ -141,7 +167,7 @@ final class MapViewModel: ObservableObject {
         hasStarted = true
 
         Task { await loadBarriers() }
-        Task { await loadPOIs(search: nil) }
+        Task { await loadPOIs() }
 
         locationService.startUpdating()
 
@@ -279,22 +305,22 @@ final class MapViewModel: ObservableObject {
         }
     }
 
-    /// Kategorie-Chip getippt: lädt POIs zur Kategorie, nochmaliges Tippen
-    /// deaktiviert und zeigt wieder alle POIs der Stadt. Das deutsche
-    /// Chip-Label wird auf den englischen DB-Kategorie-Suchbegriff gemappt
-    /// (sonst findet die RPC nichts).
-    func toggleCategory(_ category: String) {
-        if activeCategory == category {
-            activeCategory = nil
-            Task { await loadPOIs(search: nil) }
-            return
-        }
-        activeCategory = category
-        Task { await loadPOIs(search: POICategory.searchTerm(forChip: category)) }
+    /// Setzt den aktiven Kategorie-Chip (nil = alle POIs der Stadt) und
+    /// beendet eine laufende Freitext-Suche. Rein client-seitig, kein RPC.
+    func setCategory(_ label: String?) {
+        searchResults = nil
+        activeCategory = label
     }
 
-    /// Freitext-Suche aus dem SearchSheet. Ergebnis wird zurückgegeben UND als
-    /// Karten-Marker übernommen. Gesucht wird immer im ganzen Stadtgebiet.
+    /// Kategorie-Chip getippt: filtert die Stadt-POIs auf die Kategorie,
+    /// nochmaliges Tippen deaktiviert und zeigt wieder alle POIs.
+    func toggleCategory(_ category: String) {
+        setCategory(activeCategory == category ? nil : category)
+    }
+
+    /// Freitext-Suche aus dem SearchSheet (RPC, matcht über Name UND
+    /// Kategorie). Ergebnis wird zurückgegeben UND als Karten-Marker
+    /// übernommen. Gesucht wird immer im ganzen Stadtgebiet.
     func searchPOIs(query: String) async -> [POI] {
         recordRecentSearch(query)
         do {
@@ -303,7 +329,7 @@ final class MapViewModel: ObservableObject {
                 radius: AppConfig.zuerichRadiusM,
                 search: POICategory.searchTerm(forChip: query)
             )
-            pois = results
+            searchResults = results
             activeCategory = nil
             return results
         } catch {
@@ -312,14 +338,13 @@ final class MapViewModel: ObservableObject {
         }
     }
 
-    /// Lädt POIs für die ganze Stadt Zürich – ohne Suchbegriff alle POIs,
-    /// mit Suchbegriff die Treffer zu Kategorie-Chip bzw. Freitext.
-    private func loadPOIs(search: String?) async {
+    /// Lädt einmalig alle POIs der ganzen Stadt Zürich – die Basisliste für
+    /// Karte, AR und die client-seitigen Kategorie-Filter.
+    private func loadPOIs() async {
         do {
-            pois = try await poiRepository.fetchPOIs(
+            cityPOIs = try await poiRepository.fetchPOIs(
                 near: AppConfig.zuerichCenter,
-                radius: AppConfig.zuerichRadiusM,
-                search: search
+                radius: AppConfig.zuerichRadiusM
             )
         } catch {
             loadError = error.localizedDescription
