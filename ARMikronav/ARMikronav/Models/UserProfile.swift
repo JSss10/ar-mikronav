@@ -25,6 +25,12 @@ struct UserProfile: Codable {
     /// Individueller Zugewinn mit Begleitperson.
     var companionInclineBonus: Double = 3.0
     var companionCurbBonus: Double = 4.0
+
+    // Tages-Zustände + Ausstattung (Quick Wins aus der Persona-Analyse)
+    var wetConditionsToday: Bool = false
+    var lowEnergyToday: Bool = false
+    var hasEurokey: Bool = false
+
     var createdAt: Date
     var updatedAt: Date
 
@@ -34,12 +40,26 @@ struct UserProfile: Codable {
         companionTodayOverride || companionStatus == .usually
     }
 
+    /// Reihenfolge: Energie-Malus (−20 %) wirkt nur auf den persönlichen
+    /// Grundwert; der Begleit-Bonus kommt danach in voller Höhe dazu.
     var effectiveMaxIncline: Double {
-        hasCompanion ? maxIncline + companionInclineBonus : maxIncline
+        let base = lowEnergyToday ? maxIncline * 0.8 : maxIncline
+        return hasCompanion ? base + companionInclineBonus : base
     }
 
     var effectiveMaxCurb: Double {
-        hasCompanion ? maxCurbHeight + companionCurbBonus : maxCurbHeight
+        let base = lowEnergyToday ? maxCurbHeight * 0.8 : maxCurbHeight
+        return hasCompanion ? base + companionCurbBonus : base
+    }
+
+    /// Nässe verschiebt die Oberflächen-Toleranz eine Stufe Richtung "nur glatt".
+    var effectiveSurfaceTolerance: SurfaceTolerance {
+        guard wetConditionsToday else { return surfaceTolerance }
+        switch surfaceTolerance {
+        case .almostAll:  return .fineCobble
+        case .fineCobble: return .smoothOnly
+        case .smoothOnly: return .smoothOnly
+        }
     }
 
     /// Geschätzte Höhe, in der das iPhone im Sitzen gehalten wird (Meter).
@@ -56,8 +76,9 @@ struct UserProfile: Codable {
 }
 
 // Abwärtskompatible Dekodierung: Profile, die vor Einführung von Sitzhöhe,
-// Länge, Spielraum und Begleit-Boni gespeichert wurden (UserDefaults /
-// Supabase user_metadata), erhalten die bisherigen Fix-Werte als Default.
+// Länge, Spielraum, Begleit-Boni sowie den Tages-Zuständen (Nässe, Energie,
+// Eurokey) gespeichert wurden (UserDefaults / Supabase user_metadata),
+// erhalten die bisherigen Fix-Werte als Default.
 extension UserProfile {
     private enum LegacyKeys: String, CodingKey {
         case id, mobilityCategory, wheelchairType
@@ -65,6 +86,7 @@ extension UserProfile {
         case maxIncline, maxCurbHeight, surfaceTolerance, maneuverBufferCm
         case companionStatus, companionTodayOverride
         case companionInclineBonus, companionCurbBonus
+        case wetConditionsToday, lowEnergyToday, hasEurokey
         case createdAt, updatedAt
     }
 
@@ -88,6 +110,9 @@ extension UserProfile {
         companionTodayOverride = try c.decode(Bool.self, forKey: .companionTodayOverride)
         companionInclineBonus = try c.decodeIfPresent(Double.self, forKey: .companionInclineBonus) ?? 3.0
         companionCurbBonus = try c.decodeIfPresent(Double.self, forKey: .companionCurbBonus) ?? 4.0
+        wetConditionsToday = try c.decodeIfPresent(Bool.self, forKey: .wetConditionsToday) ?? false
+        lowEnergyToday = try c.decodeIfPresent(Bool.self, forKey: .lowEnergyToday) ?? false
+        hasEurokey = try c.decodeIfPresent(Bool.self, forKey: .hasEurokey) ?? false
         createdAt = try c.decode(Date.self, forKey: .createdAt)
         updatedAt = try c.decode(Date.self, forKey: .updatedAt)
     }

@@ -129,29 +129,35 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Begleitung
+    // MARK: - Heute (Tages-Zustände: Begleitung, Nässe, Energie)
 
     private var companionSection: some View {
         Section {
-            Toggle("Heute mit Begleitung", isOn: $profile.companionTodayOverride)
+            Toggle("Heute mit Begleitperson", isOn: $profile.companionTodayOverride)
+            Toggle("Nasse Bedingungen", isOn: $profile.wetConditionsToday)
+            Toggle("Heute weniger Energie", isOn: $profile.lowEnergyToday)
         } header: {
-            Text("Begleitung")
+            Text("Heute")
         } footer: {
-            Text(companionFooter)
+            Text(todayFooter)
         }
     }
 
-    private var companionFooter: String {
-        let base: String
-        switch profile.companionStatus {
-        case .alwaysAlone: base = "Standard: alleine unterwegs."
-        case .sometimes:   base = "Standard: manchmal in Begleitung."
-        case .usually:     base = "Standard: meistens in Begleitung."
+    private var todayFooter: String {
+        var parts: [String] = []
+        if profile.companionTodayOverride {
+            parts.append("Begleitung: Limits erhöht (+\(Int(profile.companionInclineBonus)) % Steigung, +\(Int(profile.companionCurbBonus)) cm Bordstein).")
         }
-        let suffix = profile.companionTodayOverride
-            ? " Heute hebt der Toggle dein Limit etwas an (mehr Steigung und Bordsteinhöhe erlaubt)."
-            : ""
-        return base + suffix
+        if profile.wetConditionsToday {
+            parts.append("Nässe: Oberflächen-Toleranz eine Stufe strenger.")
+        }
+        if profile.lowEnergyToday {
+            parts.append("Weniger Energie: Grund-Limits um 20 % gesenkt.")
+        }
+        if parts.isEmpty {
+            return "Tages-Zustände passen deine Warn-Schwellen temporär an – dein Profil bleibt unverändert."
+        }
+        return parts.joined(separator: " ")
     }
 
     // MARK: - Edit-Link + Gespeicherte Orte

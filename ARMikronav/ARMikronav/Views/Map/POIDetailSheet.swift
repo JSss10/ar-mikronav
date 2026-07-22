@@ -35,6 +35,7 @@ struct POIDetailSheet: View {
                 header
                 photoCarousel
                 statusBadge
+                eurokeyHint
                 ratingsCard
                 detailsCard
                 sourceFooter
@@ -45,6 +46,35 @@ struct POIDetailSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+    }
+
+    // MARK: - Eurokey (Quick Win): nur wenn die POI-Daten Eurokey erwähnen.
+    @ViewBuilder
+    private var eurokeyHint: some View {
+        if mentionsEurokey {
+            HStack(spacing: 8) {
+                Image(systemName: "key.fill")
+                    .foregroundStyle(profile.hasEurokey ? .green : .orange)
+                Text(profile.hasEurokey
+                     ? "Mit deinem Eurokey zugänglich"
+                     : "Eurokey erforderlich")
+                    .font(.subheadline.weight(.medium))
+            }
+            .padding(10)
+            .background(
+                (profile.hasEurokey ? Color.green : Color.orange).opacity(0.1),
+                in: RoundedRectangle(cornerRadius: 10)
+            )
+        }
+    }
+
+    private var mentionsEurokey: Bool {
+        guard let details = poi.accessibilityDetails else { return false }
+        for (key, value) in details {
+            if key.lowercased().contains("eurokey") { return true }
+            if case .string(let s) = value, s.lowercased().contains("eurokey") { return true }
+        }
+        return false
     }
 
     // MARK: - Sections
