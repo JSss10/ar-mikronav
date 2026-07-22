@@ -5,6 +5,10 @@
 // (ginto), Zugänglichkeits-Status fürs Profil, ginto-Bewertung für den
 // eigenen Rollstuhltyp, Detail-Werte aus accessibility_details, Quellen und
 // Aktionen (Route in AR starten, Ort speichern, Route auf der Karte anzeigen).
+//
+// Styling gemäss Styleguide v1.0: ausschliesslich Design-Tokens (AppColor,
+// AppTypography, AppMetrics) und die gemeinsamen Komponenten (StatusBadge,
+// App-Button-Stile). Aufbau in klar getrennten, angehobenen Karten.
 
 import SwiftUI
 import MapKit
@@ -24,6 +28,7 @@ struct POIDetailSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var saveState: SaveState = .idle
+    @State private var photoIndex = 0
 
     enum SaveState {
         case idle, saving, saved, failed
@@ -31,7 +36,7 @@ struct POIDetailSheet: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: AppMetrics.Space.l) {
                 header
                 photoCarousel
                 statusBadge
@@ -39,31 +44,43 @@ struct POIDetailSheet: View {
                 ratingsCard
                 detailsCard
                 sourceFooter
-                arButton
-                actionRow
+
+                VStack(spacing: AppMetrics.Space.s + AppMetrics.Space.xs) {
+                    arButton
+                    actionRow
+                }
+                .padding(.top, AppMetrics.Space.xs)
             }
-            .padding(20)
+            .padding(AppMetrics.Space.l)
         }
+        .background(AppColor.backgroundPrimary)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .presentationCornerRadius(AppMetrics.Radius.sheet + AppMetrics.Space.s)
     }
 
     // MARK: - Eurokey (Quick Win): nur wenn die POI-Daten Eurokey erwähnen.
     @ViewBuilder
     private var eurokeyHint: some View {
         if mentionsEurokey {
-            HStack(spacing: 8) {
+            let ok = profile.hasEurokey
+            let tint = ok ? AppColor.Status.openIcon : AppColor.Status.limitedIcon
+            HStack(spacing: AppMetrics.Space.s + AppMetrics.Space.xs) {
                 Image(systemName: "key.fill")
-                    .foregroundStyle(profile.hasEurokey ? .green : .orange)
-                Text(profile.hasEurokey
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(tint)
+                Text(ok
                      ? "Mit deinem Eurokey zugänglich"
                      : "Eurokey erforderlich")
-                    .font(.subheadline.weight(.medium))
+                    .font(AppTypography.subheadline.weight(.medium))
+                    .foregroundStyle(AppColor.textPrimary)
+                Spacer(minLength: 0)
             }
-            .padding(10)
+            .padding(.horizontal, AppMetrics.Space.m)
+            .padding(.vertical, AppMetrics.Space.s + AppMetrics.Space.xs)
             .background(
-                (profile.hasEurokey ? Color.green : Color.orange).opacity(0.1),
-                in: RoundedRectangle(cornerRadius: 10)
+                tint.opacity(0.12),
+                in: RoundedRectangle(cornerRadius: AppMetrics.Radius.field, style: .continuous)
             )
         }
     }
@@ -80,24 +97,40 @@ struct POIDetailSheet: View {
     // MARK: - Sections
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline) {
+        VStack(alignment: .leading, spacing: AppMetrics.Space.s) {
+            HStack(alignment: .firstTextBaseline, spacing: AppMetrics.Space.m) {
                 Text(poi.name)
-                    .font(.title2)
-                    .bold()
-                Spacer()
-                Text("\(Int(poi.distanceM)) m")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
+                    .font(AppTypography.title1)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: AppMetrics.Space.s)
+                distanceChip
             }
 
             if let subtitle = headerSubtitle {
                 Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(AppTypography.subheadline)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+
+    private var distanceChip: some View {
+        HStack(spacing: AppMetrics.Space.xs) {
+            Image(systemName: "location.fill")
+                .font(.caption2.weight(.bold))
+            Text("\(Int(poi.distanceM)) m")
+                .font(AppTypography.subheadline.weight(.semibold))
+                .monospacedDigit()
+        }
+        .foregroundStyle(AppColor.accentPrimary)
+        .padding(.horizontal, AppMetrics.Space.s + AppMetrics.Space.xs)
+        .padding(.vertical, AppMetrics.Space.xs + 2)
+        .background(AppColor.Violet.v100, in: Capsule())
+        .fixedSize()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(Int(poi.distanceM)) Meter entfernt")
     }
 
     /// Kategorie (deutscher ginto-Name) und Adresse, soweit vorhanden.
@@ -106,47 +139,54 @@ struct POIDetailSheet: View {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
-    /// Horizontales Foto-Karussell (ginto-Bilder des Ortes).
+    /// Foto-Karussell (ginto-Bilder des Ortes) als vollbreites Hero-Bild.
+    /// Bei mehreren Bildern paged mit dezenten Indikatoren.
     @ViewBuilder
     private var photoCarousel: some View {
         let urls = poi.imageURLs
         if !urls.isEmpty {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(urls, id: \.absoluteString) { url in
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            case .failure:
-                                Image(systemName: "photo")
-                                    .font(.title2)
-                                    .foregroundStyle(.secondary)
-                            default:
-                                ProgressView()
-                            }
+            Group {
+                if urls.count == 1 {
+                    photo(urls[0])
+                } else {
+                    TabView(selection: $photoIndex) {
+                        ForEach(Array(urls.enumerated()), id: \.element.absoluteString) { index, url in
+                            photo(url).tag(index)
                         }
-                        .frame(width: 220, height: 150)
-                        .background(Color(.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
+                    .tabViewStyle(.page(indexDisplayMode: .always))
+                    .indexViewStyle(.page(backgroundDisplayMode: .interactive))
                 }
             }
+            .frame(height: 200)
+            .frame(maxWidth: .infinity)
+            .background(AppColor.surfaceRaised)
+            .clipShape(RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous))
             .accessibilityLabel("Fotos von \(poi.name)")
         }
     }
 
-    private var statusBadge: some View {
-        HStack(spacing: 8) {
-            Image(systemName: poi.accessStatus.symbolName)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(poi.accessStatus.tint)
-            Text(poi.accessStatus.label)
-                .font(.body.weight(.medium))
+    private func photo(_ url: URL) -> some View {
+        AsyncImage(url: url) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .scaledToFill()
+            case .failure:
+                Image(systemName: "photo")
+                    .font(.largeTitle)
+                    .foregroundStyle(AppColor.textSecondary)
+            default:
+                ProgressView()
+            }
         }
-        .accessibilityElement(children: .combine)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
+    }
+
+    private var statusBadge: some View {
+        StatusBadge(status: poi.accessStatus)
     }
 
     /// ginto-Bewertung für den eigenen Rollstuhltyp mit Einstufung und
@@ -155,84 +195,117 @@ struct POIDetailSheet: View {
     @ViewBuilder
     private var ratingsCard: some View {
         if let rating = poi.gintoRating(for: profile.wheelchairType) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Zugänglichkeit im Detail")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: AppMetrics.Space.s + AppMetrics.Space.xs) {
+                sectionTitle("Zugänglichkeit im Detail")
 
-                HStack(spacing: 10) {
-                    Image(systemName: rating.status.symbolName)
-                        .foregroundStyle(rating.status.tint)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(rating.profileLabel)
-                        Text("Dein Rollstuhltyp")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(rating.gradeLabel)
-                            .foregroundStyle(.secondary)
-                        if let percent = rating.conformancePercent {
-                            Text("\(Int(percent)) % der Kriterien erfüllt")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                VStack(spacing: AppMetrics.Space.m) {
+                    HStack(spacing: AppMetrics.Space.m) {
+                        Image(systemName: rating.status.symbolName)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(rating.status.tint)
+                            .frame(width: 28)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(rating.profileLabel)
+                                .font(AppTypography.headline)
+                                .foregroundStyle(AppColor.textPrimary)
+                            Text("Dein Rollstuhltyp")
+                                .font(AppTypography.footnote)
+                                .foregroundStyle(AppColor.textSecondary)
+                        }
+
+                        Spacer(minLength: AppMetrics.Space.s)
+
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text(rating.gradeLabel)
+                                .font(AppTypography.subheadline.weight(.medium))
+                                .foregroundStyle(AppColor.textPrimary)
+                                .multilineTextAlignment(.trailing)
+                            if let percent = rating.conformancePercent {
+                                Text("\(Int(percent)) %")
+                                    .font(AppTypography.footnote)
+                                    .foregroundStyle(AppColor.textSecondary)
+                                    .monospacedDigit()
+                            }
                         }
                     }
+
+                    if let percent = rating.conformancePercent {
+                        conformanceBar(percent: percent, tint: rating.status.tint)
+                    }
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.secondarySystemBackground))
-                )
+                .padding(AppMetrics.Space.m)
+                .cardBackground()
                 .accessibilityElement(children: .combine)
             }
         }
     }
 
+    /// Fortschrittsbalken für den erfüllten Kriterien-Anteil (Prozent).
+    private func conformanceBar(percent: Double, tint: Color) -> some View {
+        GeometryReader { geo in
+            let fraction = max(0, min(1, percent / 100))
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(AppColor.borderDecorative)
+                Capsule()
+                    .fill(tint)
+                    .frame(width: geo.size.width * fraction)
+            }
+        }
+        .frame(height: 6)
+        .accessibilityHidden(true)
+    }
+
     @ViewBuilder
     private var detailsCard: some View {
         if let details = poi.accessibilityDetails, !details.isEmpty {
-            VStack(spacing: 0) {
-                ForEach(details.keys.sorted(), id: \.self) { key in
-                    if let text = displayValue(details[key]) {
-                        HStack {
-                            Text(displayKey(key))
-                            Spacer()
-                            Text(text)
-                                .foregroundStyle(.secondary)
+            let rows = details.keys.sorted().compactMap { key -> (String, String)? in
+                guard let text = displayValue(details[key]) else { return nil }
+                return (key, text)
+            }
+            if !rows.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                        HStack(alignment: .top, spacing: AppMetrics.Space.m) {
+                            Text(displayKey(row.0))
+                                .font(AppTypography.body)
+                                .foregroundStyle(AppColor.textPrimary)
+                            Spacer(minLength: AppMetrics.Space.m)
+                            Text(row.1)
+                                .font(AppTypography.body)
+                                .foregroundStyle(AppColor.textSecondary)
+                                .multilineTextAlignment(.trailing)
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .overlay(
+                        .padding(.horizontal, AppMetrics.Space.m)
+                        .padding(.vertical, AppMetrics.Space.s + AppMetrics.Space.xs)
+
+                        if index < rows.count - 1 {
                             Rectangle()
-                                .fill(Color.gray.opacity(0.15))
-                                .frame(height: 0.5),
-                            alignment: .bottom
-                        )
+                                .fill(AppColor.borderDecorative)
+                                .frame(height: 0.5)
+                                .padding(.leading, AppMetrics.Space.m)
+                        }
                     }
                 }
+                .cardBackground()
             }
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.secondarySystemBackground))
-            )
         }
     }
 
     private var sourceFooter: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: AppMetrics.Space.xs + 2) {
             Image(systemName: "info.circle")
             Text("Quelle: \(poi.source.uppercased())")
 
             if let gintoURL = poi.gintoURL {
                 Text("·")
                 Link("Auf ginto ansehen", destination: gintoURL)
+                    .foregroundStyle(AppColor.accentPrimary)
             }
         }
-        .font(.footnote)
-        .foregroundStyle(.secondary)
+        .font(AppTypography.footnote)
+        .foregroundStyle(AppColor.textSecondary)
     }
 
     private var arButton: some View {
@@ -242,11 +315,10 @@ struct POIDetailSheet: View {
             onStartARRoute(poi)
         } label: {
             Label("Route in AR starten", systemImage: "arkit")
-                .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
+        .buttonStyle(.appPrimary)
         .disabled(onStartARRoute == nil)
+        .opacity(onStartARRoute == nil ? 0.5 : 1)
         .accessibilityHint(
             onStartARRoute == nil
                 ? "Noch nicht verfügbar"
@@ -255,27 +327,22 @@ struct POIDetailSheet: View {
     }
 
     private var actionRow: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppMetrics.Space.s + AppMetrics.Space.xs) {
             Button {
                 savePlace()
             } label: {
                 switch saveState {
                 case .idle:
                     Label("Ort speichern", systemImage: "bookmark")
-                        .frame(maxWidth: .infinity)
                 case .saving:
                     ProgressView()
-                        .frame(maxWidth: .infinity)
                 case .saved:
                     Label("Gespeichert", systemImage: "bookmark.fill")
-                        .frame(maxWidth: .infinity)
                 case .failed:
                     Label("Fehlgeschlagen", systemImage: "exclamationmark.triangle")
-                        .frame(maxWidth: .infinity)
                 }
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
+            .buttonStyle(.appQuiet(fullWidth: true))
             .disabled(saveState == .saving || saveState == .saved)
 
             Button {
@@ -287,16 +354,22 @@ struct POIDetailSheet: View {
                 }
             } label: {
                 Label("Route anzeigen", systemImage: "arrow.triangle.turn.up.right.diamond")
-                    .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
+            .buttonStyle(.appQuiet(fullWidth: true))
             .accessibilityHint(
                 onShowRoute == nil
                     ? "Öffnet die Route in Apple Karten"
                     : "Berechnet die rollstuhlgerechte Route und zeigt sie auf der Karte"
             )
         }
+    }
+
+    // MARK: - Building blocks
+
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text)
+            .font(AppTypography.subheadline.weight(.semibold))
+            .foregroundStyle(AppColor.textSecondary)
     }
 
     // MARK: - Actions
@@ -349,5 +422,24 @@ struct POIDetailSheet: View {
         case .bool(let b):   return b ? "ja" : "nein"
         default:             return nil
         }
+    }
+}
+
+// MARK: - Card helper
+
+private extension View {
+    /// Angehobene Kartenfläche gemäss Styleguide (SurfaceRaised, Card-Radius,
+    /// dezente Kontur für Abgrenzung auch im hellen Modus).
+    func cardBackground() -> some View {
+        self
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous)
+                    .fill(AppColor.surfaceRaised)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous)
+                    .strokeBorder(AppColor.borderDecorative, lineWidth: 0.5)
+            )
     }
 }
