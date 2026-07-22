@@ -171,7 +171,7 @@ struct BarrierDetailSheet: View {
             Image(systemName: "info.circle")
             Text("Quelle: \(barrier.source.uppercased())")
             if let last = barrier.lastVerified {
-                Text("· geprüft \(last.formatted(date: .abbreviated, time: .omitted))")
+                Text("· geprüft \(last.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted).locale(.appGerman)))")
             }
         }
         .font(.footnote)

@@ -13,8 +13,6 @@ import CoreLocation
 struct HomeDashboardView: View {
     /// Wechselt zum Karten-Tab (z. B. Tap auf ein Ziel oder eine Barriere).
     let onOpenMap: () -> Void
-    /// Wechselt zum Profil-Tab (Einstellungen, Abmelden).
-    let onOpenProfile: () -> Void
 
     @StateObject private var viewModel = HomeDashboardViewModel()
     @StateObject private var recentDestinations = RecentDestinationsStore.shared
@@ -52,24 +50,15 @@ struct HomeDashboardView: View {
                 Text(viewModel.greeting)
                     .font(AppTypography.title2)
                     .foregroundStyle(AppColor.textPrimary)
-                Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))
+                Text(Date().formatted(.dateTime.locale(.appGerman).weekday(.wide).day().month(.wide)))
                     .font(AppTypography.subheadline)
                     .foregroundStyle(AppColor.textSecondary)
             }
 
             Spacer()
-
-            Button(action: onOpenProfile) {
-                Image(systemName: "gearshape.fill")
-                    .font(.title3)
-                    .foregroundStyle(AppColor.accentPrimary)
-                    .frame(width: AppMetrics.Touch.minimum, height: AppMetrics.Touch.minimum)
-                    .background(AppColor.surfaceRaised, in: Circle())
-            }
-            .accessibilityLabel("Profil")
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(viewModel.greeting) Heute ist \(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))")
+        .accessibilityLabel("\(viewModel.greeting) Heute ist \(Date().formatted(.dateTime.locale(.appGerman).weekday(.wide).day().month(.wide)))")
     }
 
     /// Profilbild (in den Einstellungen erfasst), sonst Initialen-Monogramm.
@@ -287,7 +276,7 @@ struct HomeDashboardView: View {
     }
 
     private func destinationSubtitle(_ destination: RecentDestination) -> String {
-        var parts = [destination.visitedAt.formatted(.relative(presentation: .named))]
+        var parts = [destination.visitedAt.formatted(.relative(presentation: .named).locale(.appGerman))]
         if let distance = viewModel.distanceText(
             latitude: destination.latitude,
             longitude: destination.longitude
@@ -442,7 +431,7 @@ struct HomeDashboardView: View {
             parts.append(distance)
         }
         if let verified = barrier.lastVerified {
-            parts.append("gemeldet " + verified.formatted(.relative(presentation: .named)))
+            parts.append("gemeldet " + verified.formatted(.relative(presentation: .named).locale(.appGerman)))
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }

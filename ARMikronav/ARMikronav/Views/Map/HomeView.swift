@@ -39,8 +39,7 @@ struct HomeView: View {
     private var tabView: some View {
         TabView(selection: $selectedTab) {
             HomeDashboardView(
-                onOpenMap: { selectedTab = .map },
-                onOpenProfile: { selectedTab = .profile }
+                onOpenMap: { selectedTab = .map }
             )
             .tabItem {
                 Label("Start", systemImage: "house.fill")

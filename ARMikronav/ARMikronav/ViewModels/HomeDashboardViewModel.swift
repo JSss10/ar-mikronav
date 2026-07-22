@@ -163,9 +163,6 @@ final class HomeDashboardViewModel: ObservableObject {
     func distanceText(latitude: Double, longitude: Double) -> String? {
         guard let user = locationService.currentLocation else { return nil }
         let meters = user.distance(from: CLLocation(latitude: latitude, longitude: longitude))
-        if meters >= 1000 {
-            return String(format: "%.1f km entfernt", meters / 1000)
-        }
-        return "\(Int(meters)) m entfernt"
+        return DistanceFormatter.awayString(fromMeters: meters)
     }
 }

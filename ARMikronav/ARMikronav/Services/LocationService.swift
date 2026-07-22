@@ -15,6 +15,10 @@ final class LocationService: NSObject, ObservableObject {
 
     @Published private(set) var currentLocation: CLLocation?
     @Published private(set) var authorizationStatus: CLAuthorizationStatus
+    /// Aktuelle Blickrichtung des Geräts in Grad (0 = Norden, im Uhrzeigersinn).
+    /// Bevorzugt der (bereits deklinationskorrigierte) wahre Kurs; fällt auf
+    /// den magnetischen zurück. `nil`, solange noch kein Kurs vorliegt.
+    @Published private(set) var heading: CLLocationDirection?
 
     private let manager: CLLocationManager
 
@@ -25,6 +29,7 @@ final class LocationService: NSObject, ObservableObject {
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
         manager.distanceFilter = 10
+        manager.headingFilter = 2
     }
 
     func requestAuthorization() {
@@ -37,6 +42,7 @@ final class LocationService: NSObject, ObservableObject {
             manager.requestWhenInUseAuthorization()
         case .authorizedWhenInUse, .authorizedAlways:
             manager.startUpdatingLocation()
+            startUpdatingHeading()
         default:
             break
         }
@@ -44,6 +50,17 @@ final class LocationService: NSObject, ObservableObject {
 
     func stopUpdating() {
         manager.stopUpdatingLocation()
+        manager.stopUpdatingHeading()
+    }
+
+    /// Startet die Kompass-Updates (für Karten- und AR-Kompass).
+    func startUpdatingHeading() {
+        guard CLLocationManager.headingAvailable() else { return }
+        manager.startUpdatingHeading()
+    }
+
+    func stopUpdatingHeading() {
+        manager.stopUpdatingHeading()
     }
 }
 
@@ -54,6 +71,9 @@ extension LocationService: CLLocationManagerDelegate {
             self.authorizationStatus = status
             if status == .authorizedWhenInUse || status == .authorizedAlways {
                 manager.startUpdatingLocation()
+                if CLLocationManager.headingAvailable() {
+                    manager.startUpdatingHeading()
+                }
             }
         }
     }
@@ -62,6 +82,16 @@ extension LocationService: CLLocationManagerDelegate {
         guard let latest = locations.last else { return }
         Task { @MainActor in
             self.currentLocation = latest
+        }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
+        // Ungültige Kurse (negative Genauigkeit) verwerfen; sonst wahren
+        // Kurs bevorzugen, magnetischen als Fallback.
+        guard newHeading.headingAccuracy >= 0 else { return }
+        let direction = newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading
+        Task { @MainActor in
+            self.heading = direction
         }
     }
 

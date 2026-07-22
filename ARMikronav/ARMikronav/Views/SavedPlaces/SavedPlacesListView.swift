@@ -134,7 +134,7 @@ struct SavedPlacesListView: View {
             parts.append(distance)
         }
         if let createdAt = place.createdAt {
-            parts.append("gespeichert am " + createdAt.formatted(date: .abbreviated, time: .omitted))
+            parts.append("gespeichert am " + createdAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted).locale(.appGerman)))
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
@@ -143,10 +143,7 @@ struct SavedPlacesListView: View {
         guard let userLocation = LocationService.shared.currentLocation else { return nil }
         let placeLocation = CLLocation(latitude: place.latitude, longitude: place.longitude)
         let meters = userLocation.distance(from: placeLocation)
-        if meters >= 1000 {
-            return String(format: "%.1f km entfernt", meters / 1000)
-        }
-        return "\(Int(meters)) m entfernt"
+        return DistanceFormatter.awayString(fromMeters: meters)
     }
 
     private func accessibilityText(for place: SavedPlace) -> String {
