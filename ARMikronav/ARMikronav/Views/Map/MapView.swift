@@ -143,7 +143,7 @@ struct MapView: View {
             BarrierDetailSheet(barrier: barrier, profile: profile)
         }
         .sheet(item: $selectedPOI) { poi in
-            POIDetailSheet(poi: poi)
+            POIDetailSheet(poi: poi, profile: profile)
         }
         .sheet(isPresented: $showingFilter) {
             FilterSheet(initial: viewModel.filterState) { newFilter in

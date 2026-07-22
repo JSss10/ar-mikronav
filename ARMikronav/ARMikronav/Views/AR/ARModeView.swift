@@ -126,7 +126,7 @@ struct ARModeView: View {
             BarrierDetailSheet(barrier: barrier, profile: profile)
         }
         .sheet(item: $selectedPOI) { poi in
-            POIDetailSheet(poi: poi)
+            POIDetailSheet(poi: poi, profile: profile)
         }
     }
 
