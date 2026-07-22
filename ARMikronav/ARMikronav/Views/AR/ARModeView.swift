@@ -159,9 +159,23 @@ struct ARModeView: View {
             BarrierDetailSheet(barrier: barrier, profile: profile)
         }
         .sheet(item: $selectedPOI) { poi in
-            POIDetailSheet(poi: poi, profile: profile, onStartARRoute: { poi in
-                Task { await viewModel.startNavigation(to: poi, profile: profile) }
-            })
+            POIDetailSheet(
+                poi: poi,
+                profile: profile,
+                onStartARRoute: { poi in
+                    Task { await viewModel.startNavigation(to: poi, profile: profile) }
+                },
+                // "Route anzeigen" berechnet die Route in-App und wechselt
+                // zurück zur Kartenansicht (statt Apple Karten zu öffnen);
+                // die Karte zeigt die geteilte activeRoute samt Panel.
+                onShowRoute: { poi in
+                    Task {
+                        if await viewModel.startNavigation(to: poi, profile: profile) {
+                            onClose()
+                        }
+                    }
+                }
+            )
         }
     }
 
