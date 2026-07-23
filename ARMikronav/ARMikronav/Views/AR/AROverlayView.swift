@@ -3,15 +3,16 @@
 //
 // SwiftUI-Overlay über der ARView ohne aktive Route: Kartenstreifen unten
 // im gleichen Styling wie das Routen-Panel (ARRoutePanel), nah an den
-// Standort gezoomt. Ein Tipp auf die Karte wechselt zurück zur
-// Kartenansicht (ersetzt den früheren "Zur Karte"-Button).
+// Standort gezoomt. Die Karte zeigt bewusst nur den Standort – keine
+// Barrieren-Marker –, damit der Ausschnitt aufgeräumt bleibt. Ein Tipp auf
+// die Karte wechselt zurück zur Kartenansicht (ersetzt den früheren
+// "Zur Karte"-Button).
 
 import SwiftUI
 import MapKit
 import CoreLocation
 
 struct AROverlayView: View {
-    let barriers: [Barrier]
     let userCoordinate: CLLocationCoordinate2D?
     let onClose: () -> Void
 
@@ -31,17 +32,6 @@ struct AROverlayView: View {
             if let userCoordinate {
                 Map(initialPosition: .region(region(around: userCoordinate))) {
                     UserAnnotation()
-                    ForEach(barriers) { barrier in
-                        Marker(
-                            barrier.type.localizedLabel,
-                            systemImage: barrier.type.symbolName,
-                            coordinate: CLLocationCoordinate2D(
-                                latitude: barrier.latitude,
-                                longitude: barrier.longitude
-                            )
-                        )
-                        .tint(barrier.type.tint)
-                    }
                 }
                 .mapDisplayPreferences()
                 .allowsHitTesting(false)
