@@ -30,6 +30,37 @@ struct Barrier: Codable, Identifiable {
 enum BarrierType: String, Codable, CaseIterable {
     case steps, curb, curbMissing = "curb_missing"
     case incline, surface, narrow, temporary
+
+    /// Grobe Schwere-Rangfolge (höher = schwerwiegender). Dient dazu, bei
+    /// mehreren Barrieren am exakt selben Punkt die repräsentative für
+    /// Karten-Marker und Listenzeile zu wählen.
+    var severityRank: Int {
+        switch self {
+        case .steps:       return 6
+        case .narrow:      return 5
+        case .curb:        return 4
+        case .curbMissing: return 3
+        case .incline:     return 2
+        case .surface:     return 1
+        case .temporary:   return 0
+        }
+    }
+}
+
+extension Barrier {
+    /// Vergleicht zwei am selben Ort liegende Barrieren: zuerst nach
+    /// Typ-Schwere, dann nach Wert (grösser = schwerer), zuletzt stabiler
+    /// Tie-Break über die ID – damit die Wahl der Stellvertreter-Barriere
+    /// über Neuberechnungen hinweg gleich bleibt.
+    func isMoreSevere(than other: Barrier) -> Bool {
+        if type.severityRank != other.type.severityRank {
+            return type.severityRank > other.type.severityRank
+        }
+        let mine = value ?? 0
+        let theirs = other.value ?? 0
+        if mine != theirs { return mine > theirs }
+        return id.uuidString > other.id.uuidString
+    }
 }
 
 enum ValueSource: String, Codable {
