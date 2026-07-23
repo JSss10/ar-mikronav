@@ -125,8 +125,8 @@ struct ARViewContainer: UIViewRepresentable {
             var result: [ProjectedPOI] = []
 
             // Maximal die 8 nächsten POIs (Distanz zur AR-Origin), damit das
-            // Bild nicht überladen wird – die stadtweite Liste ist nach
-            // Distanz zum Stadtzentrum sortiert, nicht zum eigenen Standort.
+            // Bild nicht überladen wird – die Altstadt-Liste ist nach
+            // Distanz zum Altstadt-Zentrum sortiert, nicht zum eigenen Standort.
             let originLocation = CLLocation(latitude: origin.latitude, longitude: origin.longitude)
             let nearestPOIs = pois
                 .sorted {

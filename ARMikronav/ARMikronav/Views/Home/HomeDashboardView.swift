@@ -4,7 +4,7 @@
 // Homescreen (Start-Tab): begrüsst den User mit Name und Profilfoto, zeigt
 // das aktuelle Wetter am Standort (Open-Meteo, inkl. UV-Index), die letzten
 // Navigationsziele und die neuesten Barrieren-Meldungen aus der ganzen
-// Stadt Zürich. Karten-Interaktionen (Ziel ansteuern, Barriere ansehen)
+// Zürcher Altstadt. Karten-Interaktionen (Ziel ansteuern, Barriere ansehen)
 // laufen über den onOpenMap-Callback des HomeView.
 
 import SwiftUI
@@ -324,7 +324,7 @@ struct HomeDashboardView: View {
                         Image(systemName: "checkmark.seal.fill")
                             .font(.title2)
                             .foregroundStyle(AppColor.Status.openIcon)
-                        Text("Keine neuen Barrieren-Meldungen in Zürich.")
+                        Text("Keine neuen Barrieren-Meldungen in der Altstadt.")
                             .font(AppTypography.subheadline)
                             .foregroundStyle(AppColor.textSecondary)
                         Spacer()

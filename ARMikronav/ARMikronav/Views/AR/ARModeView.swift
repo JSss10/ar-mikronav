@@ -3,7 +3,7 @@
 //
 // Vollbild-AR-Ansicht.
 // Barrieren-Modus: sauberes Kamerabild, Barrieren melden sich NUR über das
-// Warn-Banner (keine 3D-Objekte). POI-Modus: die POIs der Stadt erscheinen
+// Warn-Banner (keine 3D-Objekte). POI-Modus: die POIs der Altstadt erscheinen
 // als projizierte Karten im Kamerabild; der Filter-Button oben öffnet das
 // Kategorie-Sheet (alle ginto-Kategorien, ARPOIFilterSheet).
 // Beim Start läuft ein Coaching-Overlay (Lokalisierung); nach Timeout oder
