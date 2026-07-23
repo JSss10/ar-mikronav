@@ -18,6 +18,12 @@ final class MapViewModel: ObservableObject {
     @Published private(set) var loadError: String?
     @Published private(set) var filterState: BarrierFilterState = .default
 
+    // Sichtbarkeits-Toggles (Karte & AR): blenden Barrieren- bzw. POI-Marker
+    // komplett aus. Rein visuell – Annäherungswarnungen laufen weiterhin über
+    // filteredBarriers, damit ausgeblendete Barrieren trotzdem warnen.
+    @Published var barriersVisible = true
+    @Published var poisVisible = true
+
     // POIs (Wireframe 2.1/2.1a): standardmässig alle POIs der Altstadt
     // (einmalig geladen). Kategorie-Chips filtern diese Liste client-seitig
     // über die exakten ginto-Kategorie-Keys; nur die Freitext-Suche läuft
@@ -63,10 +69,12 @@ final class MapViewModel: ObservableObject {
     private let routeCorridorM: CLLocationDistance = 6
 
     /// Barrieren, die auf der Karte/AR angezeigt werden:
+    /// – Barrieren per Toggle ausgeblendet → keine
     /// – aktive Route → nur Barrieren im Korridor direkt entlang der Route,
     ///   co-lokalisierte zu EINER Stelle zusammengefasst (siehe unten)
     /// – sonst → alle profilrelevanten Barrieren der Altstadt (neben den POIs)
     var displayedBarriers: [Barrier] {
+        guard barriersVisible else { return [] }
         if let route = activeRoute {
             let onRoute = filteredBarriers.filter { barrier in
                 RouteService.distance(
@@ -142,7 +150,9 @@ final class MapViewModel: ObservableObject {
     }
 
     /// POIs, die auf der Karte/AR angezeigt werden:
-    /// – aktive Navigation → nur noch das Ziel
+    /// – aktive Navigation → nur noch das Ziel (auch bei ausgeblendeten POIs,
+    ///   damit das Navigationsziel immer sichtbar bleibt)
+    /// – POIs per Toggle ausgeblendet → keine
     /// – aktive Freitext-Suche → deren Treffer
     /// – aktiver Kategorie-Chip → alle Altstadt-POIs dieser Kategorie
     /// – sonst → alle POIs der Altstadt
@@ -150,6 +160,7 @@ final class MapViewModel: ObservableObject {
         if activeRoute != nil {
             return navigationTarget.map { [$0] } ?? []
         }
+        guard poisVisible else { return [] }
         if let searchResults {
             return searchResults
         }

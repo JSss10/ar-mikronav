@@ -39,6 +39,10 @@ struct MapView: View {
     @State private var pendingListBarrier: Barrier?
     /// Auf der Karte markierter gespeicherter Ort (aus dem Bookmark-Sheet).
     @State private var selectedSavedPlace: SavedPlace?
+    /// Einmaliges Zentrieren auf den Standort beim ersten GPS-Fix. Danach
+    /// bleibt der vom User gewählte Kartenausschnitt (Zoom/Position) stehen,
+    /// bis eine Aktion (Suche, Route, Standort-Button) die Kamera bewegt.
+    @State private var hasCenteredOnUser = false
 
     // Enger Zoom (~150 m Bildausschnitt), damit nur Barrieren in unmittelbarer
     // Nähe des aktuellen Standorts sichtbar sind.
@@ -125,7 +129,13 @@ struct MapView: View {
         .onAppear {
             viewModel.start()
         }
-        .onReceive(locationService.$currentLocation.compactMap { $0 }.first()) { location in
+        // Nur EINMAL auf den Standort zentrieren (State-Flag statt `.first()`:
+        // onReceive abonniert bei jedem Body-Update neu, wodurch `.first()`
+        // den letzten Standort erneut liefern und den manuell gewählten
+        // Zoom immer wieder zurücksetzen würde).
+        .onReceive(locationService.$currentLocation.compactMap { $0 }) { location in
+            guard !hasCenteredOnUser else { return }
+            hasCenteredOnUser = true
             withAnimation(.easeInOut) {
                 cameraPosition = .region(
                     MKCoordinateRegion(
@@ -197,6 +207,8 @@ struct MapView: View {
             if viewModel.activeRoute == nil {
                 VStack(alignment: .leading, spacing: 10) {
                     mapStyleButton
+                    barrierToggleButton
+                    poiToggleButton
                     savedPlacesButton
                     filterButton
                 }
@@ -370,6 +382,39 @@ struct MapView: View {
         .accessibilityLabel("Filter")
     }
 
+    /// Blendet alle Barrieren-Marker ein/aus (gilt auch für die AR-Minikarte).
+    /// Annäherungswarnungen bleiben aktiv, auch wenn die Marker ausgeblendet sind.
+    private var barrierToggleButton: some View {
+        Button {
+            viewModel.barriersVisible.toggle()
+        } label: {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.title)
+                .foregroundStyle(
+                    viewModel.barriersVisible ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.tertiary)
+                )
+                .padding(10)
+                .background(.thinMaterial, in: Circle())
+        }
+        .accessibilityLabel(viewModel.barriersVisible ? "Barrieren ausblenden" : "Barrieren einblenden")
+    }
+
+    /// Blendet alle POI-Marker ein/aus (gilt auch für den AR-Modus).
+    private var poiToggleButton: some View {
+        Button {
+            viewModel.poisVisible.toggle()
+        } label: {
+            Image(systemName: "mappin.circle.fill")
+                .font(.title)
+                .foregroundStyle(
+                    viewModel.poisVisible ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.tertiary)
+                )
+                .padding(10)
+                .background(.thinMaterial, in: Circle())
+        }
+        .accessibilityLabel(viewModel.poisVisible ? "Orte ausblenden" : "Orte einblenden")
+    }
+
     // Banner ~30 m vor profilrelevanter Barriere.
     // Tap → Detail-Sheet, X → dismiss, auto-dismiss nach 10 s.
     private func approachBanner(_ warning: BarrierWarning) -> some View {
@@ -509,6 +554,10 @@ struct MapView: View {
     private var showEmptyState: Bool {
         !viewModel.isLoading
             && viewModel.loadError == nil
+            // Kein Empty-State, wenn die Karte nur wegen der
+            // Sichtbarkeits-Toggles leer ist – das ist gewollt.
+            && viewModel.barriersVisible
+            && viewModel.poisVisible
             && viewModel.filteredBarriers.isEmpty
             && viewModel.displayedPOIs.isEmpty
             && locationService.currentLocation != nil
