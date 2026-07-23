@@ -216,8 +216,9 @@ struct SearchSheet: View {
         }
     }
 
-    /// Kategorie-Chip getippt: Suchfeld füllen, Chip markieren und die Suche
-    /// für diese Kategorie ausführen.
+    /// Kategorie-Chip getippt: filtert die stadtweit geladenen POIs
+    /// client-seitig auf die exakten ginto-Kategorie-Keys des Chips
+    /// (kein RPC) und übernimmt den Filter auch für die Karten-Marker.
     private func runCategory(_ chip: String) {
         if activeChip == chip {
             // Erneutes Tippen hebt den Filter auf.
@@ -225,11 +226,15 @@ struct SearchSheet: View {
             query = ""
             results = []
             hasSearched = false
+            viewModel.setCategory(nil)
             return
         }
         activeChip = chip
         query = chip
-        runSearch(chip)
+        searchFieldFocused = false
+        viewModel.setCategory(chip)
+        results = viewModel.poisForCategory(chip)
+        hasSearched = true
     }
 }
 
