@@ -58,10 +58,13 @@ struct TestProfileSelectionView: View {
         Button {
             start(profile)
         } label: {
-            VStack(spacing: AppMetrics.Space.s) {
+            VStack(spacing: AppMetrics.Space.m) {
                 ZStack {
-                    TestProfileAvatar(profile: profile)
+                    TestProfileAvatar(profile: profile, size: 88)
                     if startingProfileKey == profile.key {
+                        Circle()
+                            .fill(.black.opacity(0.35))
+                            .frame(width: 88, height: 88)
                         ProgressView()
                             .tint(.white)
                     }
@@ -76,12 +79,9 @@ struct TestProfileSelectionView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppMetrics.Space.m)
-            .background(
-                RoundedRectangle(cornerRadius: AppMetrics.Radius.button, style: .continuous)
-                    .fill(AppColor.surfaceRaised)
-            )
+            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TestProfileButtonStyle())
         .accessibilityLabel("Testprofil \(profile.displayName) auswählen")
     }
 
@@ -99,6 +99,17 @@ struct TestProfileSelectionView: View {
                 startingProfileKey = nil
             }
         }
+    }
+}
+
+/// Dezentes Tipp-Feedback für die Profil-Kreise (leichtes Skalieren statt
+/// gefüllter Kachel), passend zum Kreis-Design der App.
+private struct TestProfileButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1)
+            .opacity(configuration.isPressed ? 0.7 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 

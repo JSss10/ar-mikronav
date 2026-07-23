@@ -35,10 +35,55 @@ struct ARModeView: View {
 
     var body: some View {
         Group {
-            if cameraStatus != .authorized {
-                CameraPermissionView(status: $cameraStatus)
-                    .overlay(alignment: .topLeading) { dismissButton }
-            } else if originCoordinate == nil {
+            switch cameraStatus {
+            case .notDetermined:
+                // Kein eigener Erklärungs-Screen mehr: direkt Apples System-
+                // Prompt anfragen. Bis zur Antwort ein neutraler Warte-State.
+                cameraRequestPlaceholder
+            case .denied, .restricted:
+                // Verweigert – Apples Prompt erscheint nicht erneut, daher der
+                // generische Fehler-State mit Weg in die Einstellungen.
+                ARUnavailableView(
+                    reason: "Kamera-Zugriff ist deaktiviert.\nErlaube die Kamera in den Einstellungen, um den AR-Modus zu nutzen.",
+                    onBack: onClose
+                )
+            case .authorized:
+                cameraContent
+            @unknown default:
+                cameraContent
+            }
+        }
+        .trackScreen("ar_mode")
+        .task {
+            try? await Task.sleep(for: .seconds(20))
+            if case .starting = arService.sessionState {
+                localizationTimedOut = true
+            }
+        }
+    }
+
+    /// Neutraler Warte-State, während Apples Kamera-Prompt beantwortet wird.
+    private var cameraRequestPlaceholder: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            ProgressView()
+                .controlSize(.large)
+                .tint(.white)
+        }
+        .overlay(alignment: .topLeading) { dismissButton }
+        .task {
+            AVCaptureDevice.requestAccess(for: .video) { _ in
+                Task { @MainActor in
+                    cameraStatus = AVCaptureDevice.authorizationStatus(for: .video)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var cameraContent: some View {
+        Group {
+            if originCoordinate == nil {
                 ARUnavailableView(
                     reason: "GPS-Signal zu schwach.\nGehe ins Freie für besseren Empfang.",
                     onBack: onClose
@@ -55,13 +100,6 @@ struct ARModeView: View {
                 )
             } else {
                 arContent
-            }
-        }
-        .trackScreen("ar_mode")
-        .task {
-            try? await Task.sleep(for: .seconds(20))
-            if case .starting = arService.sessionState {
-                localizationTimedOut = true
             }
         }
     }

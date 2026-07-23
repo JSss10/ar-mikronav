@@ -56,6 +56,9 @@ struct TestProfile: Identifiable, Hashable {
 }
 
 /// Rundes Avatar-Bild eines Testprofils: Farbverlauf + Initialen.
+/// «Kreis-Design» im App-Stil: heller Ring und weicher Schatten, damit die
+/// Avatare zur restlichen App (Home/Profil) passen. Der Farbton bleibt je
+/// Profil unterschiedlich, damit die Profile visuell unterscheidbar sind.
 struct TestProfileAvatar: View {
     let profile: TestProfile
     var size: CGFloat = 72
@@ -75,6 +78,10 @@ struct TestProfileAvatar: View {
                 .foregroundStyle(.white)
         }
         .frame(width: size, height: size)
+        .overlay(
+            Circle().strokeBorder(AppColor.backgroundPrimary, lineWidth: 3)
+        )
+        .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
         .accessibilityHidden(true)
     }
 }

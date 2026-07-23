@@ -52,9 +52,10 @@ struct RootView: View {
 }
 
 // Routet nach erfolgreichem Login:
-// Consent → Onboarding (wenn kein Profil) → Notification-Permission (einmalig) →
-// Home. Hält das Profil separat, damit es als Binding an HomeView
-// und weiter an Settings gereicht werden kann (S1).
+// Consent → Onboarding (wenn kein Profil) → Home. Die Mitteilungs-Berechtigung
+// wird beim ersten Erreichen von Home einmalig über Apples System-Prompt
+// angefragt (kein eigener Erklärungs-Screen). Hält das Profil separat, damit es
+// als Binding an HomeView und weiter an Settings gereicht werden kann (S1).
 struct AuthenticatedRootView: View {
     @EnvironmentObject var authService: AuthService
     @State private var profile: UserProfile?
@@ -85,13 +86,17 @@ struct AuthenticatedRootView: View {
                         Task { await checkProfile() }
                     }
                 case .ready:
-                    if !notificationAsked {
-                        NotificationPermissionView {
+                    HomeView(profile: profileBinding)
+                        // Mitteilungs-Berechtigung nur noch über Apples
+                        // System-Prompt: einmalig direkt nach dem Onboarding
+                        // anfragen, ohne eigenen Erklärungs-Screen. Die
+                        // Erklärung erfolgt im Consent-Screen des Onboardings.
+                        .task {
+                            guard !notificationAsked else { return }
+                            await BarrierNotificationService.shared.requestAuthorization()
+                            NotificationPermissionStore.markAsked()
                             notificationAsked = true
                         }
-                    } else {
-                        HomeView(profile: profileBinding)
-                    }
                 }
             }
         }
