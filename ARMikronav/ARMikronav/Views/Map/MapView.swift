@@ -326,7 +326,9 @@ struct MapView: View {
                 Text("Café suchen…")
                 Spacer()
             }
-            .foregroundStyle(.secondary)
+            // Kräftigere Textfarbe: der Platzhalter war auf der hellen Karte
+            // (thinMaterial) kaum lesbar.
+            .foregroundStyle(AppColor.textPrimary)
             .padding(.horizontal, 12)
             // Gleiche Höhe wie der Home-Button (HomeView).
             .frame(height: 44)

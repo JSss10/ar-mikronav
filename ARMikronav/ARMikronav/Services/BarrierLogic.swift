@@ -142,7 +142,7 @@ func generateWarning(barrier: Barrier, profile: UserProfile, distance: Double, a
             let v = barrier.value.map { "\(Int($0))%" } ?? "unbekannt"
             return ("Steigung: \(v)", "Dein Limit: \(Int(profile.effectiveMaxIncline))%")
         case .surface:
-            let name = barrier.subtype?.replacingOccurrences(of: "_", with: " ").capitalized ?? "unbekannt"
+            let name = barrier.subtype.map(BarrierType.localizedSurface) ?? "unbekannt"
             return ("Oberfläche: \(name)", "Nicht in deiner Toleranz")
         case .narrow:
             let w = barrier.value.map { "\(Int($0))cm" } ?? "unbekannt"

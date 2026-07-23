@@ -38,6 +38,38 @@ extension BarrierType {
         case .temporary:    return "Temporäres Hindernis"
         }
     }
+
+    /// Deutsche Bezeichnung eines Oberflächen-Subtyps (OSM `surface`-Werte wie
+    /// "sett" oder "cobblestone"). Fällt bei unbekannten Werten auf eine
+    /// bereinigte, gross geschriebene Form des Rohwerts zurück.
+    static func localizedSurface(_ subtype: String) -> String {
+        switch subtype {
+        case "sett":
+            return "Kopfsteinpflaster"
+        case "cobblestone", "unhewn_cobblestone":
+            return "Kopfsteinpflaster (grob)"
+        case "cobblestone_coarse":
+            return "grobes Kopfsteinpflaster"
+        case "cobblestone_fine":
+            return "feines Kopfsteinpflaster"
+        case "paving_stones":
+            return "Pflastersteine"
+        case "gravel":
+            return "Kies"
+        case "fine_gravel":
+            return "Feinkies"
+        case "compacted":
+            return "verdichteter Belag"
+        case "sand":
+            return "Sand"
+        case "grass":
+            return "Rasen"
+        case "dirt", "ground", "earth", "mud":
+            return "Naturboden"
+        default:
+            return subtype.replacingOccurrences(of: "_", with: " ").capitalized
+        }
+    }
 }
 
 struct BarrierAnnotation: View {
