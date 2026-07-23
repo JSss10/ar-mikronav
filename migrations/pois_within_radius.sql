@@ -58,7 +58,9 @@ AS $$
           OR p.category ILIKE '%' || search || '%'
       )
     ORDER BY distance_m
-    LIMIT 50;
+    -- Hoch genug für alle POIs der Stadt Zürich (ginto-Seed: ~440 Einträge),
+    -- damit die Karte das ganze Stadtgebiet abdecken kann.
+    LIMIT 500;
 $$;
 
 COMMENT ON FUNCTION pois_within_radius(double precision, double precision, double precision, text)

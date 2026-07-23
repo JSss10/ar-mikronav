@@ -21,12 +21,12 @@ enum AppConfig {
     static let kreis1Center = CLLocationCoordinate2D(latitude: 47.3710, longitude: 8.5400)
     static let kreis1RadiusM: Double = 1400
 
-    // MARK: - Abdeckung ganze Schweiz
-    // Karte (Barrieren) und Homescreen laden schweizweit; der Radius um den
-    // geografischen Mittelpunkt (Älggi-Alp) deckt das ganze Land ab. POIs
-    // (ginto) werden ebenfalls schweizweit gesucht.
-    static let schweizCenter = CLLocationCoordinate2D(latitude: 46.8011, longitude: 8.2266)
-    static let schweizRadiusM: Double = 250_000
+    // MARK: - Abdeckung ganze Stadt Zürich
+    // Karte (POIs + Barrieren) und Homescreen laden die ganze Stadt Zürich;
+    // der Radius um das Stadtzentrum deckt das gesamte Stadtgebiet ab
+    // (Affoltern bis Wollishofen, Altstetten bis Witikon).
+    static let zuerichCenter = CLLocationCoordinate2D(latitude: 47.3769, longitude: 8.5417)
+    static let zuerichRadiusM: Double = 10_000
 
     // MARK: - Defaults
     static let defaultBarrierRadius: Double = 500

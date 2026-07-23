@@ -2,10 +2,10 @@
 // ARMikronav
 //
 // Verbindet LocationService und BarrierRepository für die Kartenansicht.
-// Barrieren werden schweizweit geladen (AppConfig.schweizCenter/-RadiusM),
-// unabhängig vom Standort – ein einmaliger Ladevorgang deckt das ganze Land
-// ab. POIs (ginto) werden ebenfalls schweizweit gesucht (nächste Treffer zur
-// Position).
+// POIs und Barrieren werden für die ganze Stadt Zürich geladen
+// (AppConfig.zuerichCenter/-RadiusM), unabhängig vom Standort – ein
+// einmaliger Ladevorgang deckt das gesamte Stadtgebiet ab. Bei aktiver
+// Route werden nur noch die Barrieren direkt auf der Route angezeigt.
 
 import Foundation
 import Combine
@@ -18,8 +18,8 @@ final class MapViewModel: ObservableObject {
     @Published private(set) var loadError: String?
     @Published private(set) var filterState: BarrierFilterState = .default
 
-    // POIs (Wireframe 2.1/2.1a): sichtbar wenn ein Kategorie-Chip aktiv ist
-    // oder eine Suche lief.
+    // POIs (Wireframe 2.1/2.1a): standardmässig alle POIs der Stadt Zürich;
+    // ein Kategorie-Chip oder eine Suche grenzt die Auswahl ein.
     @Published private(set) var pois: [POI] = []
     @Published var activeCategory: String?
     @Published private(set) var recentSearches: [String] = []
@@ -42,7 +42,6 @@ final class MapViewModel: ObservableObject {
     private let poiRepository: POIRepository
     private let recentSearchesKey = "armikronav.recentSearches"
 
-    private var lastLoadCenter: CLLocation?
     private var cancellables = Set<AnyCancellable>()
     private var hasStarted = false
 
@@ -55,9 +54,8 @@ final class MapViewModel: ObservableObject {
     private let routeCorridorM: CLLocationDistance = 30
 
     /// Barrieren, die auf der Karte/AR angezeigt werden:
-    /// – aktive Route → nur Barrieren im Korridor entlang der Route
-    /// – POIs eingeblendet (Kategorie-Chip oder Suche) → keine Barrieren
-    /// – sonst → alle profilrelevanten Barrieren
+    /// – aktive Route → nur Barrieren im Korridor direkt entlang der Route
+    /// – sonst → alle profilrelevanten Barrieren der Stadt (neben den POIs)
     var displayedBarriers: [Barrier] {
         if let route = activeRoute {
             return filteredBarriers.filter { barrier in
@@ -69,9 +67,6 @@ final class MapViewModel: ObservableObject {
                     to: route
                 ) <= routeCorridorM
             }
-        }
-        if activeCategory != nil || !pois.isEmpty {
-            return []
         }
         return filteredBarriers
     }
@@ -121,10 +116,6 @@ final class MapViewModel: ObservableObject {
         return navigationTarget.map { [$0] } ?? []
     }
 
-    var searchCenter: CLLocationCoordinate2D? {
-        lastLoadCenter?.coordinate ?? locationService.currentLocation?.coordinate
-    }
-
     init() {
         self.locationService = .shared
         self.repository = .shared
@@ -140,15 +131,9 @@ final class MapViewModel: ObservableObject {
     }
 
     func applyFilter(_ newFilter: BarrierFilterState) {
-        // Barrieren decken immer den ganzen Kreis 1 (Testgebiet) ab; der
-        // Suchradius steuert nur, wie weit um die eigene Position nach Orten
-        // (POIs) gesucht wird. Ändert sich der Radius bei aktiver Kategorie,
-        // werden die POIs im neuen Umkreis nachgeladen.
-        let radiusChanged = newFilter.radius != filterState.radius
+        // POIs und Barrieren decken immer die ganze Stadt Zürich ab; der
+        // Filter steuert nur, welche Barrierentypen auf der Karte erscheinen.
         filterState = newFilter
-        if radiusChanged, let category = activeCategory {
-            Task { await loadPOIs(search: POICategory.searchTerm(forChip: category)) }
-        }
     }
 
     func start() {
@@ -156,6 +141,7 @@ final class MapViewModel: ObservableObject {
         hasStarted = true
 
         Task { await loadBarriers() }
+        Task { await loadPOIs(search: nil) }
 
         locationService.startUpdating()
 
@@ -171,18 +157,16 @@ final class MapViewModel: ObservableObject {
     }
 
     private func handleLocationUpdate(_ location: CLLocation) {
-        // Barrieren sind schweizweit und standortunabhängig geladen – hier nur
-        // die Position für die POI-Suche merken und den Routenfortschritt
-        // aktualisieren.
-        lastLoadCenter = location
+        // POIs und Barrieren sind stadtweit und standortunabhängig geladen –
+        // hier nur den Routenfortschritt aktualisieren.
         if let route = activeRoute {
             routeProgress = RouteService.progress(of: route, at: location)
             nextManeuver = RouteService.nextManeuver(of: route, at: location)
         }
     }
 
-    /// Lädt die Barrieren der ganzen Schweiz (fixes Gebiet, unabhängig vom
-    /// Standort – der Radius um den Landesmittelpunkt deckt das ganze Land ab).
+    /// Lädt die Barrieren der ganzen Stadt Zürich (fixes Gebiet, unabhängig
+    /// vom Standort – der Radius um das Stadtzentrum deckt das Stadtgebiet ab).
     func loadBarriers() async {
         isLoading = true
         loadError = nil
@@ -190,8 +174,8 @@ final class MapViewModel: ObservableObject {
 
         do {
             barriers = try await repository.fetchBarriers(
-                near: AppConfig.schweizCenter,
-                radius: AppConfig.schweizRadiusM
+                near: AppConfig.zuerichCenter,
+                radius: AppConfig.zuerichRadiusM
             )
         } catch {
             loadError = error.localizedDescription
@@ -296,12 +280,13 @@ final class MapViewModel: ObservableObject {
     }
 
     /// Kategorie-Chip getippt: lädt POIs zur Kategorie, nochmaliges Tippen
-    /// deaktiviert. Das deutsche Chip-Label wird auf den englischen
-    /// DB-Kategorie-Suchbegriff gemappt (sonst findet die RPC nichts).
+    /// deaktiviert und zeigt wieder alle POIs der Stadt. Das deutsche
+    /// Chip-Label wird auf den englischen DB-Kategorie-Suchbegriff gemappt
+    /// (sonst findet die RPC nichts).
     func toggleCategory(_ category: String) {
         if activeCategory == category {
             activeCategory = nil
-            pois = []
+            Task { await loadPOIs(search: nil) }
             return
         }
         activeCategory = category
@@ -309,16 +294,13 @@ final class MapViewModel: ObservableObject {
     }
 
     /// Freitext-Suche aus dem SearchSheet. Ergebnis wird zurückgegeben UND als
-    /// Karten-Marker übernommen.
+    /// Karten-Marker übernommen. Gesucht wird immer im ganzen Stadtgebiet.
     func searchPOIs(query: String) async -> [POI] {
-        // Ohne GPS-Fix vom Landesmittelpunkt aus suchen, damit die Suche auch
-        // vor dem ersten Standort-Update schweizweit Treffer liefert.
-        let center = searchCenter ?? AppConfig.schweizCenter
         recordRecentSearch(query)
         do {
             let results = try await poiRepository.fetchPOIs(
-                near: center,
-                radius: AppConfig.schweizRadiusM,
+                near: AppConfig.zuerichCenter,
+                radius: AppConfig.zuerichRadiusM,
                 search: POICategory.searchTerm(forChip: query)
             )
             pois = results
@@ -330,23 +312,13 @@ final class MapViewModel: ObservableObject {
         }
     }
 
+    /// Lädt POIs für die ganze Stadt Zürich – ohne Suchbegriff alle POIs,
+    /// mit Suchbegriff die Treffer zu Kategorie-Chip bzw. Freitext.
     private func loadPOIs(search: String?) async {
-        // Mit Standort-Fix wird im eingestellten Suchradius um die eigene
-        // Position gesucht (FilterSheet). Ohne Fix bleibt der schweizweite
-        // Fallback, damit auch vor dem ersten GPS-Update Treffer erscheinen.
-        let center: CLLocationCoordinate2D
-        let radius: Double
-        if let userCenter = searchCenter {
-            center = userCenter
-            radius = filterState.radius
-        } else {
-            center = AppConfig.schweizCenter
-            radius = AppConfig.schweizRadiusM
-        }
         do {
             pois = try await poiRepository.fetchPOIs(
-                near: center,
-                radius: radius,
+                near: AppConfig.zuerichCenter,
+                radius: AppConfig.zuerichRadiusM,
                 search: search
             )
         } catch {
