@@ -69,3 +69,43 @@ git push
 git checkout -b develop
 git push -u origin develop
 ```
+
+## Feature-Log
+
+### Map rotates in travel direction
+
+```bash
+git commit -m "feat(map): rotate map into travel direction when showing a route"
+```
+
+Tapping "Route anzeigen" in the POI detail used to only zoom the map onto the
+route, always north-up. It now also rotates so the travel direction points up –
+you can immediately see which way to go.
+
+- `RouteService.initialBearingDegrees(of:)` derives the route's initial travel
+  direction as a compass heading (stable over the first ~20 m so short GPS/
+  geometry segments at the start don't skew it), plus `bearingDegrees(from:to:)`
+  as a general heading helper.
+- `MapView.fitCamera` uses a rotated `MapCamera` (heading = travel direction)
+  instead of a north-up `MKMapRect`; center and distance come from the route's
+  bounding box so the whole route stays visible even when rotated. Applies to
+  the alternative route as well.
+- Tests for the initial heading and the heading helper.
+
+```bash
+git commit -m "feat(map): keep map rotated to travel direction during navigation"
+```
+
+The map used to rotate only once when the route was shown. During active
+navigation it now follows the location and keeps rotating with the route – it
+turns right when the route turns right, left when it turns left – so the map
+orientation matches the instruction in the route panel.
+
+- `RouteService.travelBearingDegrees(of:at:)`: travel direction at the current
+  location – projects the location onto the nearest route segment and takes the
+  direction ~18 m ahead (smooths the rotation across bends).
+- `MapView.followCamera`: on every location update during navigation it sets a
+  rotated `MapCamera` (heading = travel direction), centered slightly ahead so
+  the position sits in the lower third and more of the route ahead is visible.
+- Tests for the travel direction before/after right and left turns.
+```
