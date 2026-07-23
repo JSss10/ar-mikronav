@@ -58,8 +58,8 @@ AS $$
           OR p.category ILIKE '%' || search || '%'
       )
     ORDER BY distance_m
-    -- Hoch genug für alle POIs der Stadt Zürich (ginto-Seed: ~440 Einträge),
-    -- damit die Karte das ganze Stadtgebiet abdecken kann.
+    -- Hoch genug für alle POIs der Zürcher Altstadt (ginto-Seed: ~440
+    -- Einträge), damit die Karte die ganze Altstadt abdecken kann.
     LIMIT 500;
 $$;
 

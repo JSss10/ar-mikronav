@@ -19,7 +19,7 @@ struct ARPOIFilterSheet: View {
                     row(
                         label: "Alle Orte",
                         symbol: "mappin.and.ellipse",
-                        count: viewModel.cityPOIs.count,
+                        count: viewModel.altstadtPOIs.count,
                         isSelected: viewModel.activeCategory == nil
                     ) {
                         viewModel.setCategory(nil)

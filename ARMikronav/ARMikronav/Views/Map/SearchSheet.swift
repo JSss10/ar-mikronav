@@ -216,7 +216,7 @@ struct SearchSheet: View {
         }
     }
 
-    /// Kategorie-Chip getippt: filtert die stadtweit geladenen POIs
+    /// Kategorie-Chip getippt: filtert die für die Altstadt geladenen POIs
     /// client-seitig auf die exakten ginto-Kategorie-Keys des Chips
     /// (kein RPC) und übernimmt den Filter auch für die Karten-Marker.
     private func runCategory(_ chip: String) {

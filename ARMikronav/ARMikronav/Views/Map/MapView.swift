@@ -3,7 +3,7 @@
 //
 // Kartenansicht (iOS 17 Map API). Startregion: aktueller Standort bzw. als
 // Fallback die Altstadt Zürich; POIs und Barrieren werden für die ganze
-// Stadt Zürich geladen. Zeigt Userposition, profilrelevante Barrieren,
+// Zürcher Altstadt geladen. Zeigt Userposition, profilrelevante Barrieren,
 // POI-Marker mit Zugänglichkeits-Status, Suchleiste (inkl. Kategorie-Filter)
 // und ein Annäherungs-Banner. Bei aktiver Route erscheinen nur die Barrieren
 // direkt auf der Route. MapViewModel kommt vom HomeView, damit Filter-

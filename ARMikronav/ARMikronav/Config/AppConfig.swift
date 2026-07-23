@@ -21,12 +21,13 @@ enum AppConfig {
     static let kreis1Center = CLLocationCoordinate2D(latitude: 47.3710, longitude: 8.5400)
     static let kreis1RadiusM: Double = 1400
 
-    // MARK: - Abdeckung ganze Stadt Zürich
-    // Karte (POIs + Barrieren) und Homescreen laden die ganze Stadt Zürich;
-    // der Radius um das Stadtzentrum deckt das gesamte Stadtgebiet ab
-    // (Affoltern bis Wollishofen, Altstetten bis Witikon).
-    static let zuerichCenter = CLLocationCoordinate2D(latitude: 47.3769, longitude: 8.5417)
-    static let zuerichRadiusM: Double = 10_000
+    // MARK: - Abdeckung ganze Zürcher Altstadt (Stadtkreis 1)
+    // Karte (POIs + Barrieren) und Homescreen laden die ganze Altstadt;
+    // der Radius um den historischen Mittelpunkt (47° 22′ 13″ N / 8° 32′ 30″ O)
+    // deckt die ~1,8 km² beidseits der Limmat vom Hauptbahnhof bis zum
+    // Zürichsee ab (Quartiere Rathaus, Hochschulen, Lindenhof, City).
+    static let altstadtCenter = CLLocationCoordinate2D(latitude: 47.3703, longitude: 8.5417)
+    static let altstadtRadiusM: Double = 1_200
 
     // MARK: - Defaults
     static let defaultBarrierRadius: Double = 500
