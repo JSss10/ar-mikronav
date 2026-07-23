@@ -2,9 +2,9 @@
 // ARMikronav
 //
 // Haupt-Container für authentifizierte User. Hält das MapViewModel und stellt
-// die Tab-Navigation bereit: Start (Homescreen), Karte, AR, Gespeicherte Orte
-// und Profil. Karte und AR laufen im Vollbild – dort wird die Tab-Leiste
-// ausgeblendet, die Navigation ist also nur auf Start, Gespeicherte Orte und
+// die Tab-Navigation bereit: Home (Homescreen), Karte, Kamera (AR), Orte
+// und Profil. Karte und Kamera laufen im Vollbild – dort wird die Tab-Leiste
+// ausgeblendet, die Navigation ist also nur auf Home, Orte und
 // Profil sichtbar. Filter- und Barrieren-State bleiben beim Tab-Wechsel
 // erhalten, weil Karte und AR auf dem gleichen ViewModel laufen. Das
 // Profil-Binding fliesst von hier weiter ins Profil (Settings/Abmelden, S1).
@@ -24,6 +24,17 @@ struct HomeView: View {
         case home, map, ar, saved, profile
     }
 
+    init(profile: Binding<UserProfile>) {
+        _profile = profile
+        // Aktiver Tab ohne getönte Hintergrund-/Auswahlfläche: nur Icon und
+        // Label wechseln auf die Akzentfarbe, keine Kapsel dahinter.
+        let appearance = UITabBarAppearance()
+        appearance.configureWithDefaultBackground()
+        appearance.selectionIndicatorTintColor = .clear
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
+
     var body: some View {
         Group {
             if needsLocationPermission {
@@ -34,15 +45,15 @@ struct HomeView: View {
         }
     }
 
-    // Fünf Tabs; Karte und AR blenden die Tab-Leiste aus (Vollbild), damit die
-    // Navigation nur auf Start, Gespeicherte Orte und Profil erscheint.
+    // Fünf Tabs; Karte und Kamera blenden die Tab-Leiste aus (Vollbild), damit
+    // die Navigation nur auf Home, Orte und Profil erscheint.
     private var tabView: some View {
         TabView(selection: $selectedTab) {
             HomeDashboardView(
                 onOpenMap: { selectedTab = .map }
             )
             .tabItem {
-                Label("Start", systemImage: "house.fill")
+                Label("Home", systemImage: "house.fill")
             }
             .tag(Tab.home)
 
@@ -56,7 +67,7 @@ struct HomeView: View {
             arContent
                 .toolbar(.hidden, for: .tabBar)
                 .tabItem {
-                    Label("AR", systemImage: "arkit")
+                    Label("Kamera", systemImage: "camera.fill")
                 }
                 .tag(Tab.ar)
 
@@ -149,14 +160,17 @@ struct HomeView: View {
         Button {
             selectedTab = .ar
         } label: {
-            Image(systemName: "arkit")
+            Image(systemName: "camera.fill")
                 .font(.title)
                 .foregroundStyle(.white)
                 .padding(18)
                 .background(Color.accentColor, in: Circle())
                 .shadow(radius: 4)
         }
-        .padding()
+        // Gleicher Abstand nach unten wie die Karten-Buttons (MapView,
+        // .padding(.bottom, 12)), damit AR-Button und Filter unten bündig sind.
+        .padding(.trailing)
+        .padding(.bottom, 12)
         .accessibilityLabel("In AR ansehen")
     }
 }

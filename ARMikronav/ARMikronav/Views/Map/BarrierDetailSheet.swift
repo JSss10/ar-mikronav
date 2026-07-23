@@ -198,7 +198,7 @@ struct BarrierDetailSheet: View {
         case .narrow:
             return barrier.value.map { "\(Int($0)) cm Durchgang" }
         case .surface:
-            return barrier.subtype?.replacingOccurrences(of: "_", with: " ").capitalized
+            return barrier.subtype.map(BarrierType.localizedSurface)
         case .temporary:
             return nil
         }

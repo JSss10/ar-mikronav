@@ -440,7 +440,7 @@ struct HomeDashboardView: View {
             if let v = barrier.value { parts.append("\(Int(v)) cm Durchgang") }
         case .surface:
             if let s = barrier.subtype {
-                parts.append(s.replacingOccurrences(of: "_", with: " ").capitalized)
+                parts.append(BarrierType.localizedSurface(s))
             }
         case .temporary:
             break
