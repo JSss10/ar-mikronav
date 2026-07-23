@@ -17,7 +17,9 @@ struct ProfileEditView: View {
     @State private var draft: UserProfile
 
     @StateObject private var avatarStore = AvatarStore.shared
+    @State private var showingPhotoOptions = false
     @State private var showingCamera = false
+    @State private var showingGalleryPicker = false
     @State private var galleryItem: PhotosPickerItem?
 
     init(profile: Binding<UserProfile>) {
@@ -50,6 +52,27 @@ struct ProfileEditView: View {
                 .bold()
             }
         }
+        // Apple-Muster: ein Tipp auf das Foto öffnet den Aktionsdialog
+        // (Action Sheet) mit «Foto aufnehmen / auswählen / entfernen».
+        .confirmationDialog(
+            "Profilfoto",
+            isPresented: $showingPhotoOptions,
+            titleVisibility: .visible
+        ) {
+            Button("Foto aufnehmen") { showingCamera = true }
+            Button("Foto auswählen") { showingGalleryPicker = true }
+            if avatarStore.image != nil {
+                Button("Foto entfernen", role: .destructive) {
+                    avatarStore.delete()
+                }
+            }
+            Button("Abbrechen", role: .cancel) {}
+        }
+        .photosPicker(
+            isPresented: $showingGalleryPicker,
+            selection: $galleryItem,
+            matching: .images
+        )
         .fullScreenCover(isPresented: $showingCamera) {
             CameraPicker { image in
                 avatarStore.save(image)
@@ -72,30 +95,22 @@ struct ProfileEditView: View {
 
     private var photoSection: some View {
         Section {
-            HStack(spacing: AppMetrics.Space.m) {
-                avatarPreview
-
-                VStack(alignment: .leading, spacing: AppMetrics.Space.s) {
-                    Button {
-                        showingCamera = true
-                    } label: {
-                        Label("Foto aufnehmen", systemImage: "camera")
-                    }
-
-                    PhotosPicker(selection: $galleryItem, matching: .images) {
-                        Label("Foto auswählen", systemImage: "photo.on.rectangle")
-                    }
-
-                    if avatarStore.image != nil {
-                        Button(role: .destructive) {
-                            avatarStore.delete()
-                        } label: {
-                            Label("Foto entfernen", systemImage: "trash")
-                        }
-                    }
+            // Zentriertes, antippbares Foto nach Apple-Muster (wie Kontakte /
+            // Apple-ID): der Tipp öffnet den Aktionsdialog, ein kleines
+            // Kamera-Badge signalisiert die Bearbeitbarkeit.
+            Button {
+                showingPhotoOptions = true
+            } label: {
+                VStack(spacing: AppMetrics.Space.s) {
+                    avatarPreview
+                    Text(avatarStore.image == nil ? "Foto hinzufügen" : "Foto bearbeiten")
+                        .font(AppTypography.subheadline)
+                        .foregroundStyle(AppColor.accentPrimary)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppMetrics.Space.s)
             }
-            .padding(.vertical, 4)
+            .buttonStyle(.plain)
         } header: {
             Text("Profilfoto")
         } footer: {
@@ -113,13 +128,27 @@ struct ProfileEditView: View {
                 Circle()
                     .fill(AppColor.accentPrimary)
                 Image(systemName: "person.fill")
-                    .font(.title)
+                    .font(.largeTitle)
                     .foregroundStyle(AppColor.onAccent)
             }
         }
-        .frame(width: 72, height: 72)
+        .frame(width: 96, height: 96)
         .clipShape(Circle())
+        .overlay(alignment: .bottomTrailing) { editBadge }
         .accessibilityHidden(true)
+    }
+
+    /// Kleines Kamera-Badge unten rechts – Apples Standard-Hinweis, dass das
+    /// Foto antippbar/änderbar ist.
+    private var editBadge: some View {
+        Image(systemName: "camera.fill")
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(AppColor.onAccent)
+            .frame(width: 30, height: 30)
+            .background(AppColor.accentPrimary, in: Circle())
+            .overlay(
+                Circle().strokeBorder(AppColor.backgroundPrimary, lineWidth: 2)
+            )
     }
 
     // MARK: - Sections

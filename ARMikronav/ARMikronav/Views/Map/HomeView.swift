@@ -36,13 +36,16 @@ struct HomeView: View {
     }
 
     var body: some View {
-        Group {
-            if needsLocationPermission {
-                LocationPermissionView(locationService: locationService)
-            } else {
-                tabView
+        tabView
+            // Standort-Berechtigung nur noch über Apples System-Prompt: beim
+            // ersten Betreten fragen (notDetermined), danach kein eigener
+            // Erklärungs-Screen mehr. Die Erklärung erfolgt einmalig im
+            // Consent-Screen des Onboardings.
+            .task {
+                if locationService.authorizationStatus == .notDetermined {
+                    locationService.requestAuthorization()
+                }
             }
-        }
     }
 
     // Fünf Tabs; Karte und Kamera blenden die Tab-Leiste aus (Vollbild), damit
@@ -67,7 +70,7 @@ struct HomeView: View {
             arContent
                 .toolbar(.hidden, for: .tabBar)
                 .tabItem {
-                    Label("Kamera", systemImage: "camera.fill")
+                    Label("Kamera", systemImage: "arkit")
                 }
                 .tag(Tab.ar)
 
@@ -85,17 +88,6 @@ struct HomeView: View {
                     Label("Profil", systemImage: "person.fill")
                 }
                 .tag(Tab.profile)
-        }
-    }
-
-    private var needsLocationPermission: Bool {
-        switch locationService.authorizationStatus {
-        case .notDetermined, .denied, .restricted:
-            return true
-        case .authorizedWhenInUse, .authorizedAlways:
-            return false
-        @unknown default:
-            return true
         }
     }
 
@@ -160,7 +152,7 @@ struct HomeView: View {
         Button {
             selectedTab = .ar
         } label: {
-            Image(systemName: "camera.fill")
+            Image(systemName: "arkit")
                 .font(.title)
                 .foregroundStyle(.white)
                 .padding(18)
