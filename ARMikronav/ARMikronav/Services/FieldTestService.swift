@@ -188,6 +188,7 @@ final class FieldTestService: ObservableObject {
         ProfileService.shared.deleteLocalProfile()
         ConsentStore.reset()
         NotificationPermissionStore.reset()
+        OnboardingPermissionsStore.reset()
 
         try? await AuthService.shared.signOut()
 

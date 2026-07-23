@@ -13,9 +13,6 @@ struct TestProfile: Identifiable, Hashable {
     let key: String
     let firstName: String
     let lastName: String
-    /// Grundfarbton (0…1) des Avatars, damit jedes Profil visuell
-    /// unterscheidbar ist.
-    let hue: Double
 
     var id: String { key }
 
@@ -31,23 +28,29 @@ struct TestProfile: Identifiable, Hashable {
         return "\(first)\(last)"
     }
 
-    var avatarTopColor: Color {
-        Color(hue: hue, saturation: 0.50, brightness: 0.78)
-    }
-
-    var avatarBottomColor: Color {
-        Color(hue: hue, saturation: 0.65, brightness: 0.55)
+    /// Avatar-Grundfarbe aus der Violett-Palette des Design-Systems. Jedes
+    /// Profil erhält eine eigene Stufe – markenkonform und trotzdem visuell
+    /// unterscheidbar. Alle Stufen sind dunkel genug für weisse Initialen.
+    var avatarColor: Color {
+        switch key {
+        case "tp01": return AppColor.Violet.v500
+        case "tp02": return AppColor.Violet.v600
+        case "tp03": return AppColor.Violet.v700
+        case "tp04": return AppColor.Violet.v800
+        case "tp05": return AppColor.Violet.v900
+        default:     return AppColor.Violet.v950
+        }
     }
 
     /// Die 6 Testpersonen der 3 Testtage, alphabetisch sortiert.
     /// Fehlt der Nachname, trägt ihn die Testperson im Onboarding selbst ein.
     static let all: [TestProfile] = [
-        TestProfile(key: "tp01", firstName: "Alessio", lastName: "",         hue: 0.00),
-        TestProfile(key: "tp02", firstName: "Annette", lastName: "Suter",    hue: 0.13),
-        TestProfile(key: "tp03", firstName: "Edith",   lastName: "Schwitter", hue: 0.30),
-        TestProfile(key: "tp04", firstName: "Livia",   lastName: "Künzler",  hue: 0.47),
-        TestProfile(key: "tp05", firstName: "Taz",     lastName: "",         hue: 0.62),
-        TestProfile(key: "tp06", firstName: "Ursula",  lastName: "Meier",    hue: 0.80)
+        TestProfile(key: "tp01", firstName: "Alessio", lastName: ""),
+        TestProfile(key: "tp02", firstName: "Annette", lastName: "Suter"),
+        TestProfile(key: "tp03", firstName: "Edith",   lastName: "Schwitter"),
+        TestProfile(key: "tp04", firstName: "Livia",   lastName: "Künzler"),
+        TestProfile(key: "tp05", firstName: "Taz",     lastName: ""),
+        TestProfile(key: "tp06", firstName: "Ursula",  lastName: "Meier")
     ]
 
     static func byKey(_ key: String) -> TestProfile? {
@@ -55,10 +58,10 @@ struct TestProfile: Identifiable, Hashable {
     }
 }
 
-/// Rundes Avatar-Bild eines Testprofils: Farbverlauf + Initialen.
-/// «Kreis-Design» im App-Stil: heller Ring und weicher Schatten, damit die
-/// Avatare zur restlichen App (Home/Profil) passen. Der Farbton bleibt je
-/// Profil unterschiedlich, damit die Profile visuell unterscheidbar sind.
+/// Rundes Avatar-Bild eines Testprofils im App-Stil: gefüllter Kreis in einer
+/// Violett-Stufe des Design-Systems + weisse Initialen, mit weichem Schatten
+/// (wie die Avatare auf Home/Profil). Jedes Profil erhält eine eigene Stufe,
+/// bleibt also markenkonform und trotzdem visuell unterscheidbar.
 struct TestProfileAvatar: View {
     let profile: TestProfile
     var size: CGFloat = 72
@@ -66,22 +69,14 @@ struct TestProfileAvatar: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(
-                    LinearGradient(
-                        colors: [profile.avatarTopColor, profile.avatarBottomColor],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+                .fill(profile.avatarColor)
+            // Immer weiss: die Violett-Stufen sind in beiden Modi dunkel.
             Text(profile.initials)
                 .font(.system(size: size * 0.38, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
         }
         .frame(width: size, height: size)
-        .overlay(
-            Circle().strokeBorder(AppColor.backgroundPrimary, lineWidth: 3)
-        )
-        .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
+        .shadow(color: AppColor.Violet.v950.opacity(0.18), radius: 6, y: 3)
         .accessibilityHidden(true)
     }
 }

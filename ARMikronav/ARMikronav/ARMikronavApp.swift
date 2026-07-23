@@ -52,16 +52,17 @@ struct RootView: View {
 }
 
 // Routet nach erfolgreichem Login:
-// Consent → Onboarding (wenn kein Profil) → Home. Die Mitteilungs-Berechtigung
-// wird beim ersten Erreichen von Home einmalig über Apples System-Prompt
-// angefragt (kein eigener Erklärungs-Screen). Hält das Profil separat, damit es
-// als Binding an HomeView und weiter an Settings gereicht werden kann (S1).
+// Consent (Datenschutz) → Berechtigungen (einmalig: Standort/Kamera/
+// Mitteilungen über Apples System-Prompts) → Onboarding (wenn kein Profil) →
+// Home. Danach werden keine eigenen Berechtigungs-Screens mehr gezeigt. Hält
+// das Profil separat, damit es als Binding an HomeView und weiter an Settings
+// gereicht werden kann (S1).
 struct AuthenticatedRootView: View {
     @EnvironmentObject var authService: AuthService
     @State private var profile: UserProfile?
     @State private var loadState: LoadState = .loading
     @State private var hasConsent = ConsentStore.hasConsent
-    @State private var notificationAsked = NotificationPermissionStore.wasAsked
+    @State private var permissionsPrimed = OnboardingPermissionsStore.completed
 
     enum LoadState {
         case loading
@@ -77,6 +78,13 @@ struct AuthenticatedRootView: View {
                         hasConsent = true
                     }
                 }
+            } else if !permissionsPrimed {
+                // Direkt nach dem Datenschutz-Screen: einmalige Einwilligung
+                // für Standort, Kamera und Mitteilungen. Danach wird im
+                // laufenden Betrieb höchstens noch Apples System-Prompt gezeigt.
+                OnboardingPermissionsView {
+                    permissionsPrimed = true
+                }
             } else {
                 switch loadState {
                 case .loading:
@@ -87,16 +95,6 @@ struct AuthenticatedRootView: View {
                     }
                 case .ready:
                     HomeView(profile: profileBinding)
-                        // Mitteilungs-Berechtigung nur noch über Apples
-                        // System-Prompt: einmalig direkt nach dem Onboarding
-                        // anfragen, ohne eigenen Erklärungs-Screen. Die
-                        // Erklärung erfolgt im Consent-Screen des Onboardings.
-                        .task {
-                            guard !notificationAsked else { return }
-                            await BarrierNotificationService.shared.requestAuthorization()
-                            NotificationPermissionStore.markAsked()
-                            notificationAsked = true
-                        }
                 }
             }
         }

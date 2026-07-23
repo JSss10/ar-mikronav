@@ -41,9 +41,14 @@ struct OnboardingCoordinator: View {
                         )
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .top)
                 .padding(.horizontal)
                 .padding(.vertical, 16)
             }
+            // Bei jedem Schritt eine frische ScrollView: der Inhalt beginnt
+            // immer oben, sodass das erste Eingabefeld ganz oben erscheint
+            // (kein übernommener Scroll-Offset vom vorherigen Schritt).
+            .id(viewModel.currentStep)
 
             OnboardingNavigationBar(
                 canProceed: viewModel.canProceed,
