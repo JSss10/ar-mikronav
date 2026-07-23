@@ -2,10 +2,10 @@
 // ARMikronav
 //
 // Verbindet LocationService und BarrierRepository für die Kartenansicht.
-// Barrieren werden schweizweit geladen (AppConfig.schweizCenter/-RadiusM),
-// unabhängig vom Standort – ein einmaliger Ladevorgang deckt das ganze Land
-// ab. POIs (ginto) werden ebenfalls schweizweit gesucht (nächste Treffer zur
-// Position).
+// POIs und Barrieren werden für die ganze Zürcher Altstadt geladen
+// (AppConfig.altstadtCenter/-RadiusM), unabhängig vom Standort – ein
+// einmaliger Ladevorgang deckt die ganze Altstadt ab. Bei aktiver
+// Route werden nur noch die Barrieren direkt auf der Route angezeigt.
 
 import Foundation
 import Combine
@@ -18,10 +18,15 @@ final class MapViewModel: ObservableObject {
     @Published private(set) var loadError: String?
     @Published private(set) var filterState: BarrierFilterState = .default
 
-    // POIs (Wireframe 2.1/2.1a): sichtbar wenn ein Kategorie-Chip aktiv ist
-    // oder eine Suche lief.
-    @Published private(set) var pois: [POI] = []
-    @Published var activeCategory: String?
+    // POIs (Wireframe 2.1/2.1a): standardmässig alle POIs der Altstadt
+    // (einmalig geladen). Kategorie-Chips filtern diese Liste client-seitig
+    // über die exakten ginto-Kategorie-Keys; nur die Freitext-Suche läuft
+    // über die RPC.
+    @Published private(set) var altstadtPOIs: [POI] = []
+    /// Ergebnis der letzten Freitext-Suche (nil = keine aktive Suche).
+    @Published private(set) var searchResults: [POI]?
+    /// Aktiver Kategorie-Chip (deutsches Label, siehe POICategory.chips).
+    @Published private(set) var activeCategory: String?
     @Published private(set) var recentSearches: [String] = []
 
     // Navigation: aktive rollstuhlgerechte Route zu einem POI plus
@@ -42,7 +47,6 @@ final class MapViewModel: ObservableObject {
     private let poiRepository: POIRepository
     private let recentSearchesKey = "armikronav.recentSearches"
 
-    private var lastLoadCenter: CLLocation?
     private var cancellables = Set<AnyCancellable>()
     private var hasStarted = false
 
@@ -50,17 +54,21 @@ final class MapViewModel: ObservableObject {
         barriers.filter { filterState.enabledTypes.contains($0.type) }
     }
 
-    /// Halbe Korridor-Breite: Barrieren weiter als 30 m neben dem Routen-
-    /// Polyline gelten als "nicht auf der Route" und bleiben ausgeblendet.
-    private let routeCorridorM: CLLocationDistance = 30
+    /// Halbe Korridor-Breite: nur Barrieren, die höchstens so weit neben dem
+    /// Routen-Polyline liegen, gelten als "auf der Route" und werden angezeigt.
+    /// Bewusst eng (6 m), damit in der Altstadt keine Barrieren von parallelen
+    /// Gassen mitgezählt werden – Häuserblöcke sind dort nur ~20–30 m tief,
+    /// ein breiter Korridor würde die Nachbargasse einschliessen. Gilt für
+    /// Karte, Listenansicht UND Alternativroute (alle über `activeRoute`).
+    private let routeCorridorM: CLLocationDistance = 6
 
     /// Barrieren, die auf der Karte/AR angezeigt werden:
-    /// – aktive Route → nur Barrieren im Korridor entlang der Route
-    /// – POIs eingeblendet (Kategorie-Chip oder Suche) → keine Barrieren
-    /// – sonst → alle profilrelevanten Barrieren
+    /// – aktive Route → nur Barrieren im Korridor direkt entlang der Route,
+    ///   co-lokalisierte zu EINER Stelle zusammengefasst (siehe unten)
+    /// – sonst → alle profilrelevanten Barrieren der Altstadt (neben den POIs)
     var displayedBarriers: [Barrier] {
         if let route = activeRoute {
-            return filteredBarriers.filter { barrier in
+            let onRoute = filteredBarriers.filter { barrier in
                 RouteService.distance(
                     from: CLLocationCoordinate2D(
                         latitude: barrier.latitude,
@@ -69,11 +77,30 @@ final class MapViewModel: ObservableObject {
                     to: route
                 ) <= routeCorridorM
             }
-        }
-        if activeCategory != nil || !pois.isEmpty {
-            return []
+            return collapseColocated(onRoute)
         }
         return filteredBarriers
+    }
+
+    /// Fasst Barrieren am exakt selben Punkt zu EINER Stelle zusammen –
+    /// im OSM-Import tragen viele Wegknoten mehrere Barriere-Tags gleichzeitig
+    /// (z. B. abgesenkter Bordstein + Steigung + Oberfläche). Auf der Karte
+    /// stapeln sich diese zu einem einzigen sichtbaren Marker, während die
+    /// Liste sonst jede einzeln zählen würde (8 Marker vs. 15 Listeneinträge).
+    /// Pro Punkt bleibt die schwerwiegendste Barriere als Stellvertreterin –
+    /// so zeigen Karte, Liste und der Panel-Zähler exakt dieselbe Anzahl.
+    private func collapseColocated(_ barriers: [Barrier]) -> [Barrier] {
+        var representatives: [String: Barrier] = [:]
+        for barrier in barriers {
+            // 6 Nachkommastellen ≈ 0,11 m: fasst nur wirklich deckungsgleiche
+            // Punkte zusammen, keine benachbarten Barrieren.
+            let key = String(format: "%.6f,%.6f", barrier.latitude, barrier.longitude)
+            if let current = representatives[key], !barrier.isMoreSevere(than: current) {
+                continue
+            }
+            representatives[key] = barrier
+        }
+        return Array(representatives.values)
     }
 
     /// Eine Barriere entlang der aktiven Route für die Listenansicht:
@@ -114,15 +141,32 @@ final class MapViewModel: ObservableObject {
             .sorted { $0.distanceFromStartM < $1.distanceFromStartM }
     }
 
-    /// POIs, die auf der Karte/AR angezeigt werden: während einer aktiven
-    /// Navigation nur noch das Ziel, sonst alle geladenen POIs.
+    /// POIs, die auf der Karte/AR angezeigt werden:
+    /// – aktive Navigation → nur noch das Ziel
+    /// – aktive Freitext-Suche → deren Treffer
+    /// – aktiver Kategorie-Chip → alle Altstadt-POIs dieser Kategorie
+    /// – sonst → alle POIs der Altstadt
     var displayedPOIs: [POI] {
-        guard activeRoute != nil else { return pois }
-        return navigationTarget.map { [$0] } ?? []
+        if activeRoute != nil {
+            return navigationTarget.map { [$0] } ?? []
+        }
+        if let searchResults {
+            return searchResults
+        }
+        if let activeCategory {
+            return poisForCategory(activeCategory)
+        }
+        return altstadtPOIs
     }
 
-    var searchCenter: CLLocationCoordinate2D? {
-        lastLoadCenter?.coordinate ?? locationService.currentLocation?.coordinate
+    /// Alle Altstadt-POIs eines Kategorie-Chips (exaktes Key-Matching),
+    /// nach Distanz sortiert – auch die Datenbasis der Ergebnisliste
+    /// im SearchSheet.
+    func poisForCategory(_ label: String) -> [POI] {
+        guard let chip = POICategory.chip(forLabel: label) else { return [] }
+        return altstadtPOIs
+            .filter { chip.matches(category: $0.category) }
+            .sorted { $0.distanceM < $1.distanceM }
     }
 
     init() {
@@ -140,15 +184,9 @@ final class MapViewModel: ObservableObject {
     }
 
     func applyFilter(_ newFilter: BarrierFilterState) {
-        // Barrieren decken immer den ganzen Kreis 1 (Testgebiet) ab; der
-        // Suchradius steuert nur, wie weit um die eigene Position nach Orten
-        // (POIs) gesucht wird. Ändert sich der Radius bei aktiver Kategorie,
-        // werden die POIs im neuen Umkreis nachgeladen.
-        let radiusChanged = newFilter.radius != filterState.radius
+        // POIs und Barrieren decken immer die ganze Altstadt ab; der
+        // Filter steuert nur, welche Barrierentypen auf der Karte erscheinen.
         filterState = newFilter
-        if radiusChanged, let category = activeCategory {
-            Task { await loadPOIs(search: POICategory.searchTerm(forChip: category)) }
-        }
     }
 
     func start() {
@@ -156,6 +194,7 @@ final class MapViewModel: ObservableObject {
         hasStarted = true
 
         Task { await loadBarriers() }
+        Task { await loadPOIs() }
 
         locationService.startUpdating()
 
@@ -171,18 +210,16 @@ final class MapViewModel: ObservableObject {
     }
 
     private func handleLocationUpdate(_ location: CLLocation) {
-        // Barrieren sind schweizweit und standortunabhängig geladen – hier nur
-        // die Position für die POI-Suche merken und den Routenfortschritt
-        // aktualisieren.
-        lastLoadCenter = location
+        // POIs und Barrieren sind für die ganze Altstadt und standortunabhängig
+        // geladen – hier nur den Routenfortschritt aktualisieren.
         if let route = activeRoute {
             routeProgress = RouteService.progress(of: route, at: location)
             nextManeuver = RouteService.nextManeuver(of: route, at: location)
         }
     }
 
-    /// Lädt die Barrieren der ganzen Schweiz (fixes Gebiet, unabhängig vom
-    /// Standort – der Radius um den Landesmittelpunkt deckt das ganze Land ab).
+    /// Lädt die Barrieren der ganzen Zürcher Altstadt (fixes Gebiet, unabhängig
+    /// vom Standort – der Radius um das Altstadt-Zentrum deckt Kreis 1 ab).
     func loadBarriers() async {
         isLoading = true
         loadError = nil
@@ -190,8 +227,8 @@ final class MapViewModel: ObservableObject {
 
         do {
             barriers = try await repository.fetchBarriers(
-                near: AppConfig.schweizCenter,
-                radius: AppConfig.schweizRadiusM
+                near: AppConfig.altstadtCenter,
+                radius: AppConfig.altstadtRadiusM
             )
         } catch {
             loadError = error.localizedDescription
@@ -295,33 +332,31 @@ final class MapViewModel: ObservableObject {
         }
     }
 
-    /// Kategorie-Chip getippt: lädt POIs zur Kategorie, nochmaliges Tippen
-    /// deaktiviert. Das deutsche Chip-Label wird auf den englischen
-    /// DB-Kategorie-Suchbegriff gemappt (sonst findet die RPC nichts).
-    func toggleCategory(_ category: String) {
-        if activeCategory == category {
-            activeCategory = nil
-            pois = []
-            return
-        }
-        activeCategory = category
-        Task { await loadPOIs(search: POICategory.searchTerm(forChip: category)) }
+    /// Setzt den aktiven Kategorie-Chip (nil = alle POIs der Altstadt) und
+    /// beendet eine laufende Freitext-Suche. Rein client-seitig, kein RPC.
+    func setCategory(_ label: String?) {
+        searchResults = nil
+        activeCategory = label
     }
 
-    /// Freitext-Suche aus dem SearchSheet. Ergebnis wird zurückgegeben UND als
-    /// Karten-Marker übernommen.
+    /// Kategorie-Chip getippt: filtert die Altstadt-POIs auf die Kategorie,
+    /// nochmaliges Tippen deaktiviert und zeigt wieder alle POIs.
+    func toggleCategory(_ category: String) {
+        setCategory(activeCategory == category ? nil : category)
+    }
+
+    /// Freitext-Suche aus dem SearchSheet (RPC, matcht über Name UND
+    /// Kategorie). Ergebnis wird zurückgegeben UND als Karten-Marker
+    /// übernommen. Gesucht wird immer in der ganzen Altstadt.
     func searchPOIs(query: String) async -> [POI] {
-        // Ohne GPS-Fix vom Landesmittelpunkt aus suchen, damit die Suche auch
-        // vor dem ersten Standort-Update schweizweit Treffer liefert.
-        let center = searchCenter ?? AppConfig.schweizCenter
         recordRecentSearch(query)
         do {
             let results = try await poiRepository.fetchPOIs(
-                near: center,
-                radius: AppConfig.schweizRadiusM,
+                near: AppConfig.altstadtCenter,
+                radius: AppConfig.altstadtRadiusM,
                 search: POICategory.searchTerm(forChip: query)
             )
-            pois = results
+            searchResults = results
             activeCategory = nil
             return results
         } catch {
@@ -330,24 +365,13 @@ final class MapViewModel: ObservableObject {
         }
     }
 
-    private func loadPOIs(search: String?) async {
-        // Mit Standort-Fix wird im eingestellten Suchradius um die eigene
-        // Position gesucht (FilterSheet). Ohne Fix bleibt der schweizweite
-        // Fallback, damit auch vor dem ersten GPS-Update Treffer erscheinen.
-        let center: CLLocationCoordinate2D
-        let radius: Double
-        if let userCenter = searchCenter {
-            center = userCenter
-            radius = filterState.radius
-        } else {
-            center = AppConfig.schweizCenter
-            radius = AppConfig.schweizRadiusM
-        }
+    /// Lädt einmalig alle POIs der ganzen Zürcher Altstadt – die Basisliste
+    /// für Karte, AR und die client-seitigen Kategorie-Filter.
+    private func loadPOIs() async {
         do {
-            pois = try await poiRepository.fetchPOIs(
-                near: center,
-                radius: radius,
-                search: search
+            altstadtPOIs = try await poiRepository.fetchPOIs(
+                near: AppConfig.altstadtCenter,
+                radius: AppConfig.altstadtRadiusM
             )
         } catch {
             loadError = error.localizedDescription

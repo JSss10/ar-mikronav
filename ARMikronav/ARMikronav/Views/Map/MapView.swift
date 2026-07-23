@@ -2,10 +2,11 @@
 // ARMikronav
 //
 // Kartenansicht (iOS 17 Map API). Startregion: aktueller Standort bzw. als
-// Fallback die Altstadt Zürich; die Barrieren werden schweizweit geladen.
-// Zeigt Userposition, profilrelevante Barrieren, POI-Marker mit
-// Zugänglichkeits-Status, Suchleiste (inkl. Kategorie-Filter) und ein
-// Annäherungs-Banner. MapViewModel kommt vom HomeView, damit Filter-
+// Fallback die Altstadt Zürich; POIs und Barrieren werden für die ganze
+// Zürcher Altstadt geladen. Zeigt Userposition, profilrelevante Barrieren,
+// POI-Marker mit Zugänglichkeits-Status, Suchleiste (inkl. Kategorie-Filter)
+// und ein Annäherungs-Banner. Bei aktiver Route erscheinen nur die Barrieren
+// direkt auf der Route. MapViewModel kommt vom HomeView, damit Filter-
 // und Barrieren-State mit dem AR-Modus geteilt werden.
 
 import SwiftUI
@@ -509,7 +510,7 @@ struct MapView: View {
         !viewModel.isLoading
             && viewModel.loadError == nil
             && viewModel.filteredBarriers.isEmpty
-            && viewModel.pois.isEmpty
+            && viewModel.displayedPOIs.isEmpty
             && locationService.currentLocation != nil
     }
 }
