@@ -270,6 +270,60 @@ struct RouteServiceTests {
         #expect(abs(bearing - 90) < 5)
     }
 
+    /// Auf dem ersten Segment (Norden) zeigt die Fahrtrichtung nach Norden.
+    @Test func travelBearingOnFirstSegmentIsNorth() {
+        let route = cornerRoute
+        let start = CLLocation(latitude: 47.3700, longitude: 8.5400)
+
+        let bearing = RouteService.travelBearingDegrees(of: route, at: start)
+
+        #expect(bearing != nil)
+        if let bearing {
+            #expect(bearing < 5 || bearing > 355)
+        }
+    }
+
+    /// Nach dem Knick (auf dem Ost-Segment) zeigt die Fahrtrichtung nach
+    /// Osten – die Karte dreht sich also mit dem Rechtsknick mit.
+    @Test func travelBearingAfterTurnIsEast() {
+        let route = cornerRoute
+        // ~30 m östlich des Knicks, klar auf dem zweiten Segment.
+        let afterCorner = CLLocation(latitude: 47.370899, longitude: 8.540398)
+
+        let bearing = RouteService.travelBearingDegrees(of: route, at: afterCorner)
+
+        #expect(bearing != nil)
+        if let bearing {
+            #expect(abs(bearing - 90) < 8)
+        }
+    }
+
+    /// Spiegelbild: nach einem Linksknick zeigt die Fahrtrichtung nach Westen.
+    @Test func travelBearingAfterLeftTurnIsWest() {
+        let corner = CLLocationCoordinate2D(latitude: 47.370899, longitude: 8.5400)
+        let end = CLLocationCoordinate2D(latitude: 47.370899, longitude: 8.538673) // ~130 m westlich
+        let route = ActiveRoute(
+            destinationName: "Test-Apotheke",
+            destinationCoordinate: end,
+            coordinates: [
+                CLLocationCoordinate2D(latitude: 47.3700, longitude: 8.5400),
+                corner,
+                end,
+            ],
+            totalDistanceM: 230,
+            expectedTravelTimeS: 200
+        )
+        // ~30 m westlich des Knicks, auf dem zweiten Segment.
+        let afterCorner = CLLocation(latitude: 47.370899, longitude: 8.539602)
+
+        let bearing = RouteService.travelBearingDegrees(of: route, at: afterCorner)
+
+        #expect(bearing != nil)
+        if let bearing {
+            #expect(abs(bearing - 270) < 8)
+        }
+    }
+
     /// Route ~100 m Norden, dann 90° nach Osten (~100 m).
     private var cornerRoute: ActiveRoute {
         let corner = CLLocationCoordinate2D(latitude: 47.370899, longitude: 8.5400)
