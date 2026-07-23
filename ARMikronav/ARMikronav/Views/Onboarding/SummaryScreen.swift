@@ -53,6 +53,10 @@ struct Screen16_Summary: View {
                 SummaryRow(label: "Breite", value: "\(draft.widthCm) cm")
                 SummaryRow(label: "Höhe (sitzend)", value: "\(draft.heightCm) cm")
                 SummaryRow(label: "Sitzhöhe", value: "\(draft.seatHeightCm) cm")
+                SummaryRow(
+                    label: "Handyhalterung",
+                    value: draft.phoneMountHeightCm > 0 ? "\(draft.phoneMountHeightCm) cm" : "Keine"
+                )
                 SummaryRow(label: "Länge", value: "\(draft.lengthCm) cm")
                 SummaryRow(label: "Gewicht", value: "\(draft.weightKg) kg")
             }

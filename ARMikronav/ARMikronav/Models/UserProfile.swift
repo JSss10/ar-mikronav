@@ -15,6 +15,11 @@ struct UserProfile: Codable {
     var seatHeightCm: Int = 50
     /// Gesamtlänge inkl. Fussstützen – relevant für Lifte und Wendeflächen.
     var lengthCm: Int = 120
+    /// Höhe der Handyhalterung ab Boden (cm), falls das iPhone an einer
+    /// Halterung am Rollstuhl montiert ist. 0 = keine Halterung, das Gerät
+    /// wird in der Hand gehalten und die Kamerahöhe aus Sitz-/Gesamthöhe
+    /// geschätzt (siehe arDeviceHeightM).
+    var phoneMountHeightCm: Int = 0
     var maxIncline: Double
     var maxCurbHeight: Double
     var surfaceTolerance: SurfaceTolerance
@@ -62,12 +67,17 @@ struct UserProfile: Codable {
         }
     }
 
-    /// Geschätzte Höhe, in der das iPhone im Sitzen gehalten wird (Meter).
-    /// Das Gerät liegt typischerweise auf ca. 70 % der Strecke zwischen
-    /// Sitzfläche und Kopfoberkante (etwas unter Augenhöhe). Der AR-Pfad wird
-    /// um diesen Betrag unter den Session-Ursprung gelegt, damit er unabhängig
-    /// von Rollstuhlmodell und Körpergrösse auf dem Boden liegt.
+    /// Höhe, in der das iPhone im Sitzen gehalten bzw. montiert ist (Meter).
+    /// Mit Handyhalterung ist die Montagehöhe exakt bekannt und wird direkt
+    /// verwendet. Ohne Halterung liegt das Gerät typischerweise auf ca. 70 %
+    /// der Strecke zwischen Sitzfläche und Kopfoberkante (etwas unter
+    /// Augenhöhe). Der AR-Pfad wird um diesen Betrag unter den Session-
+    /// Ursprung gelegt, damit er unabhängig von Rollstuhlmodell und
+    /// Körpergrösse auf dem Boden liegt.
     var arDeviceHeightM: Float {
+        if phoneMountHeightCm > 0 {
+            return min(max(Float(phoneMountHeightCm) / 100, 0.5), 1.6)
+        }
         let seat = Float(seatHeightCm) / 100
         let head = Float(heightCm) / 100
         let estimated = seat + (head - seat) * 0.7
@@ -82,7 +92,7 @@ struct UserProfile: Codable {
 extension UserProfile {
     private enum LegacyKeys: String, CodingKey {
         case id, mobilityCategory, wheelchairType
-        case widthCm, heightCm, weightKg, seatHeightCm, lengthCm
+        case widthCm, heightCm, weightKg, seatHeightCm, lengthCm, phoneMountHeightCm
         case maxIncline, maxCurbHeight, surfaceTolerance, maneuverBufferCm
         case companionStatus, companionTodayOverride
         case companionInclineBonus, companionCurbBonus
@@ -102,6 +112,7 @@ extension UserProfile {
             ?? wheelchairType.defaultSeatHeight
         lengthCm = try c.decodeIfPresent(Int.self, forKey: .lengthCm)
             ?? wheelchairType.defaultLength
+        phoneMountHeightCm = try c.decodeIfPresent(Int.self, forKey: .phoneMountHeightCm) ?? 0
         maxIncline = try c.decode(Double.self, forKey: .maxIncline)
         maxCurbHeight = try c.decode(Double.self, forKey: .maxCurbHeight)
         surfaceTolerance = try c.decode(SurfaceTolerance.self, forKey: .surfaceTolerance)

@@ -152,6 +152,10 @@ struct ProfileEditView: View {
                     value: $draft.heightCm, in: 100...180, step: 1)
             Stepper("Sitzhöhe: \(draft.seatHeightCm) cm",
                     value: $draft.seatHeightCm, in: 35...70, step: 1)
+            Stepper(
+                "Handyhalterung: \(draft.phoneMountHeightCm > 0 ? "\(draft.phoneMountHeightCm) cm" : "keine")",
+                value: $draft.phoneMountHeightCm, in: 0...160, step: 5
+            )
             Stepper("Länge: \(draft.lengthCm) cm",
                     value: $draft.lengthCm, in: 80...160, step: 1)
             Stepper("Gewicht: \(draft.weightKg) kg",
@@ -159,7 +163,7 @@ struct ProfileEditView: View {
         } header: {
             Text("Maße")
         } footer: {
-            Text("Die Sitzhöhe (Sitzfläche inkl. Kissen ab Boden) bestimmt zusammen mit der Gesamthöhe, auf welcher Höhe der AR-Pfad auf dem Boden angezeigt wird.")
+            Text("Die Sitzhöhe (Sitzfläche inkl. Kissen ab Boden) bestimmt zusammen mit der Gesamthöhe, auf welcher Höhe der AR-Pfad auf dem Boden angezeigt wird. Ist eine Handyhalterung angegeben (Höhe ab Boden), wird stattdessen deren Montagehöhe als Kamerahöhe verwendet.")
         }
     }
 

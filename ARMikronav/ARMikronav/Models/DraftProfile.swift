@@ -19,6 +19,8 @@ struct DraftProfile {
     var seatHeightCm: Int = 50
     var lengthCm: Int = 120
     var weightKg: Int = 80
+    /// Höhe der Handyhalterung ab Boden (0 = keine Halterung).
+    var phoneMountHeightCm: Int = 0
 
     // Fähigkeiten – werden in Screen 1.4 mit Defaults aus wheelchairSubtype vorbelegt
     var maxIncline: Double = 6.0
@@ -70,6 +72,7 @@ struct DraftProfile {
             weightKg: weightKg,
             seatHeightCm: seatHeightCm,
             lengthCm: lengthCm,
+            phoneMountHeightCm: phoneMountHeightCm,
             maxIncline: maxIncline,
             maxCurbHeight: maxCurbHeight,
             surfaceTolerance: surfaceTolerance,

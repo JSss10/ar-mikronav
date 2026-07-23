@@ -226,6 +226,7 @@ struct SettingsView: View {
             row("Breite", "\(profile.widthCm) cm  (effektiv \(profile.effectiveWidthNeeded) cm)")
             row("Gesamthöhe (sitzend)", "\(profile.heightCm) cm")
             row("Sitzhöhe", "\(profile.seatHeightCm) cm")
+            row("Handyhalterung", profile.phoneMountHeightCm > 0 ? "\(profile.phoneMountHeightCm) cm" : "Keine")
             row("Länge", "\(profile.lengthCm) cm")
             row("Gewicht", "\(profile.weightKg) kg")
             row("Max. Steigung", "\(Int(profile.effectiveMaxIncline)) %")

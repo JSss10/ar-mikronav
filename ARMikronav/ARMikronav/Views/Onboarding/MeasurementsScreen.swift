@@ -23,7 +23,15 @@ struct Screen13_Measurements: View {
                 label: "Gesamthöhe (sitzend)",
                 value: intBinding(\.heightCm),
                 unit: "cm",
-                hint: "Wichtig für niedrige Durchgänge und Überdachungen"
+                hint: "Höchster Punkt im Sitzen, inklusive Handyhalterung, falls diese übersteht – wichtig für niedrige Durchgänge und Überdachungen"
+            )
+
+            OnboardingNumberField(
+                icon: "iphone.gen3",
+                label: "Handyhalterung",
+                value: intBinding(\.phoneMountHeightCm),
+                unit: "cm",
+                hint: "Höhe der Halterung ab Boden, falls dein iPhone am Rollstuhl montiert ist – bestimmt die Kamerahöhe im AR-Modus. 0 = keine Halterung (iPhone in der Hand)"
             )
 
             OnboardingNumberField(
