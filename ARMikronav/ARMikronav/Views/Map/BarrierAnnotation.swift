@@ -42,7 +42,7 @@ extension BarrierType {
     /// Deutsche Bezeichnung eines Oberflächen-Subtyps (OSM `surface`-Werte wie
     /// "sett" oder "cobblestone"). Fällt bei unbekannten Werten auf eine
     /// bereinigte, gross geschriebene Form des Rohwerts zurück.
-    static func localizedSurface(_ subtype: String) -> String {
+    nonisolated static func localizedSurface(_ subtype: String) -> String {
         switch subtype {
         case "sett":
             return "Kopfsteinpflaster"
