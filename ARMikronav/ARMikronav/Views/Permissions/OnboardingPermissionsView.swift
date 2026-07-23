@@ -9,6 +9,7 @@
 
 import SwiftUI
 import AVFoundation
+import CoreLocation
 
 enum OnboardingPermissionsStore {
     private static let key = "armikronav.onboardingPermissionsDone"
