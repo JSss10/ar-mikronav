@@ -433,6 +433,108 @@ enum RouteService {
         return bestAlong
     }
 
+    // MARK: - Karten-Ausrichtung
+
+    /// Ab dieser Weglänge gilt ein Punkt als "weit genug voraus", um die
+    /// Anfangsrichtung der Route stabil zu bestimmen (kurze GPS-/Geometrie-
+    /// Segmente am Start verfälschen die Richtung sonst).
+    private static let initialBearingLookaheadM = 20.0
+
+    /// Anfängliche Fahrtrichtung der Route als Kompasskurs (Grad, 0 = Nord,
+    /// im Uhrzeigersinn). Damit lässt sich die Karte beim Anzeigen der Route
+    /// so drehen, dass die Fahrtrichtung nach oben zeigt – man sieht sofort,
+    /// wohin man fahren muss. Gemessen über die ersten `initialBearingLookaheadM`
+    /// Meter; reicht der Vorlauf nicht, zählt die Luftlinie zum Ziel.
+    static func initialBearingDegrees(of route: ActiveRoute) -> CLLocationDirection {
+        guard let start = route.coordinates.first else { return 0 }
+        let startLocation = CLLocation(latitude: start.latitude, longitude: start.longitude)
+
+        let reference = route.coordinates.dropFirst().first { candidate in
+            startLocation.distance(
+                from: CLLocation(latitude: candidate.latitude, longitude: candidate.longitude)
+            ) >= initialBearingLookaheadM
+        } ?? route.destinationCoordinate
+
+        return bearingDegrees(from: start, to: reference)
+    }
+
+    /// Vorausschau (Meter), über die die Fahrtrichtung am aktuellen Standort
+    /// gemittelt wird – glättet die Kartendrehung über kurze Segmente/Knicke.
+    private static let travelBearingLookaheadM = 18.0
+
+    /// Fahrtrichtung der Route am aktuellen Standort als Kompasskurs (Grad,
+    /// 0 = Nord). Projiziert den Standort auf das nächstgelegene Segment und
+    /// nimmt die Richtung `travelBearingLookaheadM` Meter voraus. Damit dreht
+    /// sich die Karte während der Navigation mit dem Routenverlauf mit – nach
+    /// rechts, wenn die Route rechts abbiegt, nach links, wenn sie links geht.
+    /// nil, wenn die Route zu kurz ist oder der Standort schon am Ziel liegt.
+    static func travelBearingDegrees(
+        of route: ActiveRoute,
+        at location: CLLocation
+    ) -> CLLocationDirection? {
+        let coords = route.coordinates
+        guard coords.count >= 2 else { return nil }
+
+        // Lokales Ost/Nord-Meter-Koordinatensystem um den Standort (0,0).
+        let points = coords.map { metersEastNorth(of: $0, relativeTo: location.coordinate) }
+
+        // Nächstgelegenes Segment + Projektionspunkt (wie in nextManeuver).
+        var bestDistanceToPath = Double.greatestFiniteMagnitude
+        var bestIndex = 0
+        var bestProjection = points[0]
+        for i in 0..<(points.count - 1) {
+            let a = points[i]
+            let b = points[i + 1]
+            let ab = b - a
+            let lengthSquared = simd_length_squared(ab)
+            let t = lengthSquared > 0 ? min(1, max(0, simd_dot(-a, ab) / lengthSquared)) : 0
+            let projected = a + t * ab
+            let distanceToPath = simd_length(projected)
+            if distanceToPath < bestDistanceToPath {
+                bestDistanceToPath = distanceToPath
+                bestIndex = i
+                bestProjection = projected
+            }
+        }
+
+        // Vom Projektionspunkt aus die Polyline vorwärts laufen, bis
+        // `travelBearingLookaheadM` Meter erreicht sind (oder das Ziel).
+        var remaining = travelBearingLookaheadM
+        var reference = points[points.count - 1]
+        var segmentStart = bestProjection
+        for j in (bestIndex + 1)..<points.count {
+            let segmentEnd = points[j]
+            let segmentLength = simd_distance(segmentStart, segmentEnd)
+            if segmentLength >= remaining {
+                reference = segmentStart + (segmentEnd - segmentStart) / segmentLength * remaining
+                break
+            }
+            remaining -= segmentLength
+            segmentStart = segmentEnd
+        }
+
+        // Richtungsvektor Projektion → Vorausschau-Punkt (x = Ost, y = Nord).
+        let vector = reference - bestProjection
+        guard simd_length(vector) > 0.1 else { return nil }
+        let bearing = atan2(vector.x, vector.y) * 180 / .pi
+        return (bearing + 360).truncatingRemainder(dividingBy: 360)
+    }
+
+    /// Kompasskurs (Grad, 0 = Nord, im Uhrzeigersinn) von `start` nach `end`.
+    static func bearingDegrees(
+        from start: CLLocationCoordinate2D,
+        to end: CLLocationCoordinate2D
+    ) -> CLLocationDirection {
+        let lat1 = start.latitude * .pi / 180
+        let lat2 = end.latitude * .pi / 180
+        let deltaLon = (end.longitude - start.longitude) * .pi / 180
+
+        let y = sin(deltaLon) * cos(lat2)
+        let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(deltaLon)
+        let bearing = atan2(y, x) * 180 / .pi
+        return (bearing + 360).truncatingRemainder(dividingBy: 360)
+    }
+
     // MARK: - Helpers
 
     private static func remainingTime(for remainingDistance: Double, on route: ActiveRoute) -> TimeInterval {

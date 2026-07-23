@@ -148,6 +148,13 @@ struct MapView: View {
         .onReceive(locationService.$currentLocation) { _ in
             evaluateProximity()
         }
+        // Während der Navigation folgt die Karte dem Standort und dreht sich
+        // fortlaufend in Fahrtrichtung mit – die Anweisung im Panel ("leicht
+        // rechts halten") stimmt so mit der Kartenausrichtung überein.
+        .onReceive(locationService.$currentLocation.compactMap { $0 }) { location in
+            guard let route = viewModel.activeRoute else { return }
+            followCamera(route: route, location: location)
+        }
         .onReceive(barrierNotifications.$tappedBarrierId) { barrierId in
             guard let barrierId,
                   let barrier = viewModel.filteredBarriers.first(where: { $0.id == barrierId })
@@ -473,19 +480,101 @@ struct MapView: View {
         }
     }
 
-    /// Zoomt die Kamera so, dass die komplette Route mit Rand sichtbar ist.
+    /// Zeigt die komplette Route und dreht die Karte dabei so, dass die
+    /// Fahrtrichtung nach oben zeigt – man sieht sofort, wohin man fahren
+    /// muss. Die Kamera zentriert auf die Mitte der Route; der Abstand ergibt
+    /// sich aus der Ausdehnung (Diagonale), damit die Route auch nach der
+    /// Drehung vollständig und mit Rand sichtbar bleibt.
     private func fitCamera(to route: ActiveRoute) {
-        var rect = MKMapRect.null
-        for coordinate in route.coordinates {
-            let point = MKMapPoint(coordinate)
-            rect = rect.union(MKMapRect(x: point.x, y: point.y, width: 0, height: 0))
-        }
-        guard !rect.isNull else { return }
+        let coordinates = route.coordinates
+        guard let first = coordinates.first else { return }
 
-        let padding = max(rect.width, rect.height) * 0.3
-        withAnimation(.easeInOut) {
-            cameraPosition = .rect(rect.insetBy(dx: -padding, dy: -padding))
+        var minLat = first.latitude, maxLat = first.latitude
+        var minLng = first.longitude, maxLng = first.longitude
+        for coordinate in coordinates {
+            minLat = min(minLat, coordinate.latitude)
+            maxLat = max(maxLat, coordinate.latitude)
+            minLng = min(minLng, coordinate.longitude)
+            maxLng = max(maxLng, coordinate.longitude)
         }
+
+        let center = CLLocationCoordinate2D(
+            latitude: (minLat + maxLat) / 2,
+            longitude: (minLng + maxLng) / 2
+        )
+
+        // Ausdehnung der Route in Metern (Diagonale der Bounding-Box), damit
+        // der gewählte Abstand die Route in jeder Drehlage abdeckt.
+        let metersPerDegreeLatitude = 111_320.0
+        let metersPerDegreeLongitude = metersPerDegreeLatitude * cos(center.latitude * .pi / 180)
+        let widthM = (maxLng - minLng) * metersPerDegreeLongitude
+        let heightM = (maxLat - minLat) * metersPerDegreeLatitude
+        let diagonalM = (widthM * widthM + heightM * heightM).squareRoot()
+
+        // Kameraabstand ~ Diagonale mit Rand; Untergrenze, damit sehr kurze
+        // Routen nicht übermässig herangezoomt werden.
+        let distance = max(diagonalM * 2.2, 220)
+
+        withAnimation(.easeInOut) {
+            cameraPosition = .camera(
+                MapCamera(
+                    centerCoordinate: center,
+                    distance: distance,
+                    heading: RouteService.initialBearingDegrees(of: route),
+                    pitch: 0
+                )
+            )
+        }
+    }
+
+    /// Meter, um die das Kartenzentrum in Fahrtrichtung vor den Standort
+    /// versetzt wird – so sitzt die Position im unteren Drittel und man sieht
+    /// mehr von der Strecke voraus.
+    private static let followForwardOffsetM = 35.0
+    /// Kameraabstand im Follow-Modus (~enger Ausschnitt für die Gassen der
+    /// Altstadt, zeigt die nächsten Meter der Route).
+    private static let followDistanceM = 240.0
+
+    /// Folgt dem Standort während der Navigation und dreht die Karte in
+    /// Fahrtrichtung: Der nächste Streckenabschnitt zeigt immer nach oben,
+    /// die Karte dreht bei einer Rechtskurve nach rechts, bei einer
+    /// Linkskurve nach links. Ohne bestimmbare Fahrtrichtung (z. B. am Ziel)
+    /// bleibt die Kamera stehen.
+    private func followCamera(route: ActiveRoute, location: CLLocation) {
+        guard let bearing = RouteService.travelBearingDegrees(of: route, at: location) else { return }
+
+        let center = Self.coordinate(
+            from: location.coordinate,
+            distanceM: Self.followForwardOffsetM,
+            bearingDeg: bearing
+        )
+
+        withAnimation(.easeInOut(duration: 0.4)) {
+            cameraPosition = .camera(
+                MapCamera(
+                    centerCoordinate: center,
+                    distance: Self.followDistanceM,
+                    heading: bearing,
+                    pitch: 0
+                )
+            )
+        }
+    }
+
+    /// Koordinate, die `distanceM` Meter in Kompassrichtung `bearingDeg`
+    /// (0 = Nord) vom Ursprung entfernt liegt (Flach-Erde-Näherung).
+    private static func coordinate(
+        from origin: CLLocationCoordinate2D,
+        distanceM: Double,
+        bearingDeg: Double
+    ) -> CLLocationCoordinate2D {
+        let metersPerDegreeLatitude = 111_320.0
+        let metersPerDegreeLongitude = metersPerDegreeLatitude * cos(origin.latitude * .pi / 180)
+        let radians = bearingDeg * .pi / 180
+        return CLLocationCoordinate2D(
+            latitude: origin.latitude + cos(radians) * distanceM / metersPerDegreeLatitude,
+            longitude: origin.longitude + sin(radians) * distanceM / metersPerDegreeLongitude
+        )
     }
 
     /// Barrieren im Korridor der aktiven Route (für die Zähler-Zeile im
