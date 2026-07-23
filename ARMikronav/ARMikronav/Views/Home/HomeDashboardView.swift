@@ -27,7 +27,7 @@ struct HomeDashboardView: View {
                 newBarriersSection
             }
             .padding(.horizontal, AppMetrics.Space.m)
-            .padding(.top, AppMetrics.Space.m)
+            .padding(.top, AppMetrics.Space.s)
             .padding(.bottom, AppMetrics.Space.xl)
         }
         .background(AppColor.backgroundPrimary)
@@ -44,18 +44,21 @@ struct HomeDashboardView: View {
 
     private var header: some View {
         HStack(spacing: AppMetrics.Space.m) {
-            avatar
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(viewModel.greeting)
-                    .font(AppTypography.title2)
-                    .foregroundStyle(AppColor.textPrimary)
+            VStack(alignment: .leading, spacing: 4) {
                 Text(Date().formatted(.dateTime.locale(.appGerman).weekday(.wide).day().month(.wide)))
-                    .font(AppTypography.subheadline)
-                    .foregroundStyle(AppColor.textSecondary)
+                    .font(AppTypography.footnote.weight(.semibold))
+                    .foregroundStyle(AppColor.accentPrimary)
+                    .textCase(.uppercase)
+                Text(viewModel.greeting)
+                    .font(AppTypography.title1)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
             }
 
-            Spacer()
+            Spacer(minLength: AppMetrics.Space.m)
+
+            avatar
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(viewModel.greeting) Heute ist \(Date().formatted(.dateTime.locale(.appGerman).weekday(.wide).day().month(.wide)))")
@@ -70,7 +73,13 @@ struct HomeDashboardView: View {
                     .scaledToFill()
             } else {
                 Circle()
-                    .fill(AppColor.accentPrimary)
+                    .fill(
+                        LinearGradient(
+                            colors: [AppColor.Violet.v500, AppColor.Violet.v700],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                 if viewModel.initials.isEmpty {
                     Image(systemName: "person.fill")
                         .font(.title3)
@@ -82,8 +91,12 @@ struct HomeDashboardView: View {
                 }
             }
         }
-        .frame(width: 52, height: 52)
+        .frame(width: 56, height: 56)
         .clipShape(Circle())
+        .overlay(
+            Circle().stroke(AppColor.Violet.v100, lineWidth: 3)
+        )
+        .shadow(color: AppColor.accentPrimary.opacity(0.25), radius: 8, y: 3)
         .accessibilityHidden(true)
     }
 
@@ -96,35 +109,33 @@ struct HomeDashboardView: View {
                 VStack(spacing: AppMetrics.Space.m) {
                     HStack(spacing: AppMetrics.Space.m) {
                         Image(systemName: weather.symbolName)
-                            .font(.system(size: 40))
+                            .font(.system(size: 34))
                             .symbolRenderingMode(.multicolor)
-                            .frame(width: 56)
+                            .frame(width: 60, height: 60)
+                            .background(.white.opacity(0.18), in: Circle())
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text("\(Int(weather.temperatureC.rounded())) °C")
-                                .font(AppTypography.title1)
-                                .foregroundStyle(AppColor.textPrimary)
+                                .font(.system(size: 40, weight: .bold))
+                                .foregroundStyle(AppColor.onAccent)
                             Text(weather.conditionDescription)
                                 .font(AppTypography.subheadline)
-                                .foregroundStyle(AppColor.textSecondary)
+                                .foregroundStyle(AppColor.onAccent.opacity(0.85))
                         }
 
                         Spacer()
 
-                        VStack(alignment: .trailing, spacing: 4) {
+                        VStack(alignment: .trailing, spacing: 6) {
                             if let place = viewModel.weatherPlaceName {
                                 Label(place, systemImage: "location.fill")
                                     .font(AppTypography.footnote)
-                                    .foregroundStyle(AppColor.textSecondary)
+                                    .foregroundStyle(AppColor.onAccent.opacity(0.9))
                             }
                             Label("\(Int(weather.windSpeedKmh.rounded())) km/h", systemImage: "wind")
                                 .font(AppTypography.footnote)
-                                .foregroundStyle(AppColor.textSecondary)
+                                .foregroundStyle(AppColor.onAccent.opacity(0.9))
                         }
                     }
-
-                    Divider()
-                        .overlay(AppColor.borderDecorative)
 
                     HStack(spacing: AppMetrics.Space.s) {
                         weatherStat(
@@ -149,46 +160,51 @@ struct HomeDashboardView: View {
             } else if viewModel.isLoadingWeather {
                 HStack(spacing: AppMetrics.Space.m) {
                     ProgressView()
+                        .tint(AppColor.onAccent)
                     Text("Wetter wird geladen…")
                         .font(AppTypography.subheadline)
-                        .foregroundStyle(AppColor.textSecondary)
+                        .foregroundStyle(AppColor.onAccent.opacity(0.9))
+                    Spacer()
                 }
             } else {
                 HStack(alignment: .top, spacing: AppMetrics.Space.m) {
                     Image(systemName: "cloud.slash")
                         .font(.title2)
-                        .foregroundStyle(AppColor.textSecondary)
+                        .foregroundStyle(AppColor.onAccent.opacity(0.9))
                     Text(viewModel.weatherError ?? "Wetter derzeit nicht verfügbar.")
                         .font(AppTypography.subheadline)
-                        .foregroundStyle(AppColor.textSecondary)
+                        .foregroundStyle(AppColor.onAccent.opacity(0.9))
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Button("Erneut") {
                         Task { await viewModel.loadWeather() }
                     }
-                    .font(AppTypography.subheadline)
-                    .foregroundStyle(AppColor.accentPrimary)
+                    .font(AppTypography.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColor.onAccent)
                 }
             }
         }
     }
 
-    /// Mini-Statistik in der Wetterkarte (UV-Index, gefühlte Temperatur, …).
+    /// Mini-Statistik in der Wetterkarte (UV-Index, gefühlte Temperatur, …),
+    /// als getönte Kachel auf dem Violett-Verlauf.
     private func weatherStat(symbol: String, label: String, value: String) -> some View {
-        VStack(spacing: 2) {
+        VStack(spacing: 3) {
             Image(systemName: symbol)
                 .font(AppTypography.subheadline)
-                .foregroundStyle(AppColor.accentPrimary)
+                .foregroundStyle(AppColor.onAccent)
             Text(value)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(AppColor.onAccent)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(AppColor.onAccent.opacity(0.8))
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func weatherAccessibilityText(_ weather: CurrentWeather) -> String {
@@ -208,7 +224,7 @@ struct HomeDashboardView: View {
 
     private var recentDestinationsSection: some View {
         VStack(alignment: .leading, spacing: AppMetrics.Space.s) {
-            sectionTitle("Letzte Ziele")
+            sectionTitle("Letzte Ziele", symbol: "clock.arrow.circlepath")
 
             if recentDestinations.destinations.isEmpty {
                 card {
@@ -236,7 +252,7 @@ struct HomeDashboardView: View {
                             if destination.id != recentDestinations.destinations.prefix(5).last?.id {
                                 Divider()
                                     .overlay(AppColor.borderDecorative)
-                                    .padding(.leading, 52)
+                                    .padding(.leading, 60)
                             }
                         }
                     }
@@ -247,9 +263,14 @@ struct HomeDashboardView: View {
 
     private func destinationRow(_ destination: RecentDestination) -> some View {
         HStack(spacing: AppMetrics.Space.m) {
-            Image(systemName: "mappin.circle.fill")
-                .font(.title2)
-                .foregroundStyle(AppColor.accentPrimary)
+            ZStack {
+                Circle()
+                    .fill(AppColor.Violet.v100)
+                    .frame(width: 40, height: 40)
+                Image(systemName: "mappin.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(AppColor.accentPrimary)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(destination.name)
@@ -290,7 +311,7 @@ struct HomeDashboardView: View {
 
     private var newBarriersSection: some View {
         VStack(alignment: .leading, spacing: AppMetrics.Space.s) {
-            sectionTitle("Neue Barrieren")
+            sectionTitle("Neue Barrieren", symbol: "exclamationmark.triangle.fill")
 
             if viewModel.isLoadingBarriers && viewModel.newBarriers.isEmpty {
                 card {
@@ -446,11 +467,20 @@ struct HomeDashboardView: View {
 
     // MARK: - Bausteine
 
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title)
-            .font(AppTypography.title2)
-            .foregroundStyle(AppColor.textPrimary)
-            .accessibilityAddTraits(.isHeader)
+    private func sectionTitle(_ title: String, symbol: String? = nil) -> some View {
+        HStack(spacing: AppMetrics.Space.s) {
+            if let symbol {
+                Image(systemName: symbol)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppColor.accentPrimary)
+            }
+            Text(title)
+                .font(AppTypography.title2)
+                .foregroundStyle(AppColor.textPrimary)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+        .accessibilityLabel(title)
     }
 
     private func card<Content: View>(
@@ -468,11 +498,12 @@ struct HomeDashboardView: View {
                 RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous)
                     .stroke(AppColor.borderDecorative, lineWidth: 1)
             )
+            .shadow(color: AppColor.textPrimary.opacity(0.05), radius: 10, y: 4)
     }
 
-    /// Hervorgehobene Karte (Wetter) mit sanftem Akzent-Verlauf – gibt dem
-    /// Homescreen einen freundlichen, modernen Auftakt, ohne die Lesbarkeit
-    /// der Werte zu beeinträchtigen.
+    /// Hervorgehobene Wetterkarte mit kräftigem Violett-Verlauf – gibt dem
+    /// Homescreen einen freundlichen, modernen Auftakt. Text in OnAccent
+    /// (weiss) hält den AAA-Kontrast auf dem Violett.
     private func heroCard<Content: View>(
         @ViewBuilder content: () -> Content
     ) -> some View {
@@ -481,15 +512,12 @@ struct HomeDashboardView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 LinearGradient(
-                    colors: [AppColor.Violet.v100, AppColor.surfaceRaised],
+                    colors: [AppColor.Violet.v600, AppColor.Violet.v800],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ),
                 in: RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous)
-                    .stroke(AppColor.borderDecorative, lineWidth: 1)
-            )
+            .shadow(color: AppColor.accentPrimary.opacity(0.3), radius: 16, y: 8)
     }
 }

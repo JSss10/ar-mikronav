@@ -32,7 +32,7 @@ struct Screen10_ProfileSetup: View {
                 Text("Vorname")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextField("Jessica", text: $draft.firstName)
+                TextField("Vorname", text: $draft.firstName)
                     .textFieldStyle(.roundedBorder)
                     .textContentType(.givenName)
             }
@@ -41,7 +41,7 @@ struct Screen10_ProfileSetup: View {
                 Text("Nachname")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextField("Muster", text: $draft.lastName)
+                TextField("Nachname", text: $draft.lastName)
                     .textFieldStyle(.roundedBorder)
                     .textContentType(.familyName)
             }

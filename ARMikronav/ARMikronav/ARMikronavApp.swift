@@ -22,6 +22,11 @@ struct ARMikronavApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(authService)
+                // Leitfarbe app-weit: Toggles, Slider und andere getönte
+                // System-Controls ziehen sich sonst das System-Grün; mit dem
+                // globalen Tint erscheinen sie durchgängig im Violett der
+                // Marke (§02 Farbsystem).
+                .tint(AppColor.accentPrimary)
                 // Prototyp ist bewusst nur auf Deutsch (Schweiz): Datums- und
                 // Zahlenformate app-weit auf Deutsch fixieren, unabhängig von
                 // der Gerätesprache (Wochentag, Monat, relative Daten …).

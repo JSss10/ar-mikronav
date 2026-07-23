@@ -60,7 +60,7 @@ struct SignUpView: View {
                         Text("Vorname")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        TextField("Jessica", text: $firstName)
+                        TextField("Vorname", text: $firstName)
                             .textFieldStyle(.roundedBorder)
                             .textContentType(.givenName)
                     }
@@ -68,7 +68,7 @@ struct SignUpView: View {
                         Text("Nachname")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        TextField("Schneiter", text: $lastName)
+                        TextField("Nachname", text: $lastName)
                             .textFieldStyle(.roundedBorder)
                             .textContentType(.familyName)
                     }
