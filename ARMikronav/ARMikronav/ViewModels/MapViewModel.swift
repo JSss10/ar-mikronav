@@ -54,9 +54,13 @@ final class MapViewModel: ObservableObject {
         barriers.filter { filterState.enabledTypes.contains($0.type) }
     }
 
-    /// Halbe Korridor-Breite: Barrieren weiter als 30 m neben dem Routen-
-    /// Polyline gelten als "nicht auf der Route" und bleiben ausgeblendet.
-    private let routeCorridorM: CLLocationDistance = 30
+    /// Halbe Korridor-Breite: nur Barrieren, die höchstens so weit neben dem
+    /// Routen-Polyline liegen, gelten als "auf der Route" und werden angezeigt.
+    /// Bewusst eng (6 m), damit in der Altstadt keine Barrieren von parallelen
+    /// Gassen mitgezählt werden – Häuserblöcke sind dort nur ~20–30 m tief,
+    /// ein breiter Korridor würde die Nachbargasse einschliessen. Gilt für
+    /// Karte, Listenansicht UND Alternativroute (alle über `activeRoute`).
+    private let routeCorridorM: CLLocationDistance = 6
 
     /// Barrieren, die auf der Karte/AR angezeigt werden:
     /// – aktive Route → nur Barrieren im Korridor direkt entlang der Route
