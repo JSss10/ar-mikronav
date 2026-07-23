@@ -112,7 +112,6 @@ struct ARModeView: View {
                 }
             } else {
                 AROverlayView(
-                    barriers: viewModel.displayedBarriers,
                     userCoordinate: originCoordinate,
                     onClose: onClose
                 )
