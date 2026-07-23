@@ -7,7 +7,6 @@
 // "Barrieren auf der Route") zusätzlich: "Heute nicht machbar?" mit
 // Alternativroute – für Barrieren, die je nach Tagesform (z. B. Hitze,
 // Erschöpfung) gerade nicht bewältigbar sind, obwohl sie es sonst wären.
-// AR-Button ist bis Task A2 deaktiviert.
 
 import SwiftUI
 
@@ -38,8 +37,6 @@ struct BarrierDetailSheet: View {
                 comparison
                 explanation
                 alternativeSection
-                sourceFooter
-                arButton
                 feedbackButton
             }
             .padding(20)
@@ -164,31 +161,6 @@ struct BarrierDetailSheet: View {
                 alternativeFailed = true
             }
         }
-    }
-
-    private var sourceFooter: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "info.circle")
-            Text("Quelle: \(barrier.source.uppercased())")
-            if let last = barrier.lastVerified {
-                Text("· geprüft \(last.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted).locale(.appGerman)))")
-            }
-        }
-        .font(.footnote)
-        .foregroundStyle(.secondary)
-    }
-
-    private var arButton: some View {
-        Button {
-            // AR wird in Task A2 verdrahtet.
-        } label: {
-            Label("In AR ansehen", systemImage: "arkit")
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        .disabled(true)
-        .accessibilityHint("Noch nicht verfügbar")
     }
 
     @ViewBuilder
