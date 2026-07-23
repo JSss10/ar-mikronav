@@ -473,18 +473,50 @@ struct MapView: View {
         }
     }
 
-    /// Zoomt die Kamera so, dass die komplette Route mit Rand sichtbar ist.
+    /// Zeigt die komplette Route und dreht die Karte dabei so, dass die
+    /// Fahrtrichtung nach oben zeigt – man sieht sofort, wohin man fahren
+    /// muss. Die Kamera zentriert auf die Mitte der Route; der Abstand ergibt
+    /// sich aus der Ausdehnung (Diagonale), damit die Route auch nach der
+    /// Drehung vollständig und mit Rand sichtbar bleibt.
     private func fitCamera(to route: ActiveRoute) {
-        var rect = MKMapRect.null
-        for coordinate in route.coordinates {
-            let point = MKMapPoint(coordinate)
-            rect = rect.union(MKMapRect(x: point.x, y: point.y, width: 0, height: 0))
-        }
-        guard !rect.isNull else { return }
+        let coordinates = route.coordinates
+        guard let first = coordinates.first else { return }
 
-        let padding = max(rect.width, rect.height) * 0.3
+        var minLat = first.latitude, maxLat = first.latitude
+        var minLng = first.longitude, maxLng = first.longitude
+        for coordinate in coordinates {
+            minLat = min(minLat, coordinate.latitude)
+            maxLat = max(maxLat, coordinate.latitude)
+            minLng = min(minLng, coordinate.longitude)
+            maxLng = max(maxLng, coordinate.longitude)
+        }
+
+        let center = CLLocationCoordinate2D(
+            latitude: (minLat + maxLat) / 2,
+            longitude: (minLng + maxLng) / 2
+        )
+
+        // Ausdehnung der Route in Metern (Diagonale der Bounding-Box), damit
+        // der gewählte Abstand die Route in jeder Drehlage abdeckt.
+        let metersPerDegreeLatitude = 111_320.0
+        let metersPerDegreeLongitude = metersPerDegreeLatitude * cos(center.latitude * .pi / 180)
+        let widthM = (maxLng - minLng) * metersPerDegreeLongitude
+        let heightM = (maxLat - minLat) * metersPerDegreeLatitude
+        let diagonalM = (widthM * widthM + heightM * heightM).squareRoot()
+
+        // Kameraabstand ~ Diagonale mit Rand; Untergrenze, damit sehr kurze
+        // Routen nicht übermässig herangezoomt werden.
+        let distance = max(diagonalM * 2.2, 220)
+
         withAnimation(.easeInOut) {
-            cameraPosition = .rect(rect.insetBy(dx: -padding, dy: -padding))
+            cameraPosition = .camera(
+                MapCamera(
+                    centerCoordinate: center,
+                    distance: distance,
+                    heading: RouteService.initialBearingDegrees(of: route),
+                    pitch: 0
+                )
+            )
         }
     }
 

@@ -433,6 +433,46 @@ enum RouteService {
         return bestAlong
     }
 
+    // MARK: - Karten-Ausrichtung
+
+    /// Ab dieser Weglänge gilt ein Punkt als "weit genug voraus", um die
+    /// Anfangsrichtung der Route stabil zu bestimmen (kurze GPS-/Geometrie-
+    /// Segmente am Start verfälschen die Richtung sonst).
+    private static let initialBearingLookaheadM = 20.0
+
+    /// Anfängliche Fahrtrichtung der Route als Kompasskurs (Grad, 0 = Nord,
+    /// im Uhrzeigersinn). Damit lässt sich die Karte beim Anzeigen der Route
+    /// so drehen, dass die Fahrtrichtung nach oben zeigt – man sieht sofort,
+    /// wohin man fahren muss. Gemessen über die ersten `initialBearingLookaheadM`
+    /// Meter; reicht der Vorlauf nicht, zählt die Luftlinie zum Ziel.
+    static func initialBearingDegrees(of route: ActiveRoute) -> CLLocationDirection {
+        guard let start = route.coordinates.first else { return 0 }
+        let startLocation = CLLocation(latitude: start.latitude, longitude: start.longitude)
+
+        let reference = route.coordinates.dropFirst().first { candidate in
+            startLocation.distance(
+                from: CLLocation(latitude: candidate.latitude, longitude: candidate.longitude)
+            ) >= initialBearingLookaheadM
+        } ?? route.destinationCoordinate
+
+        return bearingDegrees(from: start, to: reference)
+    }
+
+    /// Kompasskurs (Grad, 0 = Nord, im Uhrzeigersinn) von `start` nach `end`.
+    static func bearingDegrees(
+        from start: CLLocationCoordinate2D,
+        to end: CLLocationCoordinate2D
+    ) -> CLLocationDirection {
+        let lat1 = start.latitude * .pi / 180
+        let lat2 = end.latitude * .pi / 180
+        let deltaLon = (end.longitude - start.longitude) * .pi / 180
+
+        let y = sin(deltaLon) * cos(lat2)
+        let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(deltaLon)
+        let bearing = atan2(y, x) * 180 / .pi
+        return (bearing + 360).truncatingRemainder(dividingBy: 360)
+    }
+
     // MARK: - Helpers
 
     private static func remainingTime(for remainingDistance: Double, on route: ActiveRoute) -> TimeInterval {
