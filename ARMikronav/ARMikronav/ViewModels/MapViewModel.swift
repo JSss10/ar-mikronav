@@ -63,11 +63,12 @@ final class MapViewModel: ObservableObject {
     private let routeCorridorM: CLLocationDistance = 12
 
     /// Barrieren, die auf der Karte/AR angezeigt werden:
-    /// – aktive Route → nur Barrieren im Korridor direkt entlang der Route
+    /// – aktive Route → nur Barrieren im Korridor direkt entlang der Route,
+    ///   co-lokalisierte zu EINER Stelle zusammengefasst (siehe unten)
     /// – sonst → alle profilrelevanten Barrieren der Altstadt (neben den POIs)
     var displayedBarriers: [Barrier] {
         if let route = activeRoute {
-            return filteredBarriers.filter { barrier in
+            let onRoute = filteredBarriers.filter { barrier in
                 RouteService.distance(
                     from: CLLocationCoordinate2D(
                         latitude: barrier.latitude,
@@ -76,8 +77,30 @@ final class MapViewModel: ObservableObject {
                     to: route
                 ) <= routeCorridorM
             }
+            return collapseColocated(onRoute)
         }
         return filteredBarriers
+    }
+
+    /// Fasst Barrieren am exakt selben Punkt zu EINER Stelle zusammen –
+    /// im OSM-Import tragen viele Wegknoten mehrere Barriere-Tags gleichzeitig
+    /// (z. B. abgesenkter Bordstein + Steigung + Oberfläche). Auf der Karte
+    /// stapeln sich diese zu einem einzigen sichtbaren Marker, während die
+    /// Liste sonst jede einzeln zählen würde (8 Marker vs. 15 Listeneinträge).
+    /// Pro Punkt bleibt die schwerwiegendste Barriere als Stellvertreterin –
+    /// so zeigen Karte, Liste und der Panel-Zähler exakt dieselbe Anzahl.
+    private func collapseColocated(_ barriers: [Barrier]) -> [Barrier] {
+        var representatives: [String: Barrier] = [:]
+        for barrier in barriers {
+            // 6 Nachkommastellen ≈ 0,11 m: fasst nur wirklich deckungsgleiche
+            // Punkte zusammen, keine benachbarten Barrieren.
+            let key = String(format: "%.6f,%.6f", barrier.latitude, barrier.longitude)
+            if let current = representatives[key], !barrier.isMoreSevere(than: current) {
+                continue
+            }
+            representatives[key] = barrier
+        }
+        return Array(representatives.values)
     }
 
     /// Eine Barriere entlang der aktiven Route für die Listenansicht:
