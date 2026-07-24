@@ -113,13 +113,11 @@ final class LocationService: NSObject, ObservableObject {
         motionManager.stopDeviceMotionUpdates()
     }
 
-    /// SICHERHEITSSCHALTER (nur relevant, falls der Kegel auf dem echten Gerät
-    /// gespiegelt/verdreht zeigt): Apples `CMAttitude.rotationMatrix` bildet
-    /// Geräte- auf Referenzkoordinaten ab. Sollte die Blickrichtung falsch
-    /// herum sein, hier auf `false` stellen (nutzt die transponierte Ableitung).
-    /// Standard `true` ist aus zwei physikalischen Testfällen hergeleitet
-    /// (Kamera nach Norden → 0°, nach Osten → 90°).
-    private static let usesDeviceToReferenceMatrix = true
+    /// Konvention für Apples `CMAttitude.rotationMatrix`. Auf dem echten Gerät
+    /// verifiziert: Die transponierte Ableitung (`false`, Referenz → Gerät,
+    /// nutzt m31/m32) liefert die korrekte Kamera-Blickrichtung. Nur umstellen,
+    /// falls der Kegel je gespiegelt/verdreht erscheinen sollte.
+    private static let usesDeviceToReferenceMatrix = false
 
     /// Bearing (0 = Norden, im Uhrzeigersinn) der Kamera-Blickrichtung
     /// (Geräte-(−Z)-Achse) im Referenzrahmen `.xTrueNorthZVertical`
