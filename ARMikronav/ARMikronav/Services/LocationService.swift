@@ -39,6 +39,10 @@ final class LocationService: NSObject, ObservableObject {
     private let manager: CLLocationManager
     private let motionManager = CMMotionManager()
 
+    /// Offene Warteschlangen für `requestAuthorizationAsync()`, die auf die
+    /// Antwort im System-Dialog warten und im Delegate-Callback fortgesetzt werden.
+    private var authorizationContinuations: [CheckedContinuation<CLAuthorizationStatus, Never>] = []
+
     override init() {
         self.manager = CLLocationManager()
         self.authorizationStatus = manager.authorizationStatus
@@ -51,6 +55,30 @@ final class LocationService: NSObject, ObservableObject {
 
     func requestAuthorization() {
         manager.requestWhenInUseAuthorization()
+    }
+
+    /// Fragt die Standort-Berechtigung an und kehrt erst zurück, wenn die
+    /// Person im System-Dialog geantwortet hat. So lassen sich die
+    /// Onboarding-Prompts wirklich nacheinander abarbeiten. Ist der Status
+    /// bereits entschieden, gibt es keinen Dialog und die Funktion kehrt sofort
+    /// mit dem aktuellen Status zurück.
+    func requestAuthorizationAsync() async -> CLAuthorizationStatus {
+        guard authorizationStatus == .notDetermined else {
+            return authorizationStatus
+        }
+        return await withCheckedContinuation { continuation in
+            authorizationContinuations.append(continuation)
+            manager.requestWhenInUseAuthorization()
+        }
+    }
+
+    /// Setzt alle wartenden `requestAuthorizationAsync()`-Aufrufe fort, sobald
+    /// die Person geantwortet hat (Status nicht mehr `.notDetermined`).
+    private func resumeAuthorizationWaiters(with status: CLAuthorizationStatus) {
+        guard status != .notDetermined, !authorizationContinuations.isEmpty else { return }
+        let pending = authorizationContinuations
+        authorizationContinuations.removeAll()
+        pending.forEach { $0.resume(returning: status) }
     }
 
     func startUpdating() {
@@ -155,6 +183,7 @@ extension LocationService: CLLocationManagerDelegate {
                     manager.startUpdatingHeading()
                 }
             }
+            self.resumeAuthorizationWaiters(with: status)
         }
     }
 
