@@ -20,11 +20,13 @@ final class BarrierRepository: @unchecked Sendable {
             "radius_meters": radius
         ]
 
-        let barriers: [Barrier] = try await client
-            .rpc("barriers_within_radius", params: params)
-            .execute()
-            .value
-
-        return barriers
+        // Bei kurzen Netz-Aussetzern am Testtag begrenzt wiederholen.
+        return try await withRetry {
+            let barriers: [Barrier] = try await client
+                .rpc("barriers_within_radius", params: params)
+                .execute()
+                .value
+            return barriers
+        }
     }
 }
