@@ -68,10 +68,11 @@ struct ARRoutePanel: View {
                     style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round)
                 )
             // Standortpunkt mit Blickrichtungs-Kegel; die Minikarte ist
-            // nordausgerichtet, daher zeigt die Geräteausrichtung direkt.
+            // nordausgerichtet, daher zeigt die Kamera-Blickrichtung direkt
+            // (funktioniert auch bei aufrecht gehaltenem iPhone).
             if let userLocation = locationService.currentLocation {
                 Annotation("", coordinate: userLocation.coordinate, anchor: .center) {
-                    UserLocationMarker(headingDegrees: locationService.heading)
+                    UserLocationMarker(headingDegrees: locationService.viewingDirection)
                 }
             }
             Marker(

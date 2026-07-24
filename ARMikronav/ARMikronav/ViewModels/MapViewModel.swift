@@ -238,6 +238,11 @@ final class MapViewModel: ObservableObject {
            let cached = LocalDataStore.load([Barrier].self, named: "barriers") {
             barriers = cached
         }
+        // Allererster Start ohne Netz und ohne Cache: gebündelter Seed, damit
+        // die Karte garantiert Daten hat.
+        if barriers.isEmpty {
+            barriers = SeedData.barriers
+        }
         isLoading = barriers.isEmpty
         loadError = nil
         defer { isLoading = false }
@@ -396,6 +401,10 @@ final class MapViewModel: ObservableObject {
         if altstadtPOIs.isEmpty,
            let cached = LocalDataStore.load([POI].self, named: "pois") {
             altstadtPOIs = cached
+        }
+        // Allererster Start ohne Netz und ohne Cache: gebündelter Seed.
+        if altstadtPOIs.isEmpty {
+            altstadtPOIs = SeedData.pois
         }
         do {
             let fresh = try await poiRepository.fetchPOIs(

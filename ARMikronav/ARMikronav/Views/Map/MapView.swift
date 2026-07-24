@@ -487,11 +487,12 @@ struct MapView: View {
 
     // MARK: - Helpers
 
-    /// Blickrichtung des Geräts relativ zur aktuellen Kartendrehung – so
-    /// zeigt der Kegel am Standortpunkt auch bei gedrehter Karte dorthin,
-    /// wohin man tatsächlich schaut. `nil`, solange keine Richtung vorliegt.
+    /// Kamera-Blickrichtung des Geräts relativ zur aktuellen Kartendrehung –
+    /// so zeigt der Kegel am Standortpunkt auch bei gedrehter Karte UND bei
+    /// aufrecht gehaltenem iPhone dorthin, wohin die Kamera tatsächlich schaut.
+    /// `nil`, solange keine Richtung vorliegt.
     private var userConeHeading: CLLocationDirection? {
-        locationService.heading.map { $0 - mapHeading }
+        locationService.viewingDirection.map { $0 - mapHeading }
     }
 
     /// "Route anzeigen" aus dem POI-Detail: Route in-App berechnen und
