@@ -68,7 +68,9 @@ private struct HeadingCone: Shape {
 
     func path(in rect: CGRect) -> Path {
         let apex = CGPoint(x: rect.midX, y: rect.midY)
-        let radius = min(rect.width, rect.height) / 2
+        let apexX = Double(rect.midX)
+        let apexY = Double(rect.midY)
+        let radius = Double(min(rect.width, rect.height) / 2)
         // Bildschirm-Koordinaten (y nach unten): oben = -90°.
         let up = -Double.pi / 2
         let half = spreadDegrees * .pi / 180 / 2
@@ -80,8 +82,8 @@ private struct HeadingCone: Shape {
         for i in 0...steps {
             let angle = (up - half) + (2 * half) * Double(i) / Double(steps)
             path.addLine(to: CGPoint(
-                x: apex.x + radius * cos(angle),
-                y: apex.y + radius * sin(angle)
+                x: apexX + radius * cos(angle),
+                y: apexY + radius * sin(angle)
             ))
         }
         path.closeSubpath()
