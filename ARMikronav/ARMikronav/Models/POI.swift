@@ -8,7 +8,9 @@ import Foundation
 import SwiftUI
 import Supabase
 
-struct POI: Decodable, Identifiable {
+// Codable (nicht nur Decodable): erlaubt das Zwischenspeichern der
+// Altstadt-POIs im LocalDataStore für sofortige Anzeige beim nächsten Start.
+struct POI: Codable, Identifiable {
     let id: UUID
     let name: String
     let category: String?

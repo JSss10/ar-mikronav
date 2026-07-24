@@ -232,17 +232,30 @@ final class MapViewModel: ObservableObject {
     /// Lädt die Barrieren der ganzen Zürcher Altstadt (fixes Gebiet, unabhängig
     /// vom Standort – der Radius um das Altstadt-Zentrum deckt Kreis 1 ab).
     func loadBarriers() async {
-        isLoading = true
+        // Cache zuerst → sofortige Anzeige beim Start (schnelle Ladezeit),
+        // dann Netz-Refresh im Hintergrund.
+        if barriers.isEmpty,
+           let cached = LocalDataStore.load([Barrier].self, named: "barriers") {
+            barriers = cached
+        }
+        isLoading = barriers.isEmpty
         loadError = nil
         defer { isLoading = false }
 
         do {
-            barriers = try await repository.fetchBarriers(
+            let fresh = try await repository.fetchBarriers(
                 near: AppConfig.altstadtCenter,
                 radius: AppConfig.altstadtRadiusM
             )
+            barriers = fresh
+            LocalDataStore.save(fresh, named: "barriers")
         } catch {
-            loadError = error.localizedDescription
+            // Nur als Fehler zeigen, wenn gar keine (auch keine gecachten)
+            // Daten vorliegen – sonst bleibt die App mit den letzten Daten
+            // bedienbar (Funkloch in den Gassen).
+            if barriers.isEmpty {
+                loadError = error.localizedDescription
+            }
         }
     }
 
@@ -379,13 +392,23 @@ final class MapViewModel: ObservableObject {
     /// Lädt einmalig alle POIs der ganzen Zürcher Altstadt – die Basisliste
     /// für Karte, AR und die client-seitigen Kategorie-Filter.
     private func loadPOIs() async {
+        // Cache zuerst → sofortige Anzeige beim Start, dann Netz-Refresh.
+        if altstadtPOIs.isEmpty,
+           let cached = LocalDataStore.load([POI].self, named: "pois") {
+            altstadtPOIs = cached
+        }
         do {
-            altstadtPOIs = try await poiRepository.fetchPOIs(
+            let fresh = try await poiRepository.fetchPOIs(
                 near: AppConfig.altstadtCenter,
                 radius: AppConfig.altstadtRadiusM
             )
+            altstadtPOIs = fresh
+            LocalDataStore.save(fresh, named: "pois")
         } catch {
-            loadError = error.localizedDescription
+            // Nur melden, wenn gar keine (auch keine gecachten) POIs da sind.
+            if altstadtPOIs.isEmpty {
+                loadError = error.localizedDescription
+            }
         }
     }
 

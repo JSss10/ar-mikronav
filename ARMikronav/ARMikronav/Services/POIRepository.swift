@@ -28,11 +28,13 @@ final class POIRepository: @unchecked Sendable {
             params["search"] = .string(search)
         }
 
-        let pois: [POI] = try await client
-            .rpc("pois_within_radius", params: params)
-            .execute()
-            .value
-
-        return pois
+        // Bei kurzen Netz-Aussetzern am Testtag begrenzt wiederholen.
+        return try await withRetry {
+            let pois: [POI] = try await client
+                .rpc("pois_within_radius", params: params)
+                .execute()
+                .value
+            return pois
+        }
     }
 }
