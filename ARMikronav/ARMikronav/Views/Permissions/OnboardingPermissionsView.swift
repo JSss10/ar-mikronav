@@ -10,6 +10,7 @@
 import SwiftUI
 import AVFoundation
 import CoreLocation
+import UserNotifications
 
 enum OnboardingPermissionsStore {
     private static let key = "armikronav.onboardingPermissionsDone"
@@ -138,17 +139,43 @@ struct OnboardingPermissionsView: View {
 
     // MARK: - Anfragen
 
-    /// Fragt die drei System-Prompts nacheinander an. iOS serialisiert die
-    /// Dialoge, sie erscheinen also einer nach dem anderen.
+    /// Kurze Pause zwischen zwei System-Dialogen, damit sie ruhig einer nach
+    /// dem anderen erscheinen statt direkt hintereinander aufzupoppen.
+    private static let pauseBetweenPrompts: Duration = .milliseconds(600)
+
+    /// Fragt die drei System-Prompts der Reihe nach an. Wichtig: Jeder Schritt
+    /// wartet, bis die Person im vorherigen Dialog geantwortet hat – erst dann
+    /// erscheint der nächste. Dazwischen liegt eine kurze Verschnaufpause,
+    /// damit die Dialoge schön langsam nacheinander kommen. Bereits erteilte
+    /// oder abgelehnte Berechtigungen werden übersprungen (kein Dialog, keine
+    /// Pause).
     private func requestAll() {
         guard !isRequesting else { return }
         isRequesting = true
         Task {
+            var didShowPrompt = false
+
+            // 1. Standort – auf die Antwort warten, bevor es weitergeht.
             if locationService.authorizationStatus == .notDetermined {
-                locationService.requestAuthorization()
+                _ = await locationService.requestAuthorizationAsync()
+                didShowPrompt = true
             }
-            _ = await AVCaptureDevice.requestAccess(for: .video)
-            await BarrierNotificationService.shared.requestAuthorization()
+
+            // 2. Kamera
+            if AVCaptureDevice.authorizationStatus(for: .video) == .notDetermined {
+                if didShowPrompt { try? await Task.sleep(for: Self.pauseBetweenPrompts) }
+                _ = await AVCaptureDevice.requestAccess(for: .video)
+                didShowPrompt = true
+            }
+
+            // 3. Mitteilungen
+            let notificationStatus = await UNUserNotificationCenter.current()
+                .notificationSettings().authorizationStatus
+            if notificationStatus == .notDetermined {
+                if didShowPrompt { try? await Task.sleep(for: Self.pauseBetweenPrompts) }
+                await BarrierNotificationService.shared.requestAuthorization()
+            }
+
             await MainActor.run { finish() }
         }
     }
