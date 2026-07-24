@@ -34,9 +34,10 @@ struct AROverlayView: View {
             if let userCoordinate {
                 Map(initialPosition: .region(region(around: userCoordinate))) {
                     // Standortpunkt mit Blickrichtungs-Kegel; die Minikarte ist
-                    // nordausgerichtet, daher zeigt die Geräteausrichtung direkt.
+                    // nordausgerichtet, daher zeigt die Kamera-Blickrichtung
+                    // direkt (funktioniert auch bei aufrecht gehaltenem iPhone).
                     Annotation("", coordinate: userCoordinate, anchor: .center) {
-                        UserLocationMarker(headingDegrees: locationService.heading)
+                        UserLocationMarker(headingDegrees: locationService.viewingDirection)
                     }
                 }
                 .mapDisplayPreferences()
