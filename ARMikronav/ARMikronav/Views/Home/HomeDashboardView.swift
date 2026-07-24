@@ -18,7 +18,38 @@ struct HomeDashboardView: View {
     @StateObject private var recentDestinations = RecentDestinationsStore.shared
     @StateObject private var avatarStore = AvatarStore.shared
 
+    // Feldtest: Nur während eines aktiven Testlaufs erscheint oben rechts der
+    // "Test beenden"-Button. Er lädt offene Tracking-Events hoch, setzt das
+    // Gerät für die nächste Testperson zurück und öffnet die Abschluss-Umfrage.
+    @ObservedObject private var fieldTest = FieldTestService.shared
+    @State private var showEndTestConfirmation = false
+    @State private var isEndingTest = false
+
     var body: some View {
+        if fieldTest.isActive {
+            NavigationStack {
+                dashboard
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar { endTestToolbarItem }
+                    .confirmationDialog(
+                        "Test beenden?",
+                        isPresented: $showEndTestConfirmation,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Test beenden", role: .destructive) { endTest() }
+                        Button("Abbrechen", role: .cancel) {}
+                    } message: {
+                        Text("Deine Antworten werden hochgeladen und die Abschluss-Umfrage wird geöffnet. Das Gerät wird danach für die nächste Testperson zurückgesetzt.")
+                    }
+                    .overlay { endTestProgressOverlay }
+            }
+        } else {
+            dashboard
+        }
+    }
+
+    // Der eigentliche Homescreen-Inhalt (ohne den Feldtest-Rahmen).
+    private var dashboard: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppMetrics.Space.l) {
                 header
@@ -37,6 +68,60 @@ struct HomeDashboardView: View {
         .onAppear {
             viewModel.start()
             avatarStore.loadIfNeeded()
+        }
+    }
+
+    // MARK: - Feldtest: Test beenden
+
+    @ToolbarContentBuilder
+    private var endTestToolbarItem: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                showEndTestConfirmation = true
+            } label: {
+                Text("Test beenden")
+                    .font(AppTypography.headline)
+            }
+            .disabled(isEndingTest)
+            .accessibilityLabel("Test beenden und Abschluss-Umfrage öffnen")
+        }
+    }
+
+    /// Blendet während des Beendens einen Fortschritts-Overlay ein, damit die
+    /// Testperson sieht, dass Daten hochgeladen werden und sich gleich die
+    /// Umfrage öffnet.
+    @ViewBuilder
+    private var endTestProgressOverlay: some View {
+        if isEndingTest {
+            ZStack {
+                Color.black.opacity(0.35)
+                    .ignoresSafeArea()
+                VStack(spacing: AppMetrics.Space.m) {
+                    ProgressView()
+                        .tint(.white)
+                    Text("Test wird beendet…")
+                        .font(AppTypography.subheadline)
+                        .foregroundStyle(.white)
+                }
+                .padding(AppMetrics.Space.l)
+                .background(
+                    AppColor.Violet.v800,
+                    in: RoundedRectangle(cornerRadius: AppMetrics.Radius.card, style: .continuous)
+                )
+            }
+            .accessibilityAddTraits(.isModal)
+        }
+    }
+
+    /// Lädt offene Events hoch, setzt das Gerät zurück und öffnet die
+    /// Abschluss-Umfrage. Danach wechselt die App über den Auth-State
+    /// automatisch zurück zum Welcome-Screen für die nächste Testperson.
+    private func endTest() {
+        guard !isEndingTest else { return }
+        isEndingTest = true
+        Task {
+            await FieldTestService.shared.endTest()
+            isEndingTest = false
         }
     }
 
