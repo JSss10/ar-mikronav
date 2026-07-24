@@ -43,6 +43,9 @@ struct MapView: View {
     /// bleibt der vom User gewählte Kartenausschnitt (Zoom/Position) stehen,
     /// bis eine Aktion (Suche, Route, Standort-Button) die Kamera bewegt.
     @State private var hasCenteredOnUser = false
+    /// Aktuelle Drehung der Karte (Grad, im Uhrzeigersinn) – nötig, um den
+    /// Blickrichtungs-Kegel bei gedrehter Karte richtig auszurichten.
+    @State private var mapHeading: CLLocationDirection = 0
 
     // Enger Zoom (~150 m Bildausschnitt), damit nur Barrieren in unmittelbarer
     // Nähe des aktuellen Standorts sichtbar sind.
@@ -58,7 +61,15 @@ struct MapView: View {
 
     var body: some View {
         Map(position: $cameraPosition) {
-            UserAnnotation()
+            // Standortpunkt mit Blickrichtungs-Kegel. Die Geräteausrichtung
+            // wird um die aktuelle Kartendrehung bereinigt, damit der Kegel
+            // auch bei gedrehter Karte (Navigation) korrekt dorthin zeigt,
+            // wohin man schaut.
+            if let userLocation = locationService.currentLocation {
+                Annotation("", coordinate: userLocation.coordinate, anchor: .center) {
+                    UserLocationMarker(headingDegrees: userConeHeading)
+                }
+            }
 
             // Aktive Navigations-Route (geteilt mit dem AR-Modus).
             if let route = viewModel.activeRoute {
@@ -126,6 +137,12 @@ struct MapView: View {
         // Direkt auf der Map, damit Hell-/Dunkel-Modus und Satellitenansicht
         // nur die Karte betreffen, nicht die Overlays.
         .mapDisplayPreferences(mapPreferences)
+        // Kartendrehung mitverfolgen, damit der Blickrichtungs-Kegel am
+        // Standortpunkt korrekt ausgerichtet bleibt (Navigation dreht die
+        // Karte, der User kann sie zudem mit zwei Fingern drehen).
+        .onMapCameraChange(frequency: .continuous) { context in
+            mapHeading = context.camera.heading
+        }
         .onAppear {
             viewModel.start()
         }
@@ -469,6 +486,13 @@ struct MapView: View {
     }
 
     // MARK: - Helpers
+
+    /// Blickrichtung des Geräts relativ zur aktuellen Kartendrehung – so
+    /// zeigt der Kegel am Standortpunkt auch bei gedrehter Karte dorthin,
+    /// wohin man tatsächlich schaut. `nil`, solange keine Richtung vorliegt.
+    private var userConeHeading: CLLocationDirection? {
+        locationService.heading.map { $0 - mapHeading }
+    }
 
     /// "Route anzeigen" aus dem POI-Detail: Route in-App berechnen und
     /// die Karte auf den gesamten Routenverlauf zoomen.
