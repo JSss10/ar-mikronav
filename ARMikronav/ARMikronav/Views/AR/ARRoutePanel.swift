@@ -67,7 +67,13 @@ struct ARRoutePanel: View {
                     AppColor.accentPrimary,
                     style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round)
                 )
-            UserAnnotation()
+            // Standortpunkt mit Blickrichtungs-Kegel; die Minikarte ist
+            // nordausgerichtet, daher zeigt die Geräteausrichtung direkt.
+            if let userLocation = locationService.currentLocation {
+                Annotation("", coordinate: userLocation.coordinate, anchor: .center) {
+                    UserLocationMarker(headingDegrees: locationService.heading)
+                }
+            }
             Marker(
                 route.destinationName,
                 systemImage: "mappin",

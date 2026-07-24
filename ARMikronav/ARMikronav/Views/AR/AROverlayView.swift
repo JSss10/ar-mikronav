@@ -16,6 +16,8 @@ struct AROverlayView: View {
     let userCoordinate: CLLocationCoordinate2D?
     let onClose: () -> Void
 
+    @StateObject private var locationService = LocationService.shared
+
     var body: some View {
         VStack {
             Spacer()
@@ -31,7 +33,11 @@ struct AROverlayView: View {
         Group {
             if let userCoordinate {
                 Map(initialPosition: .region(region(around: userCoordinate))) {
-                    UserAnnotation()
+                    // Standortpunkt mit Blickrichtungs-Kegel; die Minikarte ist
+                    // nordausgerichtet, daher zeigt die Geräteausrichtung direkt.
+                    Annotation("", coordinate: userCoordinate, anchor: .center) {
+                        UserLocationMarker(headingDegrees: locationService.heading)
+                    }
                 }
                 .mapDisplayPreferences()
                 .allowsHitTesting(false)
