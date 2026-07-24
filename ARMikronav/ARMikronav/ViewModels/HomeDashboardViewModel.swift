@@ -148,15 +148,30 @@ final class HomeDashboardViewModel: ObservableObject {
                 near: AppConfig.altstadtCenter,
                 radius: AppConfig.altstadtRadiusM
             )
-            newBarriers = Array(
-                barriers
-                    .filter { $0.isActive }
-                    .sorted { ($0.lastVerified ?? .distantPast) > ($1.lastVerified ?? .distantPast) }
-                    .prefix(maxBarrierEntries)
-            )
+            newBarriers = topBarriers(from: barriers)
         } catch {
-            barriersError = "Meldungen konnten nicht geladen werden."
+            // Offline und noch nichts geladen: gebündelten Seed zeigen, statt
+            // eine leere Liste mit Fehlermeldung.
+            if newBarriers.isEmpty {
+                let seed = topBarriers(from: SeedData.barriers)
+                if seed.isEmpty {
+                    barriersError = "Meldungen konnten nicht geladen werden."
+                } else {
+                    newBarriers = seed
+                }
+            }
         }
+    }
+
+    /// Die neuesten aktiven Barrieren (nach Meldedatum), begrenzt auf die
+    /// Anzahl Homescreen-Einträge.
+    private func topBarriers(from barriers: [Barrier]) -> [Barrier] {
+        Array(
+            barriers
+                .filter { $0.isActive }
+                .sorted { ($0.lastVerified ?? .distantPast) > ($1.lastVerified ?? .distantPast) }
+                .prefix(maxBarrierEntries)
+        )
     }
 
     /// Distanz vom aktuellen Standort zu einer Koordinate, nil ohne GPS-Fix.
