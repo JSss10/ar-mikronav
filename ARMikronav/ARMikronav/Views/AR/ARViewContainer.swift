@@ -35,6 +35,19 @@ struct ARViewContainer: UIViewRepresentable {
             cameraMode: .ar,
             automaticallyConfigureSession: false
         )
+        // Für eine Navigations-Overlay wird keine Foto-Realismus-Nachbearbeitung
+        // gebraucht. Diese Effekte abschalten spart GPU-Last → gleichmässigere
+        // Bildrate, weniger thermisches Drosseln über einen langen Testtag und
+        // ein flüssigeres Bild bei Fahrt. Das Kamerabild selbst bleibt unberührt.
+        arView.renderOptions = [
+            .disableMotionBlur,
+            .disableDepthOfField,
+            .disableHDR,
+            .disableCameraGrain,
+            .disableFaceMesh,
+            .disablePersonOcclusion,
+            .disableGroundingShadows
+        ]
         context.coordinator.arView = arView
         context.coordinator.startProjecting()
         Task { await service.run(on: arView.session, at: origin) }
